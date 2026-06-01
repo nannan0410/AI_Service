@@ -1,0 +1,34 @@
+[
+  {
+    "productId": "cp_prod_new",
+    "name": "新客专享 20 元券",
+    "type": "coupon_product",
+    "channels": ["self"],
+    "status": "on",
+    "value": 20,
+    "condition": "满 200 可用",
+    "couponType": "cash",
+    "tags": ["新客"]
+  },
+  {
+    "productId": "cp_prod_parking",
+    "name": "停车 5 元券",
+    "type": "coupon_product",
+    "channels": ["self"],
+    "status": "on",
+    "value": 5,
+    "couponType": "parking",
+    "tags": []
+  },
+  {
+    "productId": "cp_prod_vip",
+    "name": "黄金会员 50 元券",
+    "type": "coupon_product",
+    "channels": ["self"],
+    "status": "on",
+    "value": 50,
+    "condition": "会员专享",
+    "couponType": "cash",
+    "tags": ["高价值"]
+  }
+]

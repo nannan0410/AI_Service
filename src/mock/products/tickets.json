@@ -1,0 +1,72 @@
+[
+  {
+    "productId": "tkt_adult",
+    "name": "成人票",
+    "type": "ticket",
+    "channels": ["self"],
+    "status": "on",
+    "price": 299,
+    "ticketTypeId": "adult",
+    "tags": ["成人"]
+  },
+  {
+    "productId": "tkt_child",
+    "name": "儿童票（折扣票）",
+    "type": "ticket",
+    "channels": ["self"],
+    "status": "on",
+    "price": 129,
+    "ticketTypeId": "child",
+    "tags": ["儿童", "亲子"]
+  },
+  {
+    "productId": "tkt_family",
+    "name": "家庭套票（2大1小）",
+    "type": "ticket",
+    "channels": ["self"],
+    "status": "on",
+    "price": 669,
+    "ticketTypeId": "family_bundle",
+    "composition": { "adult": 2, "child": 1 },
+    "tags": ["亲子", "套票"]
+  },
+  {
+    "productId": "tkt_annual",
+    "name": "家庭年卡（2大1小）",
+    "type": "ticket",
+    "channels": ["self"],
+    "status": "on",
+    "price": 2999,
+    "ticketTypeId": "family_annual",
+    "composition": { "adult": 2, "child": 1 },
+    "tags": ["亲子", "年卡"]
+  },
+  {
+    "productId": "tkt_holiday",
+    "name": "假日特惠票",
+    "type": "ticket",
+    "channels": ["self"],
+    "status": "on",
+    "price": 399,
+    "ticketTypeId": "holiday_special",
+    "tags": ["假日"]
+  },
+  {
+    "productId": "tkt_ota_001",
+    "name": "OTA 渠道双人票",
+    "type": "ticket",
+    "channels": ["ota"],
+    "status": "on",
+    "price": 558,
+    "tags": ["OTA"]
+  },
+  {
+    "productId": "tkt_ta_001",
+    "name": "TA 旅行社团队票",
+    "type": "ticket",
+    "channels": ["ta"],
+    "status": "on",
+    "price": 250,
+    "tags": ["TA", "团队"]
+  }
+]

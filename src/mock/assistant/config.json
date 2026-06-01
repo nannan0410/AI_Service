@@ -1,0 +1,17 @@
+{
+  "avatar": {
+    "avatarUrl": "/assistant/avatar-idle.svg",
+    "name": "小景",
+    "greeting": "您好，我是景区 AI 助手小景，有什么可以帮您？",
+    "themeColor": "#07c160"
+  },
+  "motions": [
+    { "actionId": "idle", "assetUrl": "/assistant/avatar-idle.svg" },
+    { "actionId": "thinking", "assetUrl": "/assistant/avatar-thinking.svg" },
+    { "actionId": "nod", "assetUrl": "/assistant/avatar-nod.svg", "durationMs": 1500 },
+    { "actionId": "shake", "assetUrl": "/assistant/avatar-shake.svg", "durationMs": 1500 },
+    { "actionId": "wave", "assetUrl": "/assistant/avatar-wave.svg", "durationMs": 2000 },
+    { "actionId": "point", "assetUrl": "/assistant/avatar-point.svg", "durationMs": 2000 }
+  ],
+  "defaultMotion": "idle"
+}

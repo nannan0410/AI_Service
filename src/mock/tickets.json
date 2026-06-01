@@ -1,0 +1,24 @@
+[
+  { "id": "adult", "name": "成人票", "price": 299, "unit": "adult" },
+  { "id": "child", "name": "儿童票（折扣票）", "price": 129, "unit": "child" },
+  {
+    "id": "family_bundle",
+    "name": "家庭套票（2大1小）",
+    "price": 669,
+    "composition": { "adult": 2, "child": 1 }
+  },
+  {
+    "id": "family_annual",
+    "name": "家庭年卡（2大1小）",
+    "price": 2999,
+    "composition": { "adult": 2, "child": 1 },
+    "validDays": 365
+  },
+  {
+    "id": "holiday_special",
+    "name": "假日特惠票",
+    "price": 399,
+    "unit": "adult",
+    "tags": ["holiday"]
+  }
+]

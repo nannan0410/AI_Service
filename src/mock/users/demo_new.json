@@ -1,0 +1,33 @@
+{
+  "memberInfo": {
+    "memberId": "10001",
+    "nickname": "新用户小明",
+    "level": "普通会员",
+    "points": 0,
+    "balance": 0
+  },
+  "visitorState": {
+    "memberId": "10001",
+    "memberLevel": "普通会员",
+    "points": 0,
+    "balance": 0,
+    "inPark": false,
+    "currentLocation": "",
+    "boundPlateNo": null,
+    "recentOrders": [],
+    "coupons": [
+      {
+        "couponId": "cpn_new_001",
+        "title": "新客专享 20 元券",
+        "type": "cash",
+        "value": 20,
+        "condition": "满 200 可用",
+        "expireAt": "2026-12-31",
+        "status": "available"
+      }
+    ],
+    "commonVisitors": [],
+    "preferences": {}
+  },
+  "orders": []
+}

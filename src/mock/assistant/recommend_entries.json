@@ -1,0 +1,80 @@
+[
+  {
+    "entryId": "first_ticket_guide",
+    "title": "首次购票指引",
+    "icon": "shopping-cart-o",
+    "target": "chat",
+    "skillId": "ticket_purchase",
+    "promptHint": "我想买门票，两大一小有优惠吗",
+    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_new" }],
+    "priority": 10
+  },
+  {
+    "entryId": "new_guest_coupon",
+    "title": "领取新客券",
+    "icon": "coupon-o",
+    "target": "chat",
+    "skillId": "proactive_marketing",
+    "promptHint": "有什么新客优惠券",
+    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_new" }],
+    "priority": 9
+  },
+  {
+    "entryId": "traffic_guide",
+    "title": "交通指南",
+    "icon": "location-o",
+    "target": "chat",
+    "skillId": "travel_guide",
+    "promptHint": "怎么去景区，交通指南",
+    "rules": [{ "op": "eq", "field": "hasPendingVisitOrder", "value": true }],
+    "priority": 10
+  },
+  {
+    "entryId": "view_orders",
+    "title": "查看订单",
+    "icon": "orders-o",
+    "target": "page",
+    "targetPath": "/orders",
+    "rules": [{ "op": "eq", "field": "hasPendingVisitOrder", "value": true }],
+    "priority": 8
+  },
+  {
+    "entryId": "travel_strategy",
+    "title": "游玩攻略",
+    "icon": "notes-o",
+    "target": "chat",
+    "skillId": "travel_guide",
+    "promptHint": "帮我生成游玩攻略",
+    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_mid" }],
+    "priority": 7
+  },
+  {
+    "entryId": "member_coupon",
+    "title": "会员专属券",
+    "icon": "gem-o",
+    "target": "chat",
+    "skillId": "proactive_marketing",
+    "promptHint": "有什么会员专属优惠",
+    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_vip" }],
+    "priority": 10
+  },
+  {
+    "entryId": "today_route",
+    "title": "今日推荐路线",
+    "icon": "location-o",
+    "target": "chat",
+    "skillId": "route_plan",
+    "promptHint": "帮我规划今日游玩路线",
+    "rules": [{ "op": "eq", "field": "inPark", "value": true }],
+    "priority": 9
+  },
+  {
+    "entryId": "batch_invoice",
+    "title": "批量开发票",
+    "icon": "bill-o",
+    "target": "page",
+    "targetPath": "/invoice",
+    "rules": [{ "op": "eq", "field": "hasInvoiceableOrders", "value": true }],
+    "priority": 8
+  }
+]

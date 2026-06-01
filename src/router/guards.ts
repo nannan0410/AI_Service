@@ -1,0 +1,35 @@
+import type { Router } from 'vue-router'
+import { getToken } from '@/utils/auth'
+import { useAuthStore } from '@/store/authStore'
+
+export function setupRouterGuards(router: Router) {
+  router.beforeEach(async (to, _from, next) => {
+    const isPublic = to.meta.public === true
+    const token = getToken()
+
+    if (isPublic) {
+      if (to.path === '/login' && token) {
+        next({ path: (to.query.redirect as string) || '/' })
+        return
+      }
+      next()
+      return
+    }
+
+    if (!token) {
+      next({ path: '/login', query: { redirect: to.fullPath } })
+      return
+    }
+
+    const authStore = useAuthStore()
+    if (!authStore.isLoggedIn) {
+      const ok = await authStore.restoreSession()
+      if (!ok) {
+        next({ path: '/login', query: { redirect: to.fullPath } })
+        return
+      }
+    }
+
+    next()
+  })
+}

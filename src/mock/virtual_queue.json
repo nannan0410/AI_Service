@@ -1,0 +1,18 @@
+[
+  {
+    "queueId": "vq_001",
+    "activityId": "act_001",
+    "activityName": "亲子漂流",
+    "status": "waiting",
+    "waitMinutes": 25,
+    "position": 12
+  },
+  {
+    "queueId": "vq_002",
+    "activityId": "act_002",
+    "activityName": "极限过山车",
+    "status": "waiting",
+    "waitMinutes": 40,
+    "position": 28
+  }
+]

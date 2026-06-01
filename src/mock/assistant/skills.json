@@ -1,0 +1,52 @@
+[
+  {
+    "skillId": "ticket_purchase",
+    "name": "智能购票",
+    "description": "识别票种与人数，推荐最优套餐并下单",
+    "enabled": true,
+    "triggerKeywords": ["买票", "购票", "门票", "两大一小", "年卡"],
+    "tools": ["getTicketCatalog", "getCoupons", "createOrder"],
+    "promptAddon": "你是购票专家，优先推荐更优惠的套票组合，2大1小优先家庭套票669元。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "nod", "onFail": "shake" }
+  },
+  {
+    "skillId": "parking_pay",
+    "name": "停车缴费",
+    "description": "查询停车费用并完成缴费",
+    "enabled": true,
+    "triggerKeywords": ["停车", "停车费", "交车费", "车牌"],
+    "tools": ["bindPlateNo", "payParking"],
+    "promptAddon": "停车仅可使用已绑定车牌，无车牌时引导用户绑定。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "nod", "onFail": "shake" }
+  },
+  {
+    "skillId": "scenic_recommend",
+    "name": "园区推荐",
+    "description": "根据偏好推荐游玩项目",
+    "enabled": true,
+    "triggerKeywords": ["推荐", "玩什么", "适合", "亲子"],
+    "tools": ["getScenicActivities", "updateVisitorPreferences"],
+    "promptAddon": "结合用户偏好过滤刺激项目，优先推荐亲子友好活动。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "point" }
+  },
+  {
+    "skillId": "invoice_service",
+    "name": "发票服务",
+    "description": "查询可开票订单并引导申请",
+    "enabled": true,
+    "triggerKeywords": ["发票", "开票", "报销"],
+    "tools": ["getMemberInfo"],
+    "promptAddon": "引导用户前往发票页申请30天内已完成且未开票订单。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "nod" }
+  },
+  {
+    "skillId": "proactive_marketing",
+    "name": "主动营销",
+    "description": "主动推送优惠券与活动",
+    "enabled": true,
+    "triggerKeywords": [],
+    "tools": ["getCoupons", "getScenicActivities"],
+    "promptAddon": "以友好语气主动推荐优惠，避免过度打扰。",
+    "linkedMotions": { "onStart": "wave", "onSuccess": "point" }
+  }
+]

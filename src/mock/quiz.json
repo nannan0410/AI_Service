@@ -1,0 +1,13 @@
+{
+  "quizId": "quiz_001",
+  "title": "景区知识小问答",
+  "description": "答对可获得 10 积分",
+  "question": "欢乐景区的开园时间是？",
+  "options": [
+    { "key": "A", "text": "08:00-20:00" },
+    { "key": "B", "text": "09:00-21:00" },
+    { "key": "C", "text": "10:00-22:00" }
+  ],
+  "correctKey": "B",
+  "rewardPoints": 10
+}

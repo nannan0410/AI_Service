@@ -1,0 +1,5 @@
+[
+  { "tagId": "new_guest", "name": "新客", "description": "首次来访用户" },
+  { "tagId": "family", "name": "亲子", "description": "携带儿童或偏好亲子项目" },
+  { "tagId": "high_value", "name": "高价值", "description": "高等级会员或高消费用户" }
+]

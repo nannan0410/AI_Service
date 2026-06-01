@@ -1,0 +1,79 @@
+{
+  "memberInfo": {
+    "memberId": "10002",
+    "nickname": "中级会员小红",
+    "level": "白银会员",
+    "points": 500,
+    "balance": 100
+  },
+  "visitorState": {
+    "memberId": "10002",
+    "memberLevel": "白银会员",
+    "points": 500,
+    "balance": 100,
+    "inPark": false,
+    "currentLocation": "",
+    "boundPlateNo": "粤B·88888",
+    "recentOrders": [],
+    "coupons": [
+      {
+        "couponId": "cpn_mid_001",
+        "title": "停车 5 元券",
+        "type": "parking",
+        "value": 5,
+        "expireAt": "2026-09-30",
+        "status": "available"
+      },
+      {
+        "couponId": "cpn_mid_002",
+        "title": "餐饮 30 元券",
+        "type": "dining",
+        "value": 30,
+        "condition": "满 100 可用",
+        "expireAt": "2026-08-31",
+        "status": "available"
+      }
+    ],
+    "commonVisitors": [
+      {
+        "name": "张红",
+        "idType": "id_card",
+        "idNumber": "440***********1234",
+        "birthDate": "1990-05-01",
+        "gender": "female",
+        "mobile": "13800001002"
+      },
+      {
+        "name": "李强",
+        "idType": "id_card",
+        "idNumber": "440***********5678",
+        "birthDate": "1988-08-08",
+        "gender": "male",
+        "mobile": "13800001003"
+      },
+      {
+        "name": "李小宝",
+        "idType": "id_card",
+        "idNumber": "440***********9012",
+        "birthDate": "2018-03-15",
+        "gender": "male",
+        "mobile": "13800001002"
+      }
+    ],
+    "preferences": { "hasChildren": true }
+  },
+  "orders": [
+    {
+      "orderId": "ORD20260515001",
+      "ticketType": "family_bundle",
+      "ticketName": "家庭套票（2大1小）",
+      "quantity": { "adult": 2, "child": 1 },
+      "totalAmount": 669,
+      "status": "paid",
+      "source": "self",
+      "visitDate": "2026-06-15",
+      "invoiceStatus": "none",
+      "createdAt": "2026-05-15T10:00:00.000Z"
+    }
+  ]
+}

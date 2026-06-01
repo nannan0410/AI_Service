@@ -1,0 +1,32 @@
+[
+  {
+    "productId": "rtl_dining_001",
+    "name": "美食广场套餐",
+    "type": "dining",
+    "channels": ["self"],
+    "status": "on",
+    "price": 88,
+    "location": "美食广场",
+    "tags": ["餐饮", "亲子"]
+  },
+  {
+    "productId": "rtl_show_001",
+    "name": "水上灯光秀 VIP 席",
+    "type": "show",
+    "channels": ["self"],
+    "status": "on",
+    "price": 128,
+    "location": "中心湖",
+    "tags": ["演出", "晚间"]
+  },
+  {
+    "productId": "rtl_retail_001",
+    "name": "景区纪念品礼盒",
+    "type": "retail",
+    "channels": ["self", "ota"],
+    "status": "on",
+    "price": 168,
+    "location": "纪念品商店",
+    "tags": ["零售"]
+  }
+]

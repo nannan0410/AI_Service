@@ -1,0 +1,101 @@
+{
+  "memberInfo": {
+    "memberId": "10003",
+    "nickname": "高级会员老王",
+    "level": "黄金会员",
+    "points": 1200,
+    "balance": 58
+  },
+  "visitorState": {
+    "memberId": "10003",
+    "memberLevel": "黄金会员",
+    "points": 1200,
+    "balance": 58,
+    "inPark": true,
+    "currentLocation": "漂流入口",
+    "boundPlateNo": "粤B·66666",
+    "recentOrders": [],
+    "coupons": [
+      {
+        "couponId": "cpn_vip_001",
+        "title": "黄金会员专属 50 元券",
+        "type": "cash",
+        "value": 50,
+        "expireAt": "2026-12-31",
+        "status": "available"
+      },
+      {
+        "couponId": "cpn_vip_002",
+        "title": "停车免费 1 小时",
+        "type": "parking",
+        "value": 15,
+        "expireAt": "2026-10-31",
+        "status": "available"
+      },
+      {
+        "couponId": "cpn_vip_003",
+        "title": "餐饮 8 折券",
+        "type": "dining",
+        "value": 0,
+        "condition": "指定餐厅",
+        "expireAt": "2026-11-30",
+        "status": "available"
+      }
+    ],
+    "commonVisitors": [
+      {
+        "name": "王建国",
+        "idType": "id_card",
+        "idNumber": "440***********3456",
+        "birthDate": "1985-01-20",
+        "gender": "male",
+        "mobile": "13800001004"
+      },
+      {
+        "name": "刘芳",
+        "idType": "id_card",
+        "idNumber": "440***********7890",
+        "birthDate": "1987-06-12",
+        "gender": "female",
+        "mobile": "13800001005"
+      },
+      {
+        "name": "王小乐",
+        "idType": "id_card",
+        "idNumber": "440***********2345",
+        "birthDate": "2017-09-01",
+        "gender": "female",
+        "mobile": "13800001004"
+      }
+    ],
+    "preferences": { "hasChildren": true, "avoidThrilling": false }
+  },
+  "orders": [
+    {
+      "orderId": "ORD20260520001",
+      "ticketType": "family_bundle",
+      "ticketName": "家庭套票（2大1小）",
+      "quantity": { "adult": 2, "child": 1 },
+      "totalAmount": 669,
+      "status": "completed",
+      "source": "self",
+      "visitDate": "2026-05-20",
+      "completedAt": "2026-05-20T18:00:00.000Z",
+      "invoiceStatus": "none",
+      "createdAt": "2026-05-18T09:00:00.000Z"
+    },
+    {
+      "orderId": "ORD20260501001",
+      "ticketType": "holiday_special",
+      "ticketName": "假日特惠票",
+      "quantity": { "adult": 1, "child": 0 },
+      "totalAmount": 399,
+      "status": "completed",
+      "source": "self",
+      "visitDate": "2026-05-01",
+      "completedAt": "2026-05-01T17:30:00.000Z",
+      "invoiceStatus": "applied",
+      "createdAt": "2026-04-28T14:00:00.000Z"
+    }
+  ]
+}
