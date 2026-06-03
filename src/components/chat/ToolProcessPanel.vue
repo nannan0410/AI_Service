@@ -1,23 +1,39 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useAiExecutionStore } from '@/store/aiExecutionStore'
+import { ref, computed } from "vue";
+import { useAiExecutionStore } from "@/store/aiExecutionStore";
 
-const aiStore = useAiExecutionStore()
-const expanded = ref(['1'])
+const aiStore = useAiExecutionStore();
+const expanded = ref(["1"]);
 
 const runningLabel = computed(() => {
-  const running = aiStore.steps.find((s) => s.status === 'running')
-  return running?.label ?? 'AI 正在处理…'
-})
+  const running = aiStore.steps.find((s) => s.status === "running");
+  return running?.label ?? "AI 正在处理…";
+});
 </script>
 
 <template>
   <van-collapse v-if="aiStore.visible" v-model="expanded" class="tool-panel">
     <van-collapse-item :title="runningLabel" name="1">
-      <div v-for="step in aiStore.steps" :key="step.id" class="tool-panel__step">
+      <div
+        v-for="step in aiStore.steps"
+        :key="step.id"
+        class="tool-panel__step"
+      >
         <van-icon
-          :name="step.status === 'done' ? 'success' : step.status === 'running' ? 'clock-o' : 'circle'"
-          :color="step.status === 'done' ? '#07c160' : step.status === 'running' ? '#1989fa' : '#ccc'"
+          :name="
+            step.status === 'done'
+              ? 'success'
+              : step.status === 'running'
+              ? 'clock-o'
+              : 'circle'
+          "
+          :color="
+            step.status === 'done'
+              ? '#07c160'
+              : step.status === 'running'
+              ? '#1989fa'
+              : '#ccc'
+          "
         />
         <span>{{ step.label }}</span>
       </div>

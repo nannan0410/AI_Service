@@ -35,6 +35,42 @@ body {
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.06);
 }
 
+/* 自定义黑底 Toast（配置页等使用 appToast） */
+.app-custom-toast {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 99999;
+  display: none;
+  max-width: calc(100% - 48px);
+  padding: 12px 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  color: #fff;
+  background: #000;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  word-break: break-word;
+  transition: opacity 0.2s ease;
+  opacity: 1;
+}
+
+/* Vant Toast 兜底样式 */
+:root {
+  --van-toast-text-color: #ffffff;
+  --van-toast-background: #000000;
+}
+
+.van-toast,
+.van-popup.van-toast {
+  z-index: 20000 !important;
+  color: #fff !important;
+  background: #000 !important;
+}
+
 img {
   display: block;
   max-width: 100%;

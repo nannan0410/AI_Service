@@ -1,31 +1,31 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { showToast } from 'vant'
-import { useAuthStore } from '@/store/authStore'
-import type { PersonaId } from '@/types'
+import { ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { showToast } from "vant";
+import { useAuthStore } from "@/store/authStore";
+import type { PersonaId } from "@/types";
 
-const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 
-const showPersonaSheet = ref(false)
+const showPersonaSheet = ref(false);
 
 const personaOptions: Array<{ id: PersonaId; name: string; desc: string }> = [
-  { id: 'demo_new', name: '新用户', desc: '零订单、无车牌' },
-  { id: 'demo_mid', name: '中级会员', desc: '有未游玩订单' },
-  { id: 'demo_vip', name: '高级会员', desc: '有已完成订单' },
-]
+  { id: "demo_new", name: "新用户", desc: "零订单、无车牌" },
+  { id: "demo_mid", name: "中级会员", desc: "有未游玩订单" },
+  { id: "demo_vip", name: "高级会员", desc: "有已完成订单" },
+];
 
 async function onSelectPersona(personaId: PersonaId) {
-  showPersonaSheet.value = false
+  showPersonaSheet.value = false;
   try {
-    await authStore.login(personaId)
-    showToast('登录成功')
-    const redirect = (route.query.redirect as string) || '/'
-    router.replace(redirect)
+    await authStore.login(personaId);
+    showToast("登录成功");
+    const redirect = (route.query.redirect as string) || "/";
+    router.replace(redirect);
   } catch (e) {
-    showToast(e instanceof Error ? e.message : '登录失败')
+    showToast(e instanceof Error ? e.message : "登录失败");
   }
 }
 </script>
@@ -33,7 +33,11 @@ async function onSelectPersona(personaId: PersonaId) {
 <template>
   <div class="login-page">
     <div class="login-page__hero">
-      <img src="/assistant/avatar-idle.svg" alt="小景" class="login-page__avatar" />
+      <img
+        src="/assistant/youyou_wave.png"
+        alt="游游"
+        class="login-page__avatar"
+      />
       <h1 class="login-page__title">景区 AI 助手</h1>
       <p class="login-page__subtitle">智慧景区运营入口 · 演示版</p>
     </div>
@@ -52,7 +56,12 @@ async function onSelectPersona(personaId: PersonaId) {
       <p class="login-page__hint">演示版请选择体验账号</p>
     </div>
 
-    <van-popup v-model:show="showPersonaSheet" round position="bottom" safe-area-inset-bottom>
+    <van-popup
+      v-model:show="showPersonaSheet"
+      round
+      position="bottom"
+      safe-area-inset-bottom
+    >
       <div class="persona-sheet">
         <h3 class="persona-sheet__title">选择演示身份</h3>
         <van-cell-group>
@@ -89,8 +98,8 @@ async function onSelectPersona(personaId: PersonaId) {
   width: 88px;
   height: 88px;
   border-radius: 50%;
-  border: 3px solid #07c160;
   background: #fff;
+  box-shadow: 0 4px 14px rgba(58, 87, 112, 0.12);
   margin-bottom: 16px;
 }
 

@@ -58,10 +58,12 @@ export default [
             dialogTitle: uiConfig.dialogTitle,
             assistantNickname: uiConfig.assistantNickname,
             assistantAvatarUrl: uiConfig.assistantAvatarUrl,
+            assistantCharacterUrl: uiConfig.assistantCharacterUrl,
             defaultImageUrl: uiConfig.defaultImageUrl,
             chatBackgroundUrl: uiConfig.chatBackgroundUrl,
             primaryColor: uiConfig.primaryColor,
             primaryColorLight: uiConfig.primaryColorLight,
+            greeting: uiConfig.greeting,
           },
         },
       }

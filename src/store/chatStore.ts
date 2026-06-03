@@ -8,7 +8,7 @@ function createWelcomeMessage(): ChatMessage {
     id: `msg_${Date.now()}`,
     type: 'system',
     role: 'system',
-    content: '您好！我是小景，您的景区 AI 助手。可以问我购票、停车、推荐游玩项目等问题。',
+    content: '欢迎和游游对话',
     createdAt: new Date().toISOString(),
   }
 }

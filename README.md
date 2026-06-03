@@ -1,6 +1,6 @@
 # 景区 AI 智能聊天助手（演示版）
 
-基于 Vue 3 + Vant 4 + DeepSeek + vite-plugin-mock 的移动端演示项目。
+基于 Vue 3 + Vant 4 + 硅基流动（OpenAI 兼容）+ vite-plugin-mock 的移动端演示项目。
 
 ## 快速开始
 
@@ -8,9 +8,9 @@
 # 安装依赖
 npm install
 
-# 配置 DeepSeek API Key（可选，未配置时使用离线占位回复）
+# 配置硅基流动 API Key（可选，未配置时使用离线占位回复）
 cp .env.example .env
-# 编辑 .env，设置 VITE_DEEPSEEK_API_KEY
+# 编辑 .env，设置 VITE_SILICONFLOW_API_KEY
 
 # 启动开发服务器
 npm run dev
@@ -33,10 +33,21 @@ npm run dev
 可配置：
 
 - **主色** / 浅色背景（对话框按钮、用户气泡等）
-- **聊天背景图**（上传或粘贴 URL）
-- **助手头像**（欢迎页 + 对话头像）
+- **欢迎语**（聊天预览气泡与欢迎页展示）
+- **聊天背景图**（仅上传，建议 9:16，&lt; 800KB）
+- **助手头像**（仅上传，建议方形，&lt; 800KB）
+- **助手形象**（仅上传，欢迎页全身图，建议 9:16，&lt; 800KB）
 
 保存后写入浏览器 LocalStorage，聊天页 `/chat` 即时生效。点击「恢复 JSON 默认」可回到 `src/mock/assistant/ui_config.json`。
+
+## 聊天页欢迎态
+
+AI 助手对话入口为 `src/pages/chat/ChatPage.vue`。当用户当天还没有真实对话记录时，会展示手机端欢迎界面：顶部助手信息、欢迎语气泡、导游形象、「猜你想问」问题卡片、底部 4 个快捷按钮和固定输入框。
+
+欢迎态问题和快捷按钮配置在 `src/mock/assistant/welcome_templates.json`：
+
+- `suggestedQuestions`：配置「猜你想问」问题、图标、发送给 AI 的提示词。
+- `quickActions`：配置底部 4 个快捷按钮、颜色、图标、发送给 AI 的提示词。
 
 ## 技术栈
 
@@ -44,7 +55,7 @@ npm run dev
 - Vant 4（移动端 UI）
 - Pinia + Vue Router（含登录守卫）
 - vite-plugin-mock
-- DeepSeek OpenAI Compatible API
+- 硅基流动 OpenAI Compatible API
 
 ## 目录结构
 

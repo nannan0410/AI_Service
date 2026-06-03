@@ -13,11 +13,14 @@ export async function chatCompletion(
   messages: LlmMessage[],
   options?: { temperature?: number },
 ): Promise<LlmChatResult> {
-  const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY || import.meta.env.DEEPSEEK_API_KEY
+  const apiKey =
+    import.meta.env.VITE_SILICONFLOW_API_KEY ||
+    import.meta.env.VITE_DEEPSEEK_API_KEY ||
+    import.meta.env.DEEPSEEK_API_KEY
   if (!apiKey || apiKey === 'your_api_key_here') {
     return {
       content:
-        '【演示提示】请在项目根目录创建 .env 文件并设置 VITE_DEEPSEEK_API_KEY，即可启用真实 AI 对话。当前为离线占位回复。',
+        '【演示提示】请在项目根目录创建 .env 文件并设置 VITE_SILICONFLOW_API_KEY（或 VITE_DEEPSEEK_API_KEY）即可启用真实 AI 对话。当前为离线占位回复。',
     }
   }
 

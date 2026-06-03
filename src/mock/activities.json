@@ -8,7 +8,7 @@
   },
   {
     "activityId": "act_002",
-    "name": "极限过山车",
+    "name": "极限过山车",   
     "location": "极限区",
     "timeRange": "09:30-20:30",
     "tags": ["刺激"]

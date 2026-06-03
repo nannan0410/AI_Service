@@ -1,71 +1,99 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { showConfirmDialog, showToast } from 'vant'
-import { useAssistantStore } from '@/store/assistantStore'
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { showConfirmDialog } from "vant";
+import { appToast } from "@/utils/toast";
+import { useAssistantStore } from "@/store/assistantStore";
 import {
   getAdminUiOverride,
   readFileAsDataUrl,
   MAX_IMAGE_SIZE_BYTES,
   type AdminUiPatch,
-} from '@/utils/adminUiConfig'
+} from "@/utils/adminUiConfig";
 
-const router = useRouter()
-const assistantStore = useAssistantStore()
+const DEFAULT_GREETING =
+  "嗨！我是游游~无论是买票、领券、查项目、看排队，还是规划路线，都可以交给我！";
 
-const primaryColor = ref('#07c160')
-const primaryColorLight = ref('#e8f8ef')
-const chatBackgroundUrl = ref('')
-const assistantAvatarUrl = ref('')
+const router = useRouter();
+const assistantStore = useAssistantStore();
 
-const bgPreview = computed(() => chatBackgroundUrl.value || undefined)
-const avatarPreview = computed(() => assistantAvatarUrl.value || '/assistant/avatar-idle.svg')
+const primaryColor = ref("#07c160");
+const primaryColorLight = ref("#e8f8ef");
+const chatBackgroundUrl = ref("");
+const assistantAvatarUrl = ref("");
+const assistantCharacterUrl = ref("");
+const welcomeMessage = ref(DEFAULT_GREETING);
 
-const previewStyle = computed(() => ({
-  '--preview-primary': primaryColor.value,
-  '--preview-primary-light': primaryColorLight.value,
+const bgPreview = computed(() => chatBackgroundUrl.value || undefined);
+const avatarPreview = computed(
+  () => assistantAvatarUrl.value || "/assistant/youyou_wave.png"
+);
+const characterPreview = computed(
+  () => assistantCharacterUrl.value || "/assistant/youyou.png"
+);
+
+const previewBodyStyle = computed(() => ({
   backgroundImage: bgPreview.value ? `url(${bgPreview.value})` : undefined,
-}))
+  backgroundColor: bgPreview.value ? undefined : primaryColorLight.value,
+}));
+
+const themeVars = computed(() => ({
+  "--admin-primary": primaryColor.value,
+  "--admin-primary-light": primaryColorLight.value,
+}));
+
+/** 配置页统一展示昵称 */
+const displayNickname = "游游";
+
+function onPickImage(
+  file: File | undefined,
+  target: { value: string },
+  label: string
+) {
+  if (!file) return;
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    appToast(`${label}过大，请小于 800KB`);
+    return;
+  }
+  readFileAsDataUrl(file).then((url) => {
+    target.value = url;
+  });
+}
 
 onMounted(async () => {
-  await assistantStore.loadConfig(true)
-  const cfg = assistantStore.uiConfig
-  const override = getAdminUiOverride()
+  await assistantStore.loadConfig(true);
+  const cfg = assistantStore.uiConfig;
+  const override = getAdminUiOverride();
   if (cfg) {
-    primaryColor.value = override?.primaryColor ?? cfg.primaryColor
-    primaryColorLight.value = override?.primaryColorLight ?? cfg.primaryColorLight ?? '#e8f8ef'
-    chatBackgroundUrl.value = override?.chatBackgroundUrl ?? cfg.chatBackgroundUrl
+    primaryColor.value = override?.primaryColor ?? cfg.primaryColor;
+    primaryColorLight.value =
+      override?.primaryColorLight ?? cfg.primaryColorLight ?? "#e8f8ef";
+    chatBackgroundUrl.value =
+      override?.chatBackgroundUrl ?? cfg.chatBackgroundUrl;
     assistantAvatarUrl.value =
-      override?.assistantAvatarUrl ?? cfg.assistantAvatarUrl ?? cfg.defaultImageUrl
+      override?.assistantAvatarUrl ??
+      cfg.assistantAvatarUrl ??
+      cfg.defaultImageUrl;
+    assistantCharacterUrl.value =
+      override?.assistantCharacterUrl ?? cfg.assistantCharacterUrl ?? "";
+    welcomeMessage.value =
+      override?.greeting ?? cfg.greeting ?? DEFAULT_GREETING;
   }
-})
-
-async function onPickBackground(file: File | undefined) {
-  if (!file) return
-  if (file.size > MAX_IMAGE_SIZE_BYTES) {
-    showToast('图片过大，请小于 800KB')
-    return
-  }
-  chatBackgroundUrl.value = await readFileAsDataUrl(file)
-}
-
-async function onPickAvatar(file: File | undefined) {
-  if (!file) return
-  if (file.size > MAX_IMAGE_SIZE_BYTES) {
-    showToast('图片过大，请小于 800KB')
-    return
-  }
-  assistantAvatarUrl.value = await readFileAsDataUrl(file)
-}
+});
 
 function onBackgroundRead(item: { file?: File } | { file?: File }[]) {
-  const file = Array.isArray(item) ? item[0]?.file : item.file
-  onPickBackground(file)
+  const file = Array.isArray(item) ? item[0]?.file : item.file;
+  onPickImage(file, chatBackgroundUrl, "背景图");
 }
 
 function onAvatarRead(item: { file?: File } | { file?: File }[]) {
-  const file = Array.isArray(item) ? item[0]?.file : item.file
-  onPickAvatar(file)
+  const file = Array.isArray(item) ? item[0]?.file : item.file;
+  onPickImage(file, assistantAvatarUrl, "头像");
+}
+
+function onCharacterRead(item: { file?: File } | { file?: File }[]) {
+  const file = Array.isArray(item) ? item[0]?.file : item.file;
+  onPickImage(file, assistantCharacterUrl, "形象图");
 }
 
 function buildPatch(): AdminUiPatch {
@@ -74,102 +102,252 @@ function buildPatch(): AdminUiPatch {
     primaryColorLight: primaryColorLight.value,
     chatBackgroundUrl: chatBackgroundUrl.value,
     assistantAvatarUrl: assistantAvatarUrl.value,
+    assistantCharacterUrl: assistantCharacterUrl.value,
     defaultImageUrl: assistantAvatarUrl.value,
-  }
+    greeting: welcomeMessage.value,
+    assistantName: displayNickname,
+    assistantNickname: displayNickname,
+  };
 }
 
 function onSave() {
-  assistantStore.applyAdminPatch(buildPatch())
-  showToast('已保存，聊天页将使用新配置')
+  try {
+    assistantStore.applyAdminPatch(buildPatch());
+    appToast("已保存，聊天页将使用新配置");
+  } catch (e) {
+    appToast(e instanceof Error ? e.message : "保存失败");
+  }
 }
 
 async function onReset() {
-  await showConfirmDialog({ title: '恢复默认配置？', message: '将清除本地覆盖并读取 JSON 默认项' })
-  await assistantStore.clearAdminPatch()
-  const cfg = assistantStore.uiConfig
+  await showConfirmDialog({
+    title: "恢复默认配置？",
+    message: "将清除本地覆盖并读取 JSON 默认项",
+  });
+  await assistantStore.clearAdminPatch();
+  const cfg = assistantStore.uiConfig;
   if (cfg) {
-    primaryColor.value = cfg.primaryColor
-    primaryColorLight.value = cfg.primaryColorLight ?? '#e8f8ef'
-    chatBackgroundUrl.value = cfg.chatBackgroundUrl
-    assistantAvatarUrl.value = cfg.assistantAvatarUrl
+    primaryColor.value = cfg.primaryColor;
+    primaryColorLight.value = cfg.primaryColorLight ?? "#e8f8ef";
+    chatBackgroundUrl.value = cfg.chatBackgroundUrl;
+    assistantAvatarUrl.value = cfg.assistantAvatarUrl;
+    assistantCharacterUrl.value = cfg.assistantCharacterUrl ?? "";
+    welcomeMessage.value = cfg.greeting ?? DEFAULT_GREETING;
   }
-  showToast('已恢复默认')
+  appToast("已恢复默认");
 }
 
 function goPreviewChat() {
-  onSave()
-  router.push('/chat')
+  try {
+    assistantStore.applyAdminPatch(buildPatch());
+    appToast({
+      message: "已保存，正在打开聊天页…",
+      duration: 1200,
+      onClose: () => router.push("/chat"),
+    });
+  } catch (e) {
+    appToast(e instanceof Error ? e.message : "保存失败");
+  }
 }
 </script>
 
 <template>
-  <div class="admin-ui">
-    <van-nav-bar title="助手 UI 配置" left-arrow fixed placeholder @click-left="$router.back()" />
+  <div class="admin-ui" :style="themeVars">
+    <van-nav-bar
+      title="助手 UI 配置"
+      left-arrow
+      fixed
+      placeholder
+      @click-left="$router.back()"
+    />
 
     <van-notice-bar
       left-icon="info-o"
       text="演示版：配置保存在浏览器 LocalStorage，换设备或清缓存后需重新设置"
     />
 
-    <div class="admin-ui__preview" :style="previewStyle">
-      <p class="admin-ui__preview-label">实时预览</p>
-      <div class="admin-ui__preview-card">
-        <img :src="avatarPreview" alt="avatar" class="admin-ui__preview-avatar" />
-        <p class="admin-ui__preview-title">景区 AI 助手</p>
-        <van-button size="small" round type="primary" class="admin-ui__preview-btn">发送</van-button>
-        <div class="admin-ui__preview-bubble">您好，有什么可以帮您？</div>
+    <section class="admin-ui__block">
+      <p class="admin-ui__block-title">实时预览</p>
+      <div class="admin-ui__panel">
+        <div
+          class="admin-ui__preview-header"
+          :style="{ background: primaryColor }"
+        >
+          <div class="admin-ui__preview-header-inner">
+            <div class="admin-ui__preview-avatar-wrap">
+              <img
+                :src="avatarPreview"
+                alt="avatar"
+                class="admin-ui__preview-avatar"
+              />
+            </div>
+            <div class="admin-ui__preview-header-text">
+              <div class="admin-ui__preview-name-row">
+                <span class="admin-ui__preview-name">{{
+                  displayNickname
+                }}</span>
+                <span class="admin-ui__preview-tag">景区 AI 助手</span>
+              </div>
+              <p class="admin-ui__preview-status">
+                <span class="admin-ui__preview-dot" />在线 · 随时为您服务
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="admin-ui__preview-body" :style="previewBodyStyle">
+          <div class="admin-ui__preview-bubble">{{ welcomeMessage }}</div>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <van-cell-group inset title="主色配置">
-      <van-field v-model="primaryColor" label="主色" placeholder="#07c160">
-        <template #button>
-          <input v-model="primaryColor" type="color" class="admin-ui__color-input" />
-        </template>
-      </van-field>
-      <van-field v-model="primaryColorLight" label="浅色背景" placeholder="#e8f8ef">
-        <template #button>
-          <input v-model="primaryColorLight" type="color" class="admin-ui__color-input" />
-        </template>
-      </van-field>
-    </van-cell-group>
-
-    <van-cell-group inset title="图片配置">
-      <van-cell title="聊天背景">
-        <template #label>建议 9:16，JPG/PNG，&lt; 800KB</template>
-      </van-cell>
-      <div class="admin-ui__uploader-row">
-        <van-uploader :after-read="onBackgroundRead" :max-count="1" accept="image/*">
-          <van-button icon="photograph" size="small" type="primary">上传背景</van-button>
-        </van-uploader>
-        <van-field v-model="chatBackgroundUrl" placeholder="或粘贴图片 URL / data URL" />
+    <section class="admin-ui__block">
+      <p class="admin-ui__block-title">主色配置</p>
+      <div class="admin-ui__panel admin-ui__panel--card">
+        <van-field v-model="primaryColor" label="主色" placeholder="#07c160">
+          <template #button>
+            <input
+              v-model="primaryColor"
+              type="color"
+              class="admin-ui__color-input"
+            />
+          </template>
+        </van-field>
+        <van-field
+          v-model="primaryColorLight"
+          label="浅色背景"
+          placeholder="#e8f8ef"
+        >
+          <template #button>
+            <input
+              v-model="primaryColorLight"
+              type="color"
+              class="admin-ui__color-input"
+            />
+          </template>
+        </van-field>
       </div>
-      <van-cell v-if="bgPreview" title="背景预览">
-        <template #value>
-          <img :src="bgPreview" alt="bg" class="admin-ui__thumb" />
-        </template>
-      </van-cell>
+    </section>
 
-      <van-cell title="助手头像">
-        <template #label>用于欢迎页与对话头像（idle 态）</template>
-      </van-cell>
-      <div class="admin-ui__uploader-row">
-        <van-uploader :after-read="onAvatarRead" :max-count="1" accept="image/*">
-          <van-button icon="photograph" size="small" type="primary">上传头像</van-button>
-        </van-uploader>
-        <van-field v-model="assistantAvatarUrl" placeholder="或粘贴图片 URL / data URL" />
+    <section class="admin-ui__block">
+      <p class="admin-ui__block-title">欢迎语</p>
+      <div class="admin-ui__panel admin-ui__panel--card">
+        <van-field
+          v-model="welcomeMessage"
+          type="textarea"
+          rows="3"
+          autosize
+          maxlength="200"
+          show-word-limit
+          placeholder="输入欢迎语"
+        />
       </div>
-      <van-cell v-if="avatarPreview" title="头像预览">
-        <template #value>
-          <img :src="avatarPreview" alt="avatar" class="admin-ui__thumb admin-ui__thumb--round" />
-        </template>
-      </van-cell>
-    </van-cell-group>
+    </section>
+
+    <section class="admin-ui__block">
+      <p class="admin-ui__block-title">图片配置</p>
+      <div class="admin-ui__panel admin-ui__panel--card">
+        <div class="admin-ui__img-block">
+          <div class="admin-ui__img-head">
+            <span class="admin-ui__item-label">聊天背景</span>
+            <span class="admin-ui__item-hint"
+              >建议 9:16，JPG/PNG，&lt; 800KB</span
+            >
+          </div>
+          <div class="admin-ui__img-actions">
+            <van-uploader
+              :after-read="onBackgroundRead"
+              :max-count="1"
+              accept="image/*"
+            >
+              <van-button icon="photograph" size="small" round type="primary">
+                上传背景
+              </van-button>
+            </van-uploader>
+          </div>
+          <img
+            v-if="bgPreview"
+            :src="bgPreview"
+            alt="背景预览"
+            class="admin-ui__thumb admin-ui__thumb--wide"
+          />
+        </div>
+
+        <div class="admin-ui__img-block">
+          <div class="admin-ui__img-head">
+            <span class="admin-ui__item-label">助手头像</span>
+            <span class="admin-ui__item-hint"
+              >用于对话头像，建议方形，JPG/PNG，&lt; 800KB</span
+            >
+          </div>
+          <div class="admin-ui__img-actions">
+            <van-uploader
+              :after-read="onAvatarRead"
+              :max-count="1"
+              accept="image/*"
+            >
+              <van-button icon="photograph" size="small" round type="primary">
+                上传头像
+              </van-button>
+            </van-uploader>
+          </div>
+          <img
+            v-if="avatarPreview"
+            :src="avatarPreview"
+            alt="头像预览"
+            class="admin-ui__thumb admin-ui__thumb--round"
+          />
+        </div>
+
+        <div class="admin-ui__img-block admin-ui__img-block--last">
+          <div class="admin-ui__img-head">
+            <span class="admin-ui__item-label">助手形象</span>
+            <span class="admin-ui__item-hint"
+              >用于欢迎页，建议 9:16，JPG/PNG，&lt; 800KB</span
+            >
+          </div>
+          <div class="admin-ui__img-actions">
+            <van-uploader
+              :after-read="onCharacterRead"
+              :max-count="1"
+              accept="image/*"
+            >
+              <van-button icon="photograph" size="small" round type="primary">
+                上传形象
+              </van-button>
+            </van-uploader>
+          </div>
+          <img
+            v-if="characterPreview"
+            :src="characterPreview"
+            alt="形象预览"
+            class="admin-ui__thumb admin-ui__thumb--character"
+          />
+        </div>
+      </div>
+    </section>
 
     <div class="admin-ui__actions">
-      <van-button block type="primary" @click="onSave">保存配置</van-button>
-      <van-button block plain type="primary" @click="goPreviewChat">保存并预览聊天页</van-button>
-      <van-button block plain @click="onReset">恢复 JSON 默认</van-button>
+      <button
+        type="button"
+        class="admin-ui__btn admin-ui__btn--primary"
+        @click="onSave"
+      >
+        保存配置
+      </button>
+      <button
+        type="button"
+        class="admin-ui__btn admin-ui__btn--light"
+        @click="goPreviewChat"
+      >
+        保存并预览聊天页
+      </button>
+      <button
+        type="button"
+        class="admin-ui__btn admin-ui__btn--outline"
+        @click="onReset"
+      >
+        恢复 JSON 默认
+      </button>
     </div>
   </div>
 </template>
@@ -177,60 +355,166 @@ function goPreviewChat() {
 <style scoped>
 .admin-ui {
   min-height: 100vh;
-  background: #f7f8fa;
   padding-bottom: 32px;
+  background: #f5f6f8;
 }
 
-.admin-ui__preview {
-  margin: 12px 16px;
-  padding: 16px;
-  border-radius: 12px;
-  background-color: #f0f2f5;
-  background-size: cover;
-  background-position: center;
+.admin-ui__block {
+  margin: 12px 16px 10px;
 }
 
-.admin-ui__preview-label {
-  margin: 0 0 8px;
+.admin-ui__block-title {
+  margin: 14px 0 10px;
+  padding-left: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #646566;
+  line-height: 1.4;
+}
+
+.admin-ui__panel {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+.admin-ui__panel--card {
+  background: #fff;
+}
+
+.admin-ui__panel--card :deep(.van-cell),
+.admin-ui__panel--card :deep(.van-field) {
+  font-size: 14px;
+  line-height: 1.5;
+  background: #fff;
+}
+
+.admin-ui__panel--card :deep(.van-field__label) {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+}
+
+.admin-ui__panel--card :deep(.van-field__control),
+.admin-ui__panel--card :deep(.van-field__control::placeholder) {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.admin-ui__panel--card :deep(.van-field__word-limit) {
   font-size: 12px;
   color: #969799;
 }
 
-.admin-ui__preview-card {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 12px;
-  padding: 16px;
-  text-align: center;
+.admin-ui__item-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  line-height: 1.5;
+}
+
+.admin-ui__item-hint {
+  font-size: 11px;
+  color: #969799;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.admin-ui__preview-header {
+  padding: 11px 16px;
+}
+
+.admin-ui__preview-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-ui__preview-avatar-wrap {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(58, 87, 112, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .admin-ui__preview-avatar {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 2px solid var(--preview-primary, #07c160);
   object-fit: cover;
 }
 
-.admin-ui__preview-title {
-  margin: 8px 0;
-  font-size: 14px;
-  font-weight: 600;
+.admin-ui__preview-header-text {
+  flex: 1;
+  min-width: 0;
 }
 
-.admin-ui__preview-btn {
-  background: var(--preview-primary, #07c160) !important;
-  border-color: var(--preview-primary, #07c160) !important;
+.admin-ui__preview-name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-ui__preview-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+
+.admin-ui__preview-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.admin-ui__preview-status {
+  margin: 6px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.admin-ui__preview-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #52c41a;
+  flex-shrink: 0;
+}
+
+.admin-ui__preview-body {
+  min-height: 100px;
+  padding: 16px 14px;
+  background-size: cover;
+  background-position: center top;
+  display: flex;
+  align-items: flex-start;
 }
 
 .admin-ui__preview-bubble {
-  margin-top: 12px;
-  text-align: left;
-  display: inline-block;
-  padding: 8px 12px;
+  max-width: 82%;
+  padding: 9px 12px;
   background: #fff;
-  border-radius: 8px;
-  font-size: 13px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  border-bottom-left-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  text-align: left;
 }
 
 .admin-ui__color-input {
@@ -239,32 +523,99 @@ function goPreviewChat() {
   padding: 0;
   border: none;
   background: none;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-.admin-ui__uploader-row {
-  padding: 0 16px 12px;
+.admin-ui__img-block {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #f0f1f3;
+}
+
+.admin-ui__img-block--last {
+  border-bottom: none;
+}
+
+.admin-ui__img-head {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  margin-bottom: 10px;
+}
+
+.admin-ui__img-actions {
+  display: flex;
+  align-items: flex-start;
 }
 
 .admin-ui__thumb {
-  width: 80px;
-  height: 48px;
+  margin-top: 12px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.admin-ui__thumb--wide {
+  width: 100%;
+  max-height: 72px;
 }
 
 .admin-ui__thumb--round {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(58, 87, 112, 0.12);
+}
+
+.admin-ui__thumb--character {
+  width: 72px;
+  height: 128px;
+  object-fit: cover;
 }
 
 .admin-ui__actions {
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+
+.admin-ui__btn {
+  display: block;
+  width: 100%;
+  height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 19px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 36px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+}
+
+.admin-ui__btn:active {
+  opacity: 0.88;
+}
+
+.admin-ui__btn--primary {
+  background: var(--admin-primary, #07c160);
+  color: #fff;
+}
+
+.admin-ui__btn--light {
+  background: var(--admin-primary-light, #e8f8ef);
+  color: var(--admin-primary, #07c160);
+  border: 1px solid var(--admin-primary, #07c160);
+}
+
+.admin-ui__btn--outline {
+  background: #fff;
+  /* border: 1px solid var(--admin-primary, #07c160); */
+  color: var(--admin-primary, #07c160);
+  box-shadow: none;
 }
 </style>

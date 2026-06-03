@@ -190,10 +190,13 @@ export interface AssistantAvatarConfig {
 export interface AssistantUiConfig {
   chatBackgroundUrl: string
   assistantAvatarUrl: string
+  /** 欢迎页全身形象图，建议 9:16 */
+  assistantCharacterUrl?: string
   dialogTitle: string
   assistantName: string
   assistantNickname: string
   defaultImageUrl: string
+  /** 欢迎语，用于聊天欢迎气泡等 */
   greeting: string
   /** 主色：对话框按钮、强调色、用户气泡等 */
   primaryColor: string
@@ -222,10 +225,12 @@ export interface WelcomePageData extends WelcomeTemplate {
     | 'dialogTitle'
     | 'assistantNickname'
     | 'assistantAvatarUrl'
+    | 'assistantCharacterUrl'
     | 'defaultImageUrl'
     | 'chatBackgroundUrl'
     | 'primaryColor'
     | 'primaryColorLight'
+    | 'greeting'
   >
 }
 

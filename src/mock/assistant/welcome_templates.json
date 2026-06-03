@@ -4,20 +4,200 @@
     "title": "欢迎来到欢乐景区",
     "subtitle": "新客专享礼遇已为您准备好",
     "body": "我是{{nickname}}，首次来访我可以帮您购票、领券，快速开启愉快旅程！",
-    "highlights": ["新客专享 20 元券", "首次购票指引", "家庭套票更优惠"]
+    "highlights": ["新客专享 20 元券", "首次购票指引", "家庭套票更优惠"],
+    "suggestedQuestions": [
+      {
+        "id": "best_ticket_price",
+        "icon": "￥",
+        "text": "景区门票怎么买最优惠？",
+        "prompt": "景区门票怎么买最优惠？",
+        "badgeColor": "#ff7a45"
+      },
+      {
+        "id": "opening_show_time",
+        "icon": "⏰",
+        "text": "营业时间和演出时间表",
+        "prompt": "请告诉我今天的营业时间和演出时间表",
+        "badgeColor": "#ffb020"
+      },
+      {
+        "id": "family_route",
+        "icon": "👨‍👩‍👧",
+        "text": "带小孩/老人路线推荐",
+        "prompt": "帮我推荐适合带小孩和老人的游玩路线",
+        "badgeColor": "#54c783"
+      },
+      {
+        "id": "parking_direction",
+        "icon": "🚙",
+        "text": "停车场怎么走？",
+        "prompt": "停车场怎么走？停车后怎么入园？",
+        "badgeColor": "#4aa3ff"
+      }
+    ],
+    "quickActions": [
+      {
+        "id": "buy_ticket",
+        "icon": "🎟️",
+        "text": "我想买票",
+        "prompt": "我想买票，请帮我推荐合适的门票",
+        "color": "#ff9f2f"
+      },
+      {
+        "id": "view_discount",
+        "icon": "🎫",
+        "text": "查看优惠",
+        "prompt": "现在有什么门票优惠或优惠券？",
+        "color": "#ff5d67"
+      },
+      {
+        "id": "travel_guide",
+        "icon": "🗺️",
+        "text": "游玩攻略",
+        "prompt": "请帮我做一份今天的游玩攻略",
+        "color": "#47c66b"
+      },
+      {
+        "id": "traffic_guide",
+        "icon": "🍽️",
+        "text": "交通指南",
+        "prompt": "请告诉我景区交通指南、停车和餐饮建议",
+        "color": "#36a8f6"
+      }
+    ]
   },
   {
     "personaId": "demo_mid",
     "title": "您的行程即将开始",
     "subtitle": "待游玩订单已就绪",
     "body": "我是{{nickname}}，您有即将出行的订单。需要交通指南、入园提醒或游玩攻略吗？",
-    "highlights": ["查看待游玩订单", "交通指南", "游玩攻略"]
+    "highlights": ["查看待游玩订单", "交通指南", "游玩攻略"],
+    "suggestedQuestions": [
+      {
+        "id": "best_ticket_price",
+        "icon": "￥",
+        "text": "景区门票怎么买最优惠？",
+        "prompt": "景区门票怎么买最优惠？",
+        "badgeColor": "#ff7a45"
+      },
+      {
+        "id": "opening_show_time",
+        "icon": "⏰",
+        "text": "营业时间和演出时间表",
+        "prompt": "请告诉我今天的营业时间和演出时间表",
+        "badgeColor": "#ffb020"
+      },
+      {
+        "id": "family_route",
+        "icon": "👨‍👩‍👧",
+        "text": "带小孩/老人路线推荐",
+        "prompt": "帮我推荐适合带小孩和老人的游玩路线",
+        "badgeColor": "#54c783"
+      },
+      {
+        "id": "parking_direction",
+        "icon": "🚙",
+        "text": "停车场怎么走？",
+        "prompt": "停车场怎么走？停车后怎么入园？",
+        "badgeColor": "#4aa3ff"
+      }
+    ],
+    "quickActions": [
+      {
+        "id": "buy_ticket",
+        "icon": "🎟️",
+        "text": "我想买票",
+        "prompt": "我想买票，请帮我推荐合适的门票",
+        "color": "#ff9f2f"
+      },
+      {
+        "id": "view_discount",
+        "icon": "🎫",
+        "text": "查看优惠",
+        "prompt": "现在有什么门票优惠或优惠券？",
+        "color": "#ff5d67"
+      },
+      {
+        "id": "travel_guide",
+        "icon": "🗺️",
+        "text": "游玩攻略",
+        "prompt": "请帮我做一份今天的游玩攻略",
+        "color": "#47c66b"
+      },
+      {
+        "id": "traffic_guide",
+        "icon": "🍽️",
+        "text": "交通指南",
+        "prompt": "请告诉我景区交通指南、停车和餐饮建议",
+        "color": "#36a8f6"
+      }
+    ]
   },
   {
     "personaId": "demo_vip",
     "title": "欢迎回来，尊贵会员",
     "subtitle": "今日在园，祝您玩得开心",
     "body": "我是{{nickname}}，已为您准备会员专属推荐。园内项目、优惠与路线都可以问我。",
-    "highlights": ["会员专属优惠", "今日推荐路线", "附近热门项目"]
+    "highlights": ["会员专属优惠", "今日推荐路线", "附近热门项目"],
+    "suggestedQuestions": [
+      {
+        "id": "best_ticket_price",
+        "icon": "￥",
+        "text": "景区门票怎么买最优惠？",
+        "prompt": "景区门票怎么买最优惠？",
+        "badgeColor": "#ff7a45"
+      },
+      {
+        "id": "opening_show_time",
+        "icon": "⏰",
+        "text": "营业时间和演出时间表",
+        "prompt": "请告诉我今天的营业时间和演出时间表",
+        "badgeColor": "#ffb020"
+      },
+      {
+        "id": "family_route",
+        "icon": "👨‍👩‍👧",
+        "text": "带小孩/老人路线推荐",
+        "prompt": "帮我推荐适合带小孩和老人的游玩路线",
+        "badgeColor": "#54c783"
+      },
+      {
+        "id": "parking_direction",
+        "icon": "🚙",
+        "text": "停车场怎么走？",
+        "prompt": "停车场怎么走？停车后怎么入园？",
+        "badgeColor": "#4aa3ff"
+      }
+    ],
+    "quickActions": [
+      {
+        "id": "buy_ticket",
+        "icon": "🎟️",
+        "text": "我想买票",
+        "prompt": "我想买票，请帮我推荐合适的门票",
+        "color": "#ff9f2f"
+      },
+      {
+        "id": "view_discount",
+        "icon": "🎫",
+        "text": "查看优惠",
+        "prompt": "现在有什么门票优惠或优惠券？",
+        "color": "#ff5d67"
+      },
+      {
+        "id": "travel_guide",
+        "icon": "🗺️",
+        "text": "游玩攻略",
+        "prompt": "请帮我做一份今天的游玩攻略",
+        "color": "#47c66b"
+      },
+      {
+        "id": "traffic_guide",
+        "icon": "🍽️",
+        "text": "交通指南",
+        "prompt": "请告诉我景区交通指南、停车和餐饮建议",
+        "color": "#36a8f6"
+      }
+    ]
   }
 ]

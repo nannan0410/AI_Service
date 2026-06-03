@@ -7,7 +7,11 @@ export type AdminUiPatch = Partial<
     AssistantUiConfig,
     | 'chatBackgroundUrl'
     | 'assistantAvatarUrl'
+    | 'assistantCharacterUrl'
     | 'defaultImageUrl'
+    | 'greeting'
+    | 'assistantName'
+    | 'assistantNickname'
     | 'primaryColor'
     | 'primaryColorLight'
     | 'primaryColorDark'
@@ -29,7 +33,14 @@ export function setAdminUiOverride(patch: AdminUiPatch | null): void {
     localStorage.removeItem(ADMIN_UI_OVERRIDE_KEY)
     return
   }
-  localStorage.setItem(ADMIN_UI_OVERRIDE_KEY, JSON.stringify(patch))
+  try {
+    localStorage.setItem(ADMIN_UI_OVERRIDE_KEY, JSON.stringify(patch))
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+      throw new Error('配置数据过大，请压缩图片后重试')
+    }
+    throw e
+  }
 }
 
 export function mergeUiConfig(base: AssistantUiConfig): AssistantUiConfig {

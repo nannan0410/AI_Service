@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { ChatMessage } from '@/types'
-import AssistantAvatar from '@/components/assistant/AssistantAvatar.vue'
+import type { ChatMessage } from "@/types";
+import AssistantAvatar from "@/components/assistant/AssistantAvatar.vue";
 
-defineProps<{ message: ChatMessage }>()
+defineProps<{ message: ChatMessage }>();
 </script>
 
 <template>
@@ -22,6 +22,8 @@ defineProps<{ message: ChatMessage }>()
         'bubble--system': message.role === 'system',
       }"
     >
+      <span v-if="message.role === 'assistant'" class="bubble__icon">🤖</span>
+      <span v-if="message.role === 'user'" class="bubble__icon">🧑</span>
       {{ message.content }}
     </div>
   </div>
@@ -46,11 +48,17 @@ defineProps<{ message: ChatMessage }>()
 
 .bubble {
   max-width: 75%;
-  padding: 10px 14px;
+  padding: 10px 12px;
   border-radius: 12px;
   font-size: 14px;
   line-height: 1.5;
   word-break: break-word;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Comic Sans MS", "Marker Felt", sans-serif;
+}
+
+.bubble__icon {
+  margin-right: 4px;
 }
 
 .bubble--user {
@@ -62,14 +70,15 @@ defineProps<{ message: ChatMessage }>()
 .bubble--assistant {
   background: #fff;
   color: #333;
-  border-bottom-left-radius: 4px;
+  border-top-left-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .bubble--system {
-  background: #f5f5f5;
-  color: #666;
-  font-size: 12px;
+  background: #f6f6f6;
+  color: #888;
+  font-size: 11px;
   max-width: 90%;
+  padding: 8px 12px;
 }
 </style>

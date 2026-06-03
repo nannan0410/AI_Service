@@ -1,44 +1,59 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { showToast } from 'vant'
-import { ocrReceipt } from '@/api/business'
-import { useAuthStore } from '@/store/authStore'
-import { getUserStorage, setUserStorage, STORAGE_SUFFIX } from '@/utils/storage'
-import type { ReceiptOcrResult } from '@/types'
+import { ref } from "vue";
+import { showToast } from "vant";
+import { ocrReceipt } from "@/api/business";
+import { useAuthStore } from "@/store/authStore";
+import {
+  getUserStorage,
+  setUserStorage,
+  STORAGE_SUFFIX,
+} from "@/utils/storage";
+import type { ReceiptOcrResult } from "@/types";
 
-const authStore = useAuthStore()
-const fileList = ref<{ url: string }[]>([])
-const ocrResult = ref<ReceiptOcrResult | null>(null)
-const loading = ref(false)
+const authStore = useAuthStore();
+const fileList = ref<{ url: string }[]>([]);
+const ocrResult = ref<ReceiptOcrResult | null>(null);
+const loading = ref(false);
 
 async function afterRead() {
-  loading.value = true
+  loading.value = true;
   try {
-    const { data: res } = await ocrReceipt()
+    const { data: res } = await ocrReceipt();
     if (res.code === 200) {
-      ocrResult.value = res.data
+      ocrResult.value = res.data;
       if (authStore.memberId) {
         const records = getUserStorage<ReceiptOcrResult[]>(
           authStore.memberId,
           STORAGE_SUFFIX.RECEIPTS,
-          [],
-        )
-        records.push(res.data)
-        setUserStorage(authStore.memberId, STORAGE_SUFFIX.RECEIPTS, records)
+          []
+        );
+        records.push(res.data);
+        setUserStorage(authStore.memberId, STORAGE_SUFFIX.RECEIPTS, records);
       }
-      showToast(`识别成功，+${res.data.pointsAwarded} 积分`)
+      showToast(`识别成功，+${res.data.pointsAwarded} 积分`);
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
 
 <template>
   <div class="page">
-    <van-nav-bar title="小票上传" left-arrow fixed placeholder @click-left="$router.back()" />
+    <van-nav-bar
+      title="小票上传"
+      left-arrow
+      fixed
+      placeholder
+      @click-left="$router.back()"
+    />
     <div class="content">
-      <van-uploader v-model="fileList" :max-count="1" :after-read="afterRead" accept="image/*" />
+      <van-uploader
+        v-model="fileList"
+        :max-count="1"
+        :after-read="afterRead"
+        accept="image/*"
+      />
       <p class="hint">演示版：上传任意图片触发 Mock OCR</p>
 
       <van-cell-group v-if="ocrResult" inset title="识别结果">
