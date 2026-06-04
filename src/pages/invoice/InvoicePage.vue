@@ -1,38 +1,45 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { fetchOrders, applyInvoice } from '@/api/business'
-import type { Order } from '@/types'
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { fetchOrders, applyInvoice } from "@/api/business";
+import type { Order } from "@/types";
 
-const router = useRouter()
-const orders = ref<Order[]>([])
+const router = useRouter();
+const orders = ref<Order[]>([]);
 
 const invoiceable = computed(() => {
-  const now = Date.now()
-  const thirtyDays = 30 * 24 * 60 * 60 * 1000
+  const now = Date.now();
+  const thirtyDays = 30 * 24 * 60 * 60 * 1000;
   return orders.value.filter((o) => {
-    if (o.status !== 'completed' || o.invoiceStatus !== 'none') return false
-    const completed = o.completedAt ? new Date(o.completedAt).getTime() : 0
-    return completed > 0 && now - completed <= thirtyDays
-  })
-})
+    if (o.status !== "completed" || o.invoiceStatus !== "none") return false;
+    const completed = o.completedAt ? new Date(o.completedAt).getTime() : 0;
+    return completed > 0 && now - completed <= thirtyDays;
+  });
+});
 
 onMounted(async () => {
-  const { data: res } = await fetchOrders()
-  if (res.code === 200) orders.value = res.data
-})
+  const { data: res } = await fetchOrders();
+  if (res.code === 200) orders.value = res.data;
+});
 
 async function onApply(order: Order) {
-  const { data: res } = await applyInvoice(order.orderId)
+  const { data: res } = await applyInvoice(order.orderId);
   if (res.code === 200) {
-    router.push(`${res.data.redirectUrl}&amount=${order.totalAmount}`)
+    router.push(`${res.data.redirectUrl}&amount=${order.totalAmount}`);
   }
 }
 </script>
 
 <template>
   <div class="page">
-    <van-nav-bar title="发票申请" left-arrow fixed placeholder @click-left="$router.back()" />
+    <van-nav-bar
+      title="发票申请"
+      left-arrow
+      fixed
+      placeholder
+      class="invoice-page__nav"
+      @click-left="$router.back()"
+    />
     <van-empty v-if="invoiceable.length === 0" description="暂无可开票订单" />
     <van-cell-group v-else inset class="list">
       <van-cell
@@ -56,6 +63,10 @@ async function onApply(order: Order) {
 .page {
   min-height: 100vh;
   background: #f7f8fa;
+}
+.invoice-page__nav:deep(.van-nav-bar) {
+  width: 100%;
+  max-width: 430px;
 }
 .list {
   margin-top: 12px;

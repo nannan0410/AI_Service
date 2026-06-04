@@ -32,7 +32,7 @@ const characterPreview = computed(
   () => assistantCharacterUrl.value || "/assistant/youyou.png"
 );
 
-const previewBodyStyle = computed(() => ({
+const previewStageStyle = computed(() => ({
   backgroundImage: bgPreview.value ? `url(${bgPreview.value})` : undefined,
   backgroundColor: bgPreview.value ? undefined : primaryColorLight.value,
 }));
@@ -158,6 +158,7 @@ function goPreviewChat() {
       left-arrow
       fixed
       placeholder
+      class="admin-page__nav"
       @click-left="$router.back()"
     />
 
@@ -168,33 +169,29 @@ function goPreviewChat() {
 
     <section class="admin-ui__block">
       <p class="admin-ui__block-title">实时预览</p>
-      <div class="admin-ui__panel">
-        <div
-          class="admin-ui__preview-header"
-          :style="{ background: primaryColor }"
-        >
-          <div class="admin-ui__preview-header-inner">
-            <div class="admin-ui__preview-avatar-wrap">
+      <div
+        class="admin-ui__panel admin-ui__preview-stage"
+        :style="previewStageStyle"
+      >
+        <header class="admin-ui__preview-topbar">
+          <div class="admin-ui__preview-brand">
+            <div class="admin-ui__preview-avatar-shell">
               <img
                 :src="avatarPreview"
-                alt="avatar"
+                :alt="displayNickname"
                 class="admin-ui__preview-avatar"
               />
             </div>
-            <div class="admin-ui__preview-header-text">
+            <div class="admin-ui__preview-brand-text">
               <div class="admin-ui__preview-name-row">
-                <span class="admin-ui__preview-name">{{
-                  displayNickname
-                }}</span>
-                <span class="admin-ui__preview-tag">景区 AI 助手</span>
+                <strong>{{ displayNickname }}</strong>
+                <span>✨</span>
               </div>
-              <p class="admin-ui__preview-status">
-                <span class="admin-ui__preview-dot" />在线 · 随时为您服务
-              </p>
+              <p>景区 AI 助手</p>
             </div>
           </div>
-        </div>
-        <div class="admin-ui__preview-body" :style="previewBodyStyle">
+        </header>
+        <div class="admin-ui__preview-body">
           <div class="admin-ui__preview-bubble">{{ welcomeMessage }}</div>
         </div>
       </div>
@@ -359,6 +356,11 @@ function goPreviewChat() {
   background: #f5f6f8;
 }
 
+.admin-page__nav:deep(.van-nav-bar) {
+  width: 100%;
+  max-width: 430px;
+}
+
 .admin-ui__block {
   margin: 12px 16px 10px;
 }
@@ -421,85 +423,78 @@ function goPreviewChat() {
   line-height: 1.4;
 }
 
-.admin-ui__preview-header {
-  padding: 11px 16px;
+.admin-ui__preview-stage {
+  position: relative;
+  min-height: 180px;
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
 }
 
-.admin-ui__preview-header-inner {
+.admin-ui__preview-topbar {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  height: 74px;
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
 }
 
-.admin-ui__preview-avatar-wrap {
-  flex-shrink: 0;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(58, 87, 112, 0.12);
+.admin-ui__preview-brand {
   display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+}
+
+.admin-ui__preview-avatar-shell {
+  display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  width: 48px;
+  height: 48px;
   overflow: hidden;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 4px 14px rgba(58, 87, 112, 0.12);
 }
 
 .admin-ui__preview-avatar {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
   object-fit: cover;
+  border-radius: 50%;
 }
 
-.admin-ui__preview-header-text {
-  flex: 1;
+.admin-ui__preview-brand-text {
   min-width: 0;
 }
 
 .admin-ui__preview-name-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.admin-ui__preview-name {
+  gap: 5px;
   font-size: 16px;
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: 0.02em;
+  line-height: 1.2;
+  color: #111;
 }
 
-.admin-ui__preview-tag {
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 11px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.28);
-}
-
-.admin-ui__preview-status {
-  margin: 6px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.admin-ui__preview-brand-text p {
+  margin: 4px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-.admin-ui__preview-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #52c41a;
-  flex-shrink: 0;
+  line-height: 1.2;
+  color: #414a53;
 }
 
 .admin-ui__preview-body {
-  min-height: 100px;
+  position: relative;
+  z-index: 1;
+  min-height: 106px;
   padding: 16px 14px;
-  background-size: cover;
-  background-position: center top;
   display: flex;
   align-items: flex-start;
 }
@@ -509,7 +504,7 @@ function goPreviewChat() {
   padding: 9px 12px;
   background: #fff;
   border-radius: 14px;
-  border-bottom-left-radius: 4px;
+  border-top-left-radius: 4px;
   font-size: 14px;
   line-height: 1.5;
   color: #333;
@@ -518,13 +513,32 @@ function goPreviewChat() {
 }
 
 .admin-ui__color-input {
-  width: 36px;
-  height: 28px;
+  width: 38px;
+  height: 25px;
   padding: 0;
   border: none;
+  outline: none;
   background: none;
-  border-radius: 8px;
+  border-radius: 6px;
+  box-shadow: none;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.admin-ui__color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border: none;
+}
+
+.admin-ui__color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 8px;
+}
+
+.admin-ui__color-input::-moz-color-swatch {
+  border: none;
+  border-radius: 8px;
 }
 
 .admin-ui__img-block {

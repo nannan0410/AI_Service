@@ -45,6 +45,7 @@ async function afterRead() {
       left-arrow
       fixed
       placeholder
+      class="receipt-page__nav"
       @click-left="$router.back()"
     />
     <div class="content">
@@ -72,6 +73,10 @@ async function afterRead() {
 .page {
   min-height: 100vh;
   background: #f7f8fa;
+}
+.receipt-page__nav:deep(.van-nav-bar) {
+  width: 100%;
+  max-width: 430px;
 }
 .content {
   padding: 16px;
