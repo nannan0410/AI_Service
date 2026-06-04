@@ -32,28 +32,30 @@ async function onSelectPersona(personaId: PersonaId) {
 
 <template>
   <div class="login-page">
-    <div class="login-page__hero">
-      <img
-        src="/assistant/youyou_wave.png"
-        alt="游游"
-        class="login-page__avatar"
-      />
-      <h1 class="login-page__title">景区 AI 助手</h1>
-      <p class="login-page__subtitle">智慧景区运营入口 · 演示版</p>
-    </div>
+    <div class="login-page__content">
+      <div class="login-page__hero">
+        <img
+          src="/assistant/youyou_wave.png"
+          alt="游游"
+          class="login-page__avatar"
+        />
+        <h1 class="login-page__title">景区 AI 助手</h1>
+        <p class="login-page__subtitle">智慧景区运营入口 · 演示版</p>
+      </div>
 
-    <div class="login-page__actions">
-      <van-button
-        type="primary"
-        block
-        round
-        class="login-page__wechat-btn"
-        :loading="authStore.loading"
-        @click="showPersonaSheet = true"
-      >
-        微信一键登录
-      </van-button>
-      <p class="login-page__hint">演示版请选择体验账号</p>
+      <div class="login-page__actions">
+        <van-button
+          type="primary"
+          block
+          round
+          class="login-page__wechat-btn"
+          :loading="authStore.loading"
+          @click="showPersonaSheet = true"
+        >
+          微信一键登录
+        </van-button>
+        <p class="login-page__hint">演示版请选择体验账号</p>
+      </div>
     </div>
 
     <van-popup
@@ -83,53 +85,70 @@ async function onSelectPersona(personaId: PersonaId) {
 .login-page {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 32px 24px;
+  padding: 24px;
   background: linear-gradient(180deg, #e8f8ef 0%, #f7f8fa 40%);
 }
 
+.login-page__content {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .login-page__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 38px;
   text-align: center;
-  margin-bottom: 48px;
 }
 
 .login-page__avatar {
+  display: block;
   width: 88px;
   height: 88px;
+  margin: 0 0 16px;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 4px 14px rgba(58, 87, 112, 0.12);
-  margin-bottom: 16px;
+  object-fit: cover;
 }
 
 .login-page__title {
-  font-size: 24px;
+  font-size: 23px;
   font-weight: 600;
   color: #323233;
   margin: 0 0 8px;
 }
 
 .login-page__subtitle {
-  font-size: 14px;
+  font-size: 13px;
   color: #969799;
   margin: 0;
 }
 
 .login-page__actions {
-  padding: 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .login-page__wechat-btn {
   background: #07c160 !important;
   border-color: #07c160 !important;
-  height: 48px;
+  height: 46px;
   font-size: 16px;
 }
 
 .login-page__hint {
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   color: #969799;
   margin-top: 16px;
 }
