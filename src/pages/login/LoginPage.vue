@@ -1,15 +1,24 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { showToast } from "vant";
 import { useAuthStore } from "@/store/authStore";
+import { useAssistantStore } from "@/store/assistantStore";
 import type { PersonaId } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const assistantStore = useAssistantStore();
 
 const showPersonaSheet = ref(false);
+const pageStyle = computed(() => ({
+  "--login-primary": assistantStore.primaryColor,
+  "--login-primary-light": assistantStore.uiConfig.primaryColorLight,
+}));
+const avatarUrl = computed(() => assistantStore.assistantAvatarUrl);
+const assistantTitle = computed(() => assistantStore.dialogTitle);
+const assistantNickname = computed(() => assistantStore.assistantNickname);
 
 const personaOptions: Array<{ id: PersonaId; name: string; desc: string }> = [
   { id: "demo_new", name: "新用户", desc: "零订单、无车牌" },
@@ -28,18 +37,22 @@ async function onSelectPersona(personaId: PersonaId) {
     showToast(e instanceof Error ? e.message : "登录失败");
   }
 }
+
+onMounted(() => {
+  assistantStore.loadConfig();
+});
 </script>
 
 <template>
-  <div class="login-page">
+  <div class="login-page" :style="pageStyle">
     <div class="login-page__content">
       <div class="login-page__hero">
         <img
-          src="/assistant/youyou_wave.png"
-          alt="游游"
+          :src="avatarUrl"
+          :alt="assistantNickname"
           class="login-page__avatar"
         />
-        <h1 class="login-page__title">景区 AI 助手</h1>
+        <h1 class="login-page__title">{{ assistantTitle }}</h1>
         <p class="login-page__subtitle">智慧景区运营入口 · 演示版</p>
       </div>
 
@@ -88,7 +101,11 @@ async function onSelectPersona(personaId: PersonaId) {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: linear-gradient(180deg, #e8f8ef 0%, #f7f8fa 40%);
+  background: linear-gradient(
+    180deg,
+    var(--login-primary-light, #e8f8ef) 0%,
+    #f7f8fa 40%
+  );
 }
 
 .login-page__content {
@@ -140,8 +157,8 @@ async function onSelectPersona(personaId: PersonaId) {
 }
 
 .login-page__wechat-btn {
-  background: #07c160 !important;
-  border-color: #07c160 !important;
+  background: var(--login-primary) !important;
+  border-color: var(--login-primary) !important;
   height: 46px;
   font-size: 16px;
 }

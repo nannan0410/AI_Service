@@ -32,11 +32,15 @@ npm run dev
 
 可配置：
 
-- **主色** / 浅色背景（对话框按钮、用户气泡等）
-- **欢迎语**（聊天预览气泡与欢迎页展示）
+- **助手名称** `assistantName`（配置/关于等正式名称，默认 `AI游游`）
+- **助手昵称** `assistantNickname`（头像名称、对话自称、欢迎文案，默认 `游游`）
+- **对话标题** `dialogTitle`（聊天页顶部副标题/标题，默认 `景区 AI 助手`）
+- **主色** / 浅色背景 / 深色强调色 `primaryColorDark`（对话框按钮、用户气泡等）
+- **欢迎语**（聊天预览气泡与欢迎页展示，可用 `{{assistantNickname}}` 自动插入昵称）
 - **聊天背景图**（仅上传，建议 9:16，&lt; 800KB）
-- **助手头像**（仅上传，建议方形，&lt; 800KB）
-- **助手形象**（仅上传，欢迎页全身图，建议 9:16，&lt; 800KB）
+- **助手头像** `assistantAvatarUrl`（顶部头像、静态头像展示，默认 `/assistant/youyou_idle.png`）
+- **助手默认图** `defaultImageUrl`（欢迎页没有对话记录时展示，默认 `/assistant/youyou.png`）
+- **助手 6 种形态图** `motions`：`idle`、`thinking`、`nod`、`shake`、`wave`、`point`（用于对话头像，建议方形 JPG/PNG，&lt; 800KB）
 
 保存后写入浏览器 LocalStorage，聊天页 `/chat` 即时生效。点击「恢复 JSON 默认」可回到 `src/mock/assistant/ui_config.json`。
 
@@ -48,6 +52,7 @@ AI 助手对话入口为 `src/pages/chat/ChatPage.vue`。当用户当天还没�
 
 - `suggestedQuestions`：配置「猜你想问」问题、图标、发送给 AI 的提示词。
 - `quickActions`：配置底部 4 个快捷按钮、颜色、图标、发送给 AI 的提示词。
+- 三个演示身份已做差异化：新客展示新客券/首次购票，中级会员展示待出行订单和交通指南，高级会员展示在园路线/附近优惠/会员券。
 
 ## 技术栈
 

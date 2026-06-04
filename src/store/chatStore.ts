@@ -3,12 +3,12 @@ import { ref } from 'vue'
 import { getUserStorage, setUserStorage, STORAGE_SUFFIX } from '@/utils/storage'
 import type { ChatMessage } from '@/types'
 
-function createWelcomeMessage(): ChatMessage {
+function createWelcomeMessage(assistantNickname: string): ChatMessage {
   return {
     id: `msg_${Date.now()}`,
     type: 'system',
     role: 'system',
-    content: '欢迎和游游对话',
+    content: `欢迎和${assistantNickname}对话`,
     createdAt: new Date().toISOString(),
   }
 }
@@ -18,10 +18,10 @@ export const useChatStore = defineStore('chat', () => {
   const sending = ref(false)
   const currentUserId = ref('')
 
-  function loadForUser(userId: string) {
+  function loadForUser(userId: string, assistantNickname: string) {
     currentUserId.value = userId
     const saved = getUserStorage<ChatMessage[]>(userId, STORAGE_SUFFIX.CHAT, [])
-    messages.value = saved.length > 0 ? saved : [createWelcomeMessage()]
+    messages.value = saved.length > 0 ? saved : [createWelcomeMessage(assistantNickname)]
   }
 
   function persist() {
@@ -54,8 +54,8 @@ export const useChatStore = defineStore('chat', () => {
     })
   }
 
-  function clearMessages() {
-    messages.value = [createWelcomeMessage()]
+  function clearMessages(assistantNickname: string) {
+    messages.value = [createWelcomeMessage(assistantNickname)]
     persist()
   }
 

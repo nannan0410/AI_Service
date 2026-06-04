@@ -15,12 +15,12 @@ const member = ref<MemberInfo | null>(null);
 const activities = ref<Activity[]>([]);
 
 const shortcuts = [
-  { title: "AI 聊天", icon: "chat-o", path: "/chat", color: "#07c160" },
+  { title: "AI 聊天", icon: "chat-o", path: "/chat", color: "var(--chat-primary)" },
   { title: "我的订单", icon: "orders-o", path: "/orders", color: "#1989fa" },
   { title: "停车缴费", icon: "logistics", path: "/parking", color: "#ff976a" },
   { title: "优惠券", icon: "coupon-o", path: "/coupon", color: "#ee0a24" },
   { title: "发票申请", icon: "bill-o", path: "/invoice", color: "#7232dd" },
-  { title: "小票上传", icon: "photograph", path: "/receipt", color: "#07c160" },
+  { title: "小票上传", icon: "photograph", path: "/receipt", color: "var(--chat-primary)" },
 ];
 
 onMounted(async () => {
@@ -145,7 +145,7 @@ onMounted(async () => {
 .home-page__level {
   margin: 0;
   font-size: 13px;
-  color: var(--chat-primary, #07c160);
+  color: var(--chat-primary);
 }
 
 .home-page__shortcuts-card {
@@ -193,7 +193,7 @@ onMounted(async () => {
   width: 124px;
   height: 48px;
   font-size: 16px;
-  background: var(--chat-primary, #07c160) !important;
-  border-color: var(--chat-primary, #07c160) !important;
+  background: var(--chat-primary) !important;
+  border-color: var(--chat-primary) !important;
 }
 </style>

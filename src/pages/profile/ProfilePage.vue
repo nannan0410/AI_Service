@@ -101,15 +101,15 @@ async function onLogout() {
 
 .profile__logout-btn.van-button--plain {
   height: 44px;
-  color: var(--chat-primary, #07c160) !important;
+  color: var(--chat-primary) !important;
   background: #fff;
-  border: 1px solid var(--chat-primary, #07c160) !important;
+  border: 1px solid var(--chat-primary) !important;
   border-radius: 999px;
 }
 
 .profile__logout-btn.van-button--plain:active {
-  color: var(--chat-primary-dark, #06ad56) !important;
-  border-color: var(--chat-primary-dark, #06ad56) !important;
+  color: var(--chat-primary-dark) !important;
+  border-color: var(--chat-primary-dark) !important;
 }
 </style>
 
@@ -132,6 +132,8 @@ async function onLogout() {
 
 .profile-logout-dialog .van-dialog__footer {
   display: flex;
+  overflow: hidden;
+  border: 1px solid #ebedf0;
 }
 
 .profile-logout-dialog .van-dialog__cancel,
@@ -143,12 +145,18 @@ async function onLogout() {
   height: 48px;
   margin: 0;
   padding: 0;
+  border: none !important;
+  border-radius: 0;
   text-align: center;
   font-weight: 500;
 }
 
+.profile-logout-dialog .van-dialog__confirm {
+  border-left: 1px solid #ebedf0 !important;
+}
+
 .profile-logout-dialog .van-dialog__cancel {
-  color: var(--chat-primary, #07c160) !important;
+  color: var(--chat-primary) !important;
 }
 
 .profile-logout-dialog .van-dialog__confirm {

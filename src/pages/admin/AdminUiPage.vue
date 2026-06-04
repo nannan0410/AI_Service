@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { showConfirmDialog } from "vant";
 import { appToast } from "@/utils/toast";
 import { useAssistantStore } from "@/store/assistantStore";
+import type { AssistantMotionId } from "@/types";
 import {
   getAdminUiOverride,
   readFileAsDataUrl,
@@ -11,25 +12,46 @@ import {
   type AdminUiPatch,
 } from "@/utils/adminUiConfig";
 
-const DEFAULT_GREETING =
-  "嗨！我是游游~无论是买票、领券、查项目、看排队，还是规划路线，都可以交给我！";
-
 const router = useRouter();
 const assistantStore = useAssistantStore();
 
-const primaryColor = ref("#07c160");
+type ImageTarget = { value: string };
+
+const motionItems: Array<{ id: AssistantMotionId; label: string }> = [
+  { id: "idle", label: "idle 静止" },
+  { id: "thinking", label: "thinking 思考" },
+  { id: "nod", label: "nod 点头" },
+  { id: "shake", label: "shake 摇头" },
+  { id: "wave", label: "wave 挥手" },
+  { id: "point", label: "point 指引" },
+];
+
+const assistantName = ref("");
+const assistantNickname = ref("");
+const dialogTitle = ref("");
+const primaryColor = ref("");
 const primaryColorLight = ref("#e8f8ef");
+const primaryColorDark = ref("");
 const chatBackgroundUrl = ref("");
 const assistantAvatarUrl = ref("");
-const assistantCharacterUrl = ref("");
-const welcomeMessage = ref(DEFAULT_GREETING);
+const defaultImageUrl = ref("");
+const welcomeMessage = ref("");
+const motionImages = ref<Record<AssistantMotionId, string>>({
+  idle: "",
+  thinking: "",
+  nod: "",
+  shake: "",
+  wave: "",
+  point: "",
+});
 
 const bgPreview = computed(() => chatBackgroundUrl.value || undefined);
-const avatarPreview = computed(
-  () => assistantAvatarUrl.value || "/assistant/youyou_wave.png"
-);
-const characterPreview = computed(
-  () => assistantCharacterUrl.value || "/assistant/youyou.png"
+const avatarPreview = computed(() => assistantAvatarUrl.value);
+const previewGreeting = computed(() =>
+  welcomeMessage.value.replace(
+    /\{\{\s*assistantNickname\s*\}\}/g,
+    assistantNickname.value
+  )
 );
 
 const previewStageStyle = computed(() => ({
@@ -40,14 +62,15 @@ const previewStageStyle = computed(() => ({
 const themeVars = computed(() => ({
   "--admin-primary": primaryColor.value,
   "--admin-primary-light": primaryColorLight.value,
+  "--admin-primary-dark": primaryColorDark.value,
 }));
 
 /** 配置页统一展示昵称 */
-const displayNickname = "游游";
+const displayNickname = computed(() => assistantNickname.value);
 
 function onPickImage(
   file: File | undefined,
-  target: { value: string },
+  target: ImageTarget,
   label: string
 ) {
   if (!file) return;
@@ -60,25 +83,36 @@ function onPickImage(
   });
 }
 
+function fillForm(cfg = assistantStore.uiConfig) {
+  const override = getAdminUiOverride();
+  assistantName.value = override?.assistantName ?? cfg.assistantName;
+  assistantNickname.value =
+    override?.assistantNickname ?? cfg.assistantNickname;
+  dialogTitle.value = override?.dialogTitle ?? cfg.dialogTitle;
+  primaryColor.value = override?.primaryColor ?? cfg.primaryColor;
+  primaryColorLight.value =
+    override?.primaryColorLight ?? cfg.primaryColorLight ?? "#e8f8ef";
+  primaryColorDark.value =
+    override?.primaryColorDark ?? cfg.primaryColorDark ?? cfg.primaryColor;
+  chatBackgroundUrl.value =
+    override?.chatBackgroundUrl ?? cfg.chatBackgroundUrl;
+  assistantAvatarUrl.value =
+    override?.assistantAvatarUrl ?? cfg.assistantAvatarUrl;
+  defaultImageUrl.value = override?.defaultImageUrl ?? cfg.defaultImageUrl;
+  welcomeMessage.value = override?.greeting ?? cfg.greeting;
+
+  const sourceMotions = override?.motions ?? cfg.motions;
+  motionImages.value = motionItems.reduce((acc, item) => {
+    acc[item.id] =
+      sourceMotions.find((motion) => motion.actionId === item.id)?.assetUrl ??
+      "";
+    return acc;
+  }, {} as Record<AssistantMotionId, string>);
+}
+
 onMounted(async () => {
   await assistantStore.loadConfig(true);
-  const cfg = assistantStore.uiConfig;
-  const override = getAdminUiOverride();
-  if (cfg) {
-    primaryColor.value = override?.primaryColor ?? cfg.primaryColor;
-    primaryColorLight.value =
-      override?.primaryColorLight ?? cfg.primaryColorLight ?? "#e8f8ef";
-    chatBackgroundUrl.value =
-      override?.chatBackgroundUrl ?? cfg.chatBackgroundUrl;
-    assistantAvatarUrl.value =
-      override?.assistantAvatarUrl ??
-      cfg.assistantAvatarUrl ??
-      cfg.defaultImageUrl;
-    assistantCharacterUrl.value =
-      override?.assistantCharacterUrl ?? cfg.assistantCharacterUrl ?? "";
-    welcomeMessage.value =
-      override?.greeting ?? cfg.greeting ?? DEFAULT_GREETING;
-  }
+  fillForm();
 });
 
 function onBackgroundRead(item: { file?: File } | { file?: File }[]) {
@@ -86,27 +120,52 @@ function onBackgroundRead(item: { file?: File } | { file?: File }[]) {
   onPickImage(file, chatBackgroundUrl, "背景图");
 }
 
-function onAvatarRead(item: { file?: File } | { file?: File }[]) {
+function onDefaultImageRead(item: { file?: File } | { file?: File }[]) {
   const file = Array.isArray(item) ? item[0]?.file : item.file;
-  onPickImage(file, assistantAvatarUrl, "头像");
+  onPickImage(file, defaultImageUrl, "助手默认图");
 }
 
-function onCharacterRead(item: { file?: File } | { file?: File }[]) {
+function onAvatarRead(item: { file?: File } | { file?: File }[]) {
   const file = Array.isArray(item) ? item[0]?.file : item.file;
-  onPickImage(file, assistantCharacterUrl, "形象图");
+  onPickImage(file, assistantAvatarUrl, "助手头像");
+}
+
+function onMotionRead(
+  item: { file?: File } | { file?: File }[],
+  actionId: AssistantMotionId
+) {
+  const file = Array.isArray(item) ? item[0]?.file : item.file;
+  onPickImage(
+    file,
+    {
+      get value() {
+        return motionImages.value[actionId];
+      },
+      set value(url: string) {
+        motionImages.value[actionId] = url;
+      },
+    },
+    `${actionId} 形态图`
+  );
 }
 
 function buildPatch(): AdminUiPatch {
+  const motions = assistantStore.uiConfig.motions.map((motion) => ({
+    ...motion,
+    assetUrl: motionImages.value[motion.actionId] || motion.assetUrl,
+  }));
   return {
+    assistantName: assistantName.value,
+    assistantNickname: assistantNickname.value,
+    dialogTitle: dialogTitle.value,
     primaryColor: primaryColor.value,
     primaryColorLight: primaryColorLight.value,
+    primaryColorDark: primaryColorDark.value,
     chatBackgroundUrl: chatBackgroundUrl.value,
     assistantAvatarUrl: assistantAvatarUrl.value,
-    assistantCharacterUrl: assistantCharacterUrl.value,
-    defaultImageUrl: assistantAvatarUrl.value,
+    defaultImageUrl: defaultImageUrl.value,
     greeting: welcomeMessage.value,
-    assistantName: displayNickname,
-    assistantNickname: displayNickname,
+    motions,
   };
 }
 
@@ -125,15 +184,7 @@ async function onReset() {
     message: "将清除本地覆盖并读取 JSON 默认项",
   });
   await assistantStore.clearAdminPatch();
-  const cfg = assistantStore.uiConfig;
-  if (cfg) {
-    primaryColor.value = cfg.primaryColor;
-    primaryColorLight.value = cfg.primaryColorLight ?? "#e8f8ef";
-    chatBackgroundUrl.value = cfg.chatBackgroundUrl;
-    assistantAvatarUrl.value = cfg.assistantAvatarUrl;
-    assistantCharacterUrl.value = cfg.assistantCharacterUrl ?? "";
-    welcomeMessage.value = cfg.greeting ?? DEFAULT_GREETING;
-  }
+  fillForm();
   appToast("已恢复默认");
 }
 
@@ -187,20 +238,45 @@ function goPreviewChat() {
                 <strong>{{ displayNickname }}</strong>
                 <span>✨</span>
               </div>
-              <p>景区 AI 助手</p>
+              <p>{{ dialogTitle }}</p>
             </div>
           </div>
         </header>
         <div class="admin-ui__preview-body">
-          <div class="admin-ui__preview-bubble">{{ welcomeMessage }}</div>
+          <div class="admin-ui__preview-bubble">{{ previewGreeting }}</div>
         </div>
+      </div>
+    </section>
+
+    <section class="admin-ui__block">
+      <p class="admin-ui__block-title">基础信息</p>
+      <div class="admin-ui__panel admin-ui__panel--card">
+        <van-field
+          v-model="assistantName"
+          label="助手名称"
+          :placeholder="assistantStore.uiConfig.assistantName"
+        />
+        <van-field
+          v-model="assistantNickname"
+          label="助手昵称"
+          :placeholder="assistantStore.uiConfig.assistantNickname"
+        />
+        <van-field
+          v-model="dialogTitle"
+          label="对话标题"
+          :placeholder="assistantStore.uiConfig.dialogTitle"
+        />
       </div>
     </section>
 
     <section class="admin-ui__block">
       <p class="admin-ui__block-title">主色配置</p>
       <div class="admin-ui__panel admin-ui__panel--card">
-        <van-field v-model="primaryColor" label="主色" placeholder="#07c160">
+        <van-field
+          v-model="primaryColor"
+          label="主色"
+          :placeholder="assistantStore.uiConfig.primaryColor"
+        >
           <template #button>
             <input
               v-model="primaryColor"
@@ -222,6 +298,19 @@ function goPreviewChat() {
             />
           </template>
         </van-field>
+        <van-field
+          v-model="primaryColorDark"
+          label="深色强调"
+          :placeholder="assistantStore.uiConfig.primaryColorDark"
+        >
+          <template #button>
+            <input
+              v-model="primaryColorDark"
+              type="color"
+              class="admin-ui__color-input"
+            />
+          </template>
+        </van-field>
       </div>
     </section>
 
@@ -235,7 +324,7 @@ function goPreviewChat() {
           autosize
           maxlength="200"
           show-word-limit
-          placeholder="输入欢迎语"
+          placeholder="输入欢迎语，可用 {{assistantNickname}} 代表助手昵称"
         />
       </div>
     </section>
@@ -273,7 +362,7 @@ function goPreviewChat() {
           <div class="admin-ui__img-head">
             <span class="admin-ui__item-label">助手头像</span>
             <span class="admin-ui__item-hint"
-              >用于对话头像，建议方形，JPG/PNG，&lt; 800KB</span
+              >用于展示助手头像，建议方形，JPG/PNG，&lt; 800KB</span
             >
           </div>
           <div class="admin-ui__img-actions">
@@ -295,30 +384,63 @@ function goPreviewChat() {
           />
         </div>
 
-        <div class="admin-ui__img-block admin-ui__img-block--last">
+        <div class="admin-ui__img-block">
           <div class="admin-ui__img-head">
-            <span class="admin-ui__item-label">助手形象</span>
+            <span class="admin-ui__item-label">助手默认图</span>
             <span class="admin-ui__item-hint"
-              >用于欢迎页，建议 9:16，JPG/PNG，&lt; 800KB</span
+              >用于欢迎页全身形象图，建议 9:16，JPG/PNG，&lt; 800KB</span
             >
           </div>
           <div class="admin-ui__img-actions">
             <van-uploader
-              :after-read="onCharacterRead"
+              :after-read="onDefaultImageRead"
               :max-count="1"
               accept="image/*"
             >
               <van-button icon="photograph" size="small" round type="primary">
-                上传形象
+                上传默认图
               </van-button>
             </van-uploader>
           </div>
           <img
-            v-if="characterPreview"
-            :src="characterPreview"
-            alt="形象预览"
+            v-if="defaultImageUrl"
+            :src="defaultImageUrl"
+            alt="默认图预览"
             class="admin-ui__thumb admin-ui__thumb--character"
           />
+        </div>
+
+        <div class="admin-ui__img-block admin-ui__img-block--last">
+          <div class="admin-ui__img-head">
+            <span class="admin-ui__item-label">助手 6 种形态</span>
+            <span class="admin-ui__item-hint"
+              >用于对话头像，建议方形，JPG/PNG，&lt; 800KB</span
+            >
+          </div>
+          <div class="admin-ui__motion-grid">
+            <div
+              v-for="item in motionItems"
+              :key="item.id"
+              class="admin-ui__motion-item"
+            >
+              <span class="admin-ui__motion-label">{{ item.label }}</span>
+              <img
+                v-if="motionImages[item.id]"
+                :src="motionImages[item.id]"
+                :alt="`${item.label} 预览`"
+                class="admin-ui__thumb admin-ui__thumb--round"
+              />
+              <van-uploader
+                :after-read="(file) => onMotionRead(file, item.id)"
+                :max-count="1"
+                accept="image/*"
+              >
+                <van-button icon="photograph" size="mini" round type="primary">
+                  上传
+                </van-button>
+              </van-uploader>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -563,6 +685,29 @@ function goPreviewChat() {
   align-items: flex-start;
 }
 
+.admin-ui__motion-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-ui__motion-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  background: #fafafa;
+  border: 1px solid #f0f1f3;
+  border-radius: 12px;
+}
+
+.admin-ui__motion-label {
+  font-size: 12px;
+  color: #646566;
+  line-height: 1.4;
+}
+
 .admin-ui__thumb {
   margin-top: 12px;
   object-fit: cover;
@@ -616,20 +761,19 @@ function goPreviewChat() {
 }
 
 .admin-ui__btn--primary {
-  background: var(--admin-primary, #07c160);
+  background: var(--admin-primary);
   color: #fff;
 }
 
 .admin-ui__btn--light {
   background: var(--admin-primary-light, #e8f8ef);
-  color: var(--admin-primary, #07c160);
-  border: 1px solid var(--admin-primary, #07c160);
+  color: var(--admin-primary);
+  border: 1px solid var(--admin-primary);
 }
 
 .admin-ui__btn--outline {
   background: #fff;
-  /* border: 1px solid var(--admin-primary, #07c160); */
-  color: var(--admin-primary, #07c160);
+  color: var(--admin-primary, var(--admin-primary));
   box-shadow: none;
 }
 </style>

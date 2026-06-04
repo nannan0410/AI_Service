@@ -1,6 +1,6 @@
 import { llmConfig } from '@config/llm.config'
-import { systemPrompt } from './prompts/system'
-import type { LlmChatResult, LlmMessage } from '@/types'
+import { buildSystemPrompt } from './prompts/system'
+import type { AssistantUiConfig, LlmChatResult, LlmMessage } from '@/types'
 
 interface ChatCompletionResponse {
   choices?: Array<{
@@ -11,6 +11,7 @@ interface ChatCompletionResponse {
 
 export async function chatCompletion(
   messages: LlmMessage[],
+  uiConfig: AssistantUiConfig,
   options?: { temperature?: number },
 ): Promise<LlmChatResult> {
   const apiKey =
@@ -32,7 +33,7 @@ export async function chatCompletion(
     },
     body: JSON.stringify({
       model: llmConfig.model,
-      messages: [{ role: 'system', content: systemPrompt }, ...messages],
+      messages: [{ role: 'system', content: buildSystemPrompt(uiConfig) }, ...messages],
       temperature: options?.temperature ?? llmConfig.temperature,
       max_tokens: llmConfig.maxTokens,
     }),
@@ -53,8 +54,12 @@ export async function chatCompletion(
 }
 
 /** 统一 AI 调用入口 — 所有 LLM 请求必须经此文件 */
-export async function sendChatMessage(history: LlmMessage[], userMessage: string): Promise<string> {
+export async function sendChatMessage(
+  history: LlmMessage[],
+  userMessage: string,
+  uiConfig: AssistantUiConfig,
+): Promise<string> {
   const messages: LlmMessage[] = [...history, { role: 'user', content: userMessage }]
-  const result = await chatCompletion(messages)
+  const result = await chatCompletion(messages, uiConfig)
   return result.content
 }
