@@ -1,13 +1,14 @@
 import type { AssistantUiConfig } from '@/types'
+import defaultUiConfig from '@/mock/assistant/ui_config.json'
 
-const DEFAULT_PRIMARY = '#07c160'
-const DEFAULT_PRIMARY_LIGHT = '#e8f8ef'
+const DEFAULT_UI_CONFIG = defaultUiConfig as AssistantUiConfig
 
 export function applyChatTheme(config: Pick<AssistantUiConfig, 'primaryColor' | 'primaryColorLight' | 'primaryColorDark'>) {
   const root = document.documentElement
-  const primary = config.primaryColor || DEFAULT_PRIMARY
-  const light = config.primaryColorLight || DEFAULT_PRIMARY_LIGHT
-  const dark = config.primaryColorDark || primary
+  const primary = config.primaryColor || DEFAULT_UI_CONFIG.primaryColor
+  const light =
+    config.primaryColorLight || DEFAULT_UI_CONFIG.primaryColorLight || DEFAULT_UI_CONFIG.primaryColor
+  const dark = config.primaryColorDark || DEFAULT_UI_CONFIG.primaryColorDark || primary
 
   root.style.setProperty('--chat-primary', primary)
   root.style.setProperty('--chat-primary-light', light)

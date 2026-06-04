@@ -57,33 +57,24 @@ const pageStyle = computed(() => {
 });
 
 const todayKey = computed(() => new Date().toDateString());
-const assistantName = computed(
-  () =>
-    assistantStore.uiConfig?.assistantNickname ||
-    assistantStore.uiConfig?.assistantName ||
-    "游游"
-);
-const assistantTitle = computed(
-  () => assistantStore.uiConfig?.dialogTitle || assistantStore.dialogTitle
-);
-const avatarUrl = computed(
-  () =>
-    assistantStore.uiConfig?.assistantAvatarUrl ||
-    assistantStore.uiConfig?.defaultImageUrl ||
-    "/assistant/youyou_wave.png"
-);
-const characterUrl = computed(
-  () =>
-    assistantStore.uiConfig?.assistantCharacterUrl || "/assistant/youyou.png"
-);
-const greetingText = computed(
-  () =>
-    assistantStore.uiConfig?.greeting?.trim() ||
-    "嗨！我是游游~无论是买票、领券、查项目、看排队，还是规划路线，都可以交给我！"
+const assistantNickname = computed(() => assistantStore.assistantNickname);
+const assistantTitle = computed(() => assistantStore.dialogTitle);
+const avatarUrl = computed(() => assistantStore.assistantAvatarUrl);
+const characterUrl = computed(() => assistantStore.defaultImageUrl);
+const inputPlaceholder = computed(
+  () => `有问题，问${assistantNickname.value}吧~`
 );
 const currentWelcomeTemplate = computed(() => {
   const personaId = authStore.personaId || "demo_new";
   return templates.find((item) => item.personaId === personaId) ?? templates[0];
+});
+const welcomeBody = computed(() => {
+  const templateBody = currentWelcomeTemplate.value?.body?.trim();
+  const fallbackBody = assistantStore.uiConfig.greeting.trim();
+  return (templateBody || fallbackBody).replace(
+    /\{\{\s*(nickname|assistantNickname)\s*\}\}/g,
+    assistantNickname.value
+  );
 });
 const suggestedQuestions = computed(
   () => currentWelcomeTemplate.value?.suggestedQuestions ?? []
@@ -101,10 +92,10 @@ const hasTodayConversation = computed(() =>
 const showWelcome = computed(() => !hasTodayConversation.value);
 
 onMounted(async () => {
-  if (authStore.memberId) {
-    chatStore.loadForUser(authStore.memberId);
-  }
   await assistantStore.loadConfig(true);
+  if (authStore.memberId) {
+    chatStore.loadForUser(authStore.memberId, assistantNickname.value);
+  }
   assistantStore.setMotion("wave", 2200);
 });
 
@@ -155,7 +146,11 @@ async function onSend() {
 
   try {
     aiStore.completeStep(0);
-    const reply = await sendChatMessage(buildHistory(), text);
+    const reply = await sendChatMessage(
+      buildHistory(),
+      text,
+      assistantStore.uiConfig
+    );
     aiStore.completeStep(1);
     aiStore.completeStep(2);
     chatStore.addAssistantMessage(reply);
@@ -182,13 +177,13 @@ async function onSend() {
         <div class="chat-page__avatar-shell">
           <img
             :src="avatarUrl"
-            :alt="assistantName"
+            :alt="assistantNickname"
             class="chat-page__avatar"
           />
         </div>
         <div class="chat-page__brand-text">
           <div class="chat-page__name-row">
-            <strong>{{ assistantName }}</strong>
+            <strong>{{ assistantNickname }}</strong>
             <span>✨</span>
           </div>
           <p>{{ assistantTitle }}</p>
@@ -199,11 +194,11 @@ async function onSend() {
     <main v-if="showWelcome" class="chat-page__welcome">
       <section class="chat-page__hero" aria-label="欢迎介绍">
         <div class="chat-page__cloud">
-          <p>{{ greetingText }}</p>
+          <p>{{ welcomeBody }}</p>
         </div>
         <img
           :src="characterUrl"
-          :alt="`${assistantName}导游形象`"
+          :alt="`${assistantNickname}导游形象`"
           class="chat-page__character"
         />
       </section>
@@ -263,7 +258,7 @@ async function onSend() {
       <div class="chat-page__input-bar">
         <van-field
           v-model="input"
-          placeholder="有问题，问游游吧~"
+          :placeholder="inputPlaceholder"
           :disabled="chatStore.sending"
           @keyup.enter="onSend"
         >
@@ -493,9 +488,10 @@ async function onSend() {
   text-align: left;
   background: transparent;
   border-bottom: 1px solid #f6f6f6;
-  &:last-child {
-    border-bottom: none;
-  }
+}
+
+.chat-page__question:last-child {
+  border-bottom: none;
 }
 
 .chat-page__question-index {
@@ -567,7 +563,7 @@ async function onSend() {
   border: none;
   border-radius: 14px;
   color: #fff;
-  background: var(--action-color, var(--chat-primary, #07c160));
+  background: var(--action-color, var(--chat-primary));
 }
 
 .chat-page__quick-action-icon {
@@ -594,7 +590,7 @@ async function onSend() {
 
 .chat-page__input-bar :deep(.van-field__left-icon) {
   margin-right: 8px;
-  color: var(--chat-primary, #07c160);
+  color: var(--chat-primary);
   font-size: 20px;
 }
 
@@ -618,7 +614,7 @@ async function onSend() {
   border: none;
   border-radius: 50%;
   color: #fff;
-  background: var(--action-color, var(--chat-primary, #07c160));
+  background: var(--action-color, var(--chat-primary));
   box-shadow: 0 8px 18px rgba(255, 126, 69, 0.3);
 }
 

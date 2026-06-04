@@ -148,13 +148,13 @@ interface TicketProduct extends ProductBase {
 | 字段 | 说明 | 展示位置 |
 |------|------|----------|
 | `chatBackgroundUrl` | 聊天框背景图 | `/chat` 全屏背景 |
-| `assistantAvatarUrl` | 助手头像 | 消息气泡旁、欢迎页 |
+| `assistantAvatarUrl` | 助手头像 | 顶部头像、静态头像 |
 | `dialogTitle` | 对话框标题 | NavBar 标题 |
 | `assistantName` | 助手名称 | 配置/关于 |
 | `assistantNickname` | 助手昵称 | 对话自称、欢迎文案 |
-| `defaultImageUrl` | 助手默认图（idle） | 欢迎页、无动画态 |
+| `defaultImageUrl` | 助手默认图 | 欢迎页无对话记录时 |
 | `greeting` | 通用欢迎语兜底 | 无 persona 模板时 |
-| `themeColor` | 主题色 | 按钮、强调色 |
+| `primaryColor` / `primaryColorLight` / `primaryColorDark` | 主题强调色 | 按钮、强调色 |
 | `motions[]` | 6 种形态 | idle/thinking/nod/shake/wave/point |
 
 **文件**：`mock/assistant/ui_config.json`（可与原 `config.json` 合并）
@@ -717,10 +717,16 @@ type MessageType =
 
 | 项 | 说明 |
 |----|------|
+| 助手名称 `assistantName` | 配置/关于等正式名称，默认 `AI游游` |
+| 助手昵称 `assistantNickname` | 头像名称、对话自称、欢迎文案，默认 `游游` |
+| 对话标题 `dialogTitle` | 聊天页顶部标题/副标题，默认 `景区 AI 助手` |
 | 主色 `primaryColor` | 发送按钮、用户气泡、标签、头像边框 |
 | 浅色 `primaryColorLight` | 标签背景、头像底色 |
+| 深色强调 `primaryColorDark` | 深色按钮、强调态 |
 | 聊天背景 `chatBackgroundUrl` | 欢迎页 + 聊天页背景 |
-| 助手头像 `assistantAvatarUrl` | 欢迎页大图 + 对话 idle 头像 |
+| 助手头像 `assistantAvatarUrl` | 顶部头像、静态头像，默认 `/assistant/youyou_idle.png` |
+| 助手默认图 `defaultImageUrl` | 欢迎页没有对话记录时展示，默认 `/assistant/youyou.png` |
+| 6 种形态 `motions` | 对话头像：idle/thinking/nod/shake/wave/point |
 
 ### 图片配置方式
 

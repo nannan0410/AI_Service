@@ -189,12 +189,14 @@ export interface AssistantAvatarConfig {
 
 export interface AssistantUiConfig {
   chatBackgroundUrl: string
+  /** 助手头像，用于顶部头像、静态头像展示 */
   assistantAvatarUrl: string
   /** 欢迎页全身形象图，建议 9:16 */
   assistantCharacterUrl?: string
   dialogTitle: string
   assistantName: string
   assistantNickname: string
+  /** 助手默认图，用于欢迎页全身形象图 */
   defaultImageUrl: string
   /** 欢迎语，用于聊天欢迎气泡等 */
   greeting: string
@@ -230,6 +232,7 @@ export interface WelcomePageData extends WelcomeTemplate {
     | 'chatBackgroundUrl'
     | 'primaryColor'
     | 'primaryColorLight'
+    | 'primaryColorDark'
     | 'greeting'
   >
 }

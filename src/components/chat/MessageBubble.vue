@@ -62,7 +62,7 @@ defineProps<{ message: ChatMessage }>();
 }
 
 .bubble--user {
-  background: var(--chat-primary, #07c160);
+  background: var(--chat-primary);
   color: #fff;
   border-bottom-right-radius: 4px;
 }

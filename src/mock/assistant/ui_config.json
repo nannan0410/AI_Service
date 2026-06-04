@@ -1,9 +1,8 @@
 {
   "chatBackgroundUrl": "/assistant/chat-bg.svg",
-  "assistantAvatarUrl": "/assistant/youyou_wave.png",
-  "assistantCharacterUrl": "/assistant/youyou.png",
+  "assistantAvatarUrl": "/assistant/youyou_idle.png",
   "dialogTitle": "景区 AI 助手",
-  "assistantName": "游游",
+  "assistantName": "AI游游",
   "assistantNickname": "游游",
   "defaultImageUrl": "/assistant/youyou.png",
   "greeting": "嗨！我是游游~无论是买票、领券、查项目、看排队，还是规划路线，都可以交给我！",

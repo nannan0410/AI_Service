@@ -26,18 +26,12 @@ const displayMotion = computed(() => props.motion || assistantStore.motion);
 
 const avatarSrc = computed(() => {
   const cfg = assistantStore.uiConfig;
-  if (!cfg) return "/assistant/youyou_wave.png";
+  if (displayMotion.value === "idle") return cfg.assistantAvatarUrl;
   const found = cfg.motions.find((m) => m.actionId === displayMotion.value);
-  return found?.assetUrl || cfg.assistantAvatarUrl || cfg.defaultImageUrl;
+  return found?.assetUrl || cfg.assistantAvatarUrl;
 });
 
-const assistantName = computed(
-  () =>
-    assistantStore.uiConfig?.assistantNickname ??
-    assistantStore.uiConfig?.assistantName ??
-    "游游"
-);
-
+const assistantName = computed(() => assistantStore.assistantNickname);
 </script>
 
 <template>

@@ -29,7 +29,7 @@ const runningLabel = computed(() => {
           "
           :color="
             step.status === 'done'
-              ? '#07c160'
+              ? 'var(--chat-primary)'
               : step.status === 'running'
               ? '#1989fa'
               : '#ccc'

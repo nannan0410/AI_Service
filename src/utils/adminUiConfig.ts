@@ -8,6 +8,7 @@ export type AdminUiPatch = Partial<
     | 'chatBackgroundUrl'
     | 'assistantAvatarUrl'
     | 'assistantCharacterUrl'
+    | 'dialogTitle'
     | 'defaultImageUrl'
     | 'greeting'
     | 'assistantName'
@@ -15,6 +16,7 @@ export type AdminUiPatch = Partial<
     | 'primaryColor'
     | 'primaryColorLight'
     | 'primaryColorDark'
+    | 'motions'
   >
 >
 
@@ -45,16 +47,17 @@ export function setAdminUiOverride(patch: AdminUiPatch | null): void {
 
 export function mergeUiConfig(base: AssistantUiConfig): AssistantUiConfig {
   const patch = getAdminUiOverride()
-  if (!patch) return base
+  if (!patch) return { ...base, motions: base.motions.map((m) => ({ ...m })) }
 
-  const merged = { ...base, ...patch }
-
-  if (patch.assistantAvatarUrl) {
-    merged.defaultImageUrl = patch.defaultImageUrl ?? patch.assistantAvatarUrl
-    merged.motions = base.motions.map((m) =>
-      m.actionId === 'idle' ? { ...m, assetUrl: patch.assistantAvatarUrl! } : m,
-    )
+  const merged: AssistantUiConfig = {
+    ...base,
+    ...patch,
+    motions: (patch.motions ?? base.motions).map((m) => ({ ...m })),
   }
+
+  const idleAsset = merged.motions.find((m) => m.actionId === 'idle')?.assetUrl
+  merged.assistantAvatarUrl = patch.assistantAvatarUrl ?? merged.assistantAvatarUrl ?? idleAsset
+  merged.defaultImageUrl = patch.defaultImageUrl ?? merged.defaultImageUrl
 
   return merged
 }
