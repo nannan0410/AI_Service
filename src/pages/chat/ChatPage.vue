@@ -69,9 +69,9 @@ const currentWelcomeTemplate = computed(() => {
   return templates.find((item) => item.personaId === personaId) ?? templates[0];
 });
 const welcomeBody = computed(() => {
-  const templateBody = currentWelcomeTemplate.value?.body?.trim();
   const fallbackBody = assistantStore.uiConfig.greeting.trim();
-  return (templateBody || fallbackBody).replace(
+  const templateBody = currentWelcomeTemplate.value?.body?.trim();
+  return (fallbackBody || templateBody).replace(
     /\{\{\s*(nickname|assistantNickname)\s*\}\}/g,
     assistantNickname.value
   );
@@ -105,6 +105,14 @@ function scrollToBottom() {
       listRef.value.scrollTop = listRef.value.scrollHeight;
     }
   });
+}
+
+function onRestoreChat() {
+  input.value = "";
+  pendingPrompt.value = null;
+  chatStore.sending = false;
+  chatStore.clearMessages(assistantNickname.value);
+  assistantStore.setMotion("wave", 2200);
 }
 
 function buildHistory(): LlmMessage[] {
@@ -173,6 +181,17 @@ async function onSend() {
       <button class="chat-page__back" type="button" @click="$router.back()">
         <van-icon name="arrow-left" size="20" />
       </button>
+
+      <button
+        v-if="!showWelcome"
+        class="chat-page__restore"
+        type="button"
+        aria-label="一键开启新对话"
+        @click="onRestoreChat"
+      >
+        <img src="/restore.svg" alt="" class="chat-page__restore-icon" />
+      </button>
+
       <div class="chat-page__brand">
         <div class="chat-page__avatar-shell">
           <img
@@ -339,11 +358,38 @@ async function onSend() {
   box-shadow: 0 8px 22px rgba(58, 87, 112, 0.12);
 }
 
+.chat-page__restore {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 8px 22px rgba(58, 87, 112, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-page__restore-icon {
+  width: 23px;
+  height: 23px;
+}
+
+.chat-page__restore:active {
+  opacity: 0.88;
+}
+
 .chat-page__brand {
   display: flex;
   align-items: center;
   min-width: 0;
   gap: 10px;
+  padding-right: 44px; /* 预留右侧“新对话”按钮空间 */
 }
 
 .chat-page__avatar-shell {
@@ -573,6 +619,7 @@ async function onSend() {
 
 .chat-page__quick-action-text {
   font-size: 11px;
+  line-height: 15px;
 }
 
 .chat-page__input-bar {
@@ -584,23 +631,23 @@ async function onSend() {
 
 .chat-page__input-bar :deep(.van-cell) {
   align-items: center;
-  padding: 1px 8px 1px 14px;
+  padding: 3px 8px 3px 13px;
   background: transparent;
 }
 
 .chat-page__input-bar :deep(.van-field__left-icon) {
   margin-right: 8px;
   color: var(--chat-primary);
-  font-size: 20px;
+  font-size: 22px;
 }
 
 .chat-page__input-bar :deep(.van-field__control) {
   font-size: 13px;
-  color: #888;
+  color: #333;
 }
 
 .chat-page__input-bar :deep(.van-field__control::placeholder) {
-  color: #a7a7a7;
+  color: #acacac;
 }
 
 .chat-page__send-btn {
@@ -608,14 +655,14 @@ async function onSend() {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 35px;
+  height: 35px;
   padding: 0;
   border: none;
   border-radius: 50%;
   color: #fff;
   background: var(--action-color, var(--chat-primary));
-  box-shadow: 0 8px 18px rgba(255, 126, 69, 0.3);
+  box-shadow: 0 8px 18px rgba(255, 126, 69, 0.15);
 }
 
 .chat-page__send-btn:disabled {
