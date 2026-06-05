@@ -58,7 +58,7 @@ defineProps<{ message: ChatMessage }>();
 }
 
 .bubble__icon {
-  margin-right: 4px;
+  margin-right: 3px;
 }
 
 .bubble--user {
