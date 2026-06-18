@@ -19,7 +19,15 @@ export type TicketTypeId =
   | 'family_annual'
   | 'holiday_special'
 
-export type MessageType = 'text' | 'coupon' | 'ticket' | 'activity' | 'order' | 'system'
+export type MessageType =
+  | 'text'
+  | 'coupon'
+  | 'ticket'
+  | 'activity'
+  | 'order'
+  | 'visitor_picker'
+  | 'guide'
+  | 'system'
 
 export type AssistantMotionId =
   | 'idle'

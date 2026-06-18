@@ -5,7 +5,7 @@
     "icon": "shopping-cart-o",
     "target": "chat",
     "skillId": "ticket_purchase",
-    "promptHint": "我想买门票，两大一小有优惠吗",
+    "promptHint": "两大一小有优惠吗",
     "rules": [{ "op": "eq", "field": "personaId", "value": "demo_new" }],
     "priority": 10
   },
@@ -25,7 +25,7 @@
     "icon": "location-o",
     "target": "chat",
     "skillId": "travel_guide",
-    "promptHint": "怎么去景区，交通指南",
+    "promptHint": "怎么去景区",
     "rules": [{ "op": "eq", "field": "hasPendingVisitOrder", "value": true }],
     "priority": 10
   },
@@ -44,7 +44,7 @@
     "icon": "notes-o",
     "target": "chat",
     "skillId": "travel_guide",
-    "promptHint": "帮我生成游玩攻略",
+    "promptHint": "生成游玩攻略",
     "rules": [{ "op": "eq", "field": "personaId", "value": "demo_mid" }],
     "priority": 7
   },
@@ -54,7 +54,7 @@
     "icon": "gem-o",
     "target": "chat",
     "skillId": "proactive_marketing",
-    "promptHint": "有什么会员专属优惠",
+    "promptHint": "会员专属优惠",
     "rules": [{ "op": "eq", "field": "personaId", "value": "demo_vip" }],
     "priority": 10
   },
@@ -64,7 +64,7 @@
     "icon": "location-o",
     "target": "chat",
     "skillId": "route_plan",
-    "promptHint": "帮我规划今日游玩路线",
+    "promptHint": "规划今日路线",
     "rules": [{ "op": "eq", "field": "inPark", "value": true }],
     "priority": 9
   },

@@ -2,11 +2,11 @@
   {
     "skillId": "ticket_purchase",
     "name": "智能购票",
-    "description": "识别票种与人数，推荐最优套餐并下单",
+    "description": "像朋友一样一步步确认人数、日期、票种、游客信息，带券后进入 H5 确认下单",
     "enabled": true,
-    "triggerKeywords": ["买票", "购票", "门票", "两大一小", "年卡"],
-    "tools": ["getTicketCatalog", "getCoupons", "createOrder"],
-    "promptAddon": "你是购票专家，优先推荐更优惠的套票组合，2大1小优先家庭套票669元。",
+    "triggerKeywords": ["买票", "购票", "门票", "订票", "下单", "确认下单", "两大一小", "成人票", "儿童票", "老人票", "年卡"],
+    "tools": ["getProductCatalog", "getCoupons", "issueCoupon", "selectCommonVisitors", "createOrderDraft"],
+    "promptAddon": "你是像朋友一样聊天的购票助手，语气轻快，句末多用~，提问用？。每次回复尽量不超过60字。游客明确问优惠券/领券时才推送或查询账户券；选游客前可悄悄幽默提示有券惊喜。攻略要给出明确路线。识别购票意图后按人数→日期→票种→游客→优惠券→确认下单推进；缺哪项只问哪一项。关键词用 Markdown 加粗。2大1小优先家庭套票669元。游客勾选后推送优惠券并默认带上，进入 H5 确认下单/模拟支付。不要说打开App。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "nod", "onFail": "shake" }
   },
   {
