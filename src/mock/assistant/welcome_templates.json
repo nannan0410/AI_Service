@@ -7,129 +7,121 @@
     "highlights": ["新客专享 20 元券", "首次购票指引", "家庭套票更优惠"],
     "suggestedQuestions": [
       {
-        "id": "new_guest_coupon",
-        "icon": "🎫",
-        "text": "新客券怎么领取？",
-        "prompt": "我是新客，请告诉我新客优惠券怎么领取、能怎么用。",
-        "badgeColor": "#ff7a45"
-      },
-      {
-        "id": "first_ticket_guide",
-        "icon": "🎟️",
-        "text": "第一次来怎么买票？",
-        "prompt": "我是第一次来欢乐景区，请按步骤教我怎么买票最合适。",
-        "badgeColor": "#ffb020"
-      },
-      {
         "id": "new_guest_bundle",
         "icon": "👨‍👩‍👧",
         "text": "两大一小买什么票？",
+        "desc": "家庭出游门票与优惠组合推荐",
         "prompt": "两大一小首次来玩，请帮我推荐最划算的门票和优惠券组合。",
-        "badgeColor": "#54c783"
+        "badgeColor": "#54c783",
+        "priority": 10
       },
       {
         "id": "new_guest_must_play",
         "icon": "⭐",
         "text": "新客必玩项目有哪些？",
+        "desc": "首次入园热门项目与游玩顺序",
         "prompt": "我是第一次来欢乐景区，请推荐适合新客的必玩项目和入园顺序。",
-        "badgeColor": "#4aa3ff"
-      }
-    ],
-    "quickActions": [
-      {
-        "id": "first_buy_ticket",
-        "icon": "🎟️",
-        "text": "首次购票",
-        "prompt": "我是新客，请带我完成首次购票指引。",
-        "color": "#ff9f2f"
+        "badgeColor": "#4aa3ff",
+        "priority": 9
       },
       {
-        "id": "claim_new_coupon",
+        "id": "new_ticket_usage",
         "icon": "🎫",
-        "text": "领新客券",
-        "prompt": "请帮我领取或查看可用的新客优惠券。",
-        "color": "#ff5d67"
+        "text": "门票如何使用",
+        "desc": "首次入园游客最常咨询的问题",
+        "prompt": "请告诉我门票怎么使用、几点可以入园？",
+        "badgeColor": "#54c783",
+        "priority": 8
       },
       {
-        "id": "new_guest_offer",
-        "icon": "💰",
-        "text": "优惠组合",
-        "prompt": "请根据新客券帮我推荐最划算的购票组合。",
-        "color": "#47c66b"
+        "id": "new_route_plan",
+        "icon": "🗺",
+        "text": "帮我规划路线",
+        "desc": "根据热门线路自动生成攻略",
+        "prompt": "请推荐适合今天的游玩项目和路线，不需要交通和入园信息。",
+        "badgeColor": "#4aa3ff",
+        "priority": 7
       },
       {
-        "id": "first_visit_plan",
-        "icon": "🗺️",
-        "text": "新客攻略",
-        "prompt": "请给第一次来的游客做一份轻松游玩攻略。",
-        "color": "#36a8f6"
+        "id": "new_food",
+        "icon": "🍜",
+        "text": "景区有什么好吃的",
+        "desc": "推荐热门餐饮和特色美食",
+        "prompt": "景区里有什么推荐的美食？",
+        "badgeColor": "#ffb020",
+        "priority": 6
+      },
+      {
+        "id": "new_weather",
+        "icon": "🌤",
+        "text": "今天适合游玩吗",
+        "desc": "结合天气和景区情况推荐玩法",
+        "prompt": "今天适合来景区游玩吗？天气和人流怎么样？",
+        "badgeColor": "#4aa3ff",
+        "priority": 5
       }
     ]
   },
   {
     "personaId": "demo_mid",
     "title": "您的行程即将开始",
-    "subtitle": "2026-06-15 待出行订单已就绪",
-    "body": "我是{{nickname}}，您有 2026-06-15 的待出行订单。我可以帮您查看订单、规划交通、提醒入园事项。",
-    "highlights": ["2026-06-15 待出行订单", "交通指南", "查看订单"],
+    "subtitle": "{{pendingVisitSubtitle}}",
+    "body": "我是{{nickname}}，您有 {{upcomingVisitOrderCount}} 笔待出行订单，最近 {{nextVisitDate}} 出行。我可以帮您查看订单、规划交通、提醒入园事项。",
+    "highlights": ["{{pendingVisitSubtitle}}", "共 {{upcomingVisitOrderCount}} 笔待出行", "交通指南", "查看订单"],
     "suggestedQuestions": [
-      {
-        "id": "mid_order_detail",
-        "icon": "📋",
-        "text": "查看 6月15日订单",
-        "prompt": "请帮我查看 2026-06-15 的待出行订单详情。",
-        "badgeColor": "#ff7a45"
-      },
-      {
-        "id": "mid_traffic_guide",
-        "icon": "🚙",
-        "text": "当天怎么去最方便？",
-        "prompt": "我 2026-06-15 要去景区，请告诉我交通指南、停车和入园路线。",
-        "badgeColor": "#ffb020"
-      },
       {
         "id": "mid_entry_notice",
         "icon": "⏰",
         "text": "入园前要准备什么？",
+        "desc": "结合待出行订单的入园提醒",
         "prompt": "请根据我的待出行订单，提醒我入园前需要准备什么。",
-        "badgeColor": "#54c783"
+        "badgeColor": "#54c783",
+        "priority": 10
       },
       {
         "id": "mid_day_plan",
         "icon": "🗺️",
         "text": "按订单做游玩攻略",
-        "prompt": "请根据我 2026-06-15 的待出行订单，做一份当天游玩攻略。",
-        "badgeColor": "#4aa3ff"
-      }
-    ],
-    "quickActions": [
-      {
-        "id": "traffic_guide",
-        "icon": "🚙",
-        "text": "交通指南",
-        "prompt": "请告诉我 2026-06-15 出行的交通指南、停车位置和入园路线。",
-        "color": "#ff9f2f"
+        "desc": "根据订单日期生成当天攻略",
+        "prompt": "请根据我最近的待出行订单，做一份当天游玩攻略。",
+        "badgeColor": "#4aa3ff",
+        "priority": 9
       },
       {
-        "id": "view_order",
-        "icon": "📋",
-        "text": "查看订单",
-        "prompt": "请帮我查看待出行订单详情。",
-        "color": "#ff5d67"
+        "id": "mid_traffic",
+        "icon": "🚗",
+        "text": "怎么去景区",
+        "desc": "交通方式与到达指引",
+        "prompt": "请给我一份到达景区的交通指南。",
+        "badgeColor": "#54c783",
+        "priority": 8
       },
       {
-        "id": "entry_reminder",
-        "icon": "✅",
-        "text": "入园提醒",
-        "prompt": "请告诉我入园当天要带什么、几点到更合适。",
-        "color": "#47c66b"
+        "id": "mid_ticket_usage",
+        "icon": "🎫",
+        "text": "门票如何使用",
+        "desc": "入园核验与注意事项",
+        "prompt": "请告诉我门票怎么使用、几点可以入园？",
+        "badgeColor": "#4aa3ff",
+        "priority": 7
       },
       {
-        "id": "order_route_plan",
-        "icon": "🗺️",
-        "text": "订单攻略",
-        "prompt": "请根据我的待出行订单生成一份游玩路线。",
-        "color": "#36a8f6"
+        "id": "mid_parking",
+        "icon": "🅿️",
+        "text": "停车场还有车位吗",
+        "desc": "实时查询停车场状态",
+        "prompt": "景区停车场在哪里？现在还有车位吗？",
+        "badgeColor": "#ffb020",
+        "priority": 6
+      },
+      {
+        "id": "mid_show",
+        "icon": "🎭",
+        "text": "下一场演出几点开始",
+        "desc": "查看当日演出安排",
+        "prompt": "今天有哪些演出？下一场几点开始？",
+        "badgeColor": "#4aa3ff",
+        "priority": 5
       }
     ]
   },
@@ -141,62 +133,58 @@
     "highlights": ["会员专属优惠", "今日推荐路线", "附近热门项目"],
     "suggestedQuestions": [
       {
-        "id": "vip_today_route",
-        "icon": "🗺️",
-        "text": "现在先玩哪里？",
-        "prompt": "我现在在园区内，请根据当前位置和排队情况推荐今日路线。",
-        "badgeColor": "#ff7a45"
-      },
-      {
         "id": "vip_nearby_offer",
         "icon": "💰",
         "text": "附近有什么优惠？",
+        "desc": "园内餐饮与二消优惠推荐",
         "prompt": "我现在在园区内，请推荐附近可用的餐饮、二消或项目优惠。",
-        "badgeColor": "#ffb020"
-      },
-      {
-        "id": "vip_member_coupon",
-        "icon": "🎫",
-        "text": "会员券有哪些？",
-        "prompt": "请查看我当前可用的会员券，并推荐现在最适合使用哪张。",
-        "badgeColor": "#54c783"
+        "badgeColor": "#ffb020",
+        "priority": 10
       },
       {
         "id": "vip_queue_recommend",
         "icon": "🎢",
         "text": "排队少的项目推荐",
+        "desc": "根据当前热度推荐可玩项目",
         "prompt": "我现在在园区内，请推荐附近排队时间较短、适合马上玩的项目。",
-        "badgeColor": "#4aa3ff"
-      }
-    ],
-    "quickActions": [
-      {
-        "id": "today_route",
-        "icon": "🗺️",
-        "text": "今日路线",
-        "prompt": "请根据我在园状态安排今日游玩路线。",
-        "color": "#ff9f2f"
+        "badgeColor": "#4aa3ff",
+        "priority": 9
       },
       {
-        "id": "nearby_offer",
-        "icon": "💰",
-        "text": "附近优惠",
-        "prompt": "请推荐我当前位置附近能马上使用的优惠。",
-        "color": "#ff5d67"
+        "id": "vip_today_route",
+        "icon": "🗺",
+        "text": "今日推荐路线",
+        "desc": "在园游客专属游玩路线",
+        "prompt": "我现在在园区内，请根据当前位置和排队情况推荐今日路线。",
+        "badgeColor": "#54c783",
+        "priority": 8
       },
       {
-        "id": "member_coupon",
-        "icon": "🎫",
-        "text": "会员券",
-        "prompt": "请查看我的会员专属券和可用权益。",
-        "color": "#47c66b"
+        "id": "vip_food",
+        "icon": "🍜",
+        "text": "附近有什么好吃的",
+        "desc": "推荐园内热门餐饮",
+        "prompt": "我现在在园区里，附近有什么推荐的美食？",
+        "badgeColor": "#ffb020",
+        "priority": 7
       },
       {
-        "id": "nearby_project",
-        "icon": "🎢",
-        "text": "附近项目",
-        "prompt": "请推荐我附近排队少、适合马上体验的项目。",
-        "color": "#36a8f6"
+        "id": "vip_show",
+        "icon": "🎭",
+        "text": "下一场演出几点开始",
+        "desc": "查看今日演出安排",
+        "prompt": "今天有哪些演出？下一场几点开始？",
+        "badgeColor": "#4aa3ff",
+        "priority": 6
+      },
+      {
+        "id": "vip_parking",
+        "icon": "🅿️",
+        "text": "离园后怎么找车",
+        "desc": "停车场位置与离场指引",
+        "prompt": "游玩结束后，停车场在哪里？怎么最快找到我的车？",
+        "badgeColor": "#54c783",
+        "priority": 5
       }
     ]
   }

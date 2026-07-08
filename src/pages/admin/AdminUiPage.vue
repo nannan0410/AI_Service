@@ -34,6 +34,7 @@ const primaryColorLight = ref("#e8f8ef");
 const primaryColorDark = ref("");
 const chatBackgroundUrl = ref("");
 const assistantAvatarUrl = ref("");
+const memberDefaultAvatarUrl = ref("");
 const defaultImageUrl = ref("");
 const welcomeMessage = ref("");
 const motionImages = ref<Record<AssistantMotionId, string>>({
@@ -47,6 +48,7 @@ const motionImages = ref<Record<AssistantMotionId, string>>({
 
 const bgPreview = computed(() => chatBackgroundUrl.value || undefined);
 const avatarPreview = computed(() => assistantAvatarUrl.value);
+const memberAvatarPreview = computed(() => memberDefaultAvatarUrl.value);
 const previewGreeting = computed(() =>
   welcomeMessage.value.replace(
     /\{\{\s*assistantNickname\s*\}\}/g,
@@ -71,7 +73,8 @@ const displayNickname = computed(() => assistantNickname.value);
 function onPickImage(
   file: File | undefined,
   target: ImageTarget,
-  label: string
+  label: string,
+  autoSave = true
 ) {
   if (!file) return;
   if (file.size > MAX_IMAGE_SIZE_BYTES) {
@@ -80,7 +83,19 @@ function onPickImage(
   }
   readFileAsDataUrl(file).then((url) => {
     target.value = url;
+    if (autoSave) {
+      persistPatch(`${label}已上传并保存`);
+    }
   });
+}
+
+function persistPatch(successMessage = "已保存，聊天页将使用新配置") {
+  try {
+    assistantStore.applyAdminPatch(buildPatch());
+    appToast(successMessage);
+  } catch (e) {
+    appToast(e instanceof Error ? e.message : "保存失败");
+  }
 }
 
 function fillForm(cfg = assistantStore.uiConfig) {
@@ -98,6 +113,8 @@ function fillForm(cfg = assistantStore.uiConfig) {
     override?.chatBackgroundUrl ?? cfg.chatBackgroundUrl;
   assistantAvatarUrl.value =
     override?.assistantAvatarUrl ?? cfg.assistantAvatarUrl;
+  memberDefaultAvatarUrl.value =
+    override?.memberDefaultAvatarUrl ?? cfg.memberDefaultAvatarUrl;
   defaultImageUrl.value = override?.defaultImageUrl ?? cfg.defaultImageUrl;
   welcomeMessage.value = override?.greeting ?? cfg.greeting;
 
@@ -123,6 +140,11 @@ function onBackgroundRead(item: { file?: File } | { file?: File }[]) {
 function onDefaultImageRead(item: { file?: File } | { file?: File }[]) {
   const file = Array.isArray(item) ? item[0]?.file : item.file;
   onPickImage(file, defaultImageUrl, "助手默认图");
+}
+
+function onMemberAvatarRead(item: { file?: File } | { file?: File }[]) {
+  const file = Array.isArray(item) ? item[0]?.file : item.file;
+  onPickImage(file, memberDefaultAvatarUrl, "会员默认头像");
 }
 
 function onAvatarRead(item: { file?: File } | { file?: File }[]) {
@@ -163,6 +185,7 @@ function buildPatch(): AdminUiPatch {
     primaryColorDark: primaryColorDark.value,
     chatBackgroundUrl: chatBackgroundUrl.value,
     assistantAvatarUrl: assistantAvatarUrl.value,
+    memberDefaultAvatarUrl: memberDefaultAvatarUrl.value,
     defaultImageUrl: defaultImageUrl.value,
     greeting: welcomeMessage.value,
     motions,
@@ -170,12 +193,7 @@ function buildPatch(): AdminUiPatch {
 }
 
 function onSave() {
-  try {
-    assistantStore.applyAdminPatch(buildPatch());
-    appToast("已保存，聊天页将使用新配置");
-  } catch (e) {
-    appToast(e instanceof Error ? e.message : "保存失败");
-  }
+  persistPatch();
 }
 
 async function onReset() {
@@ -204,18 +222,9 @@ function goPreviewChat() {
 
 <template>
   <div class="admin-ui" :style="themeVars">
-    <van-nav-bar
-      title="助手 UI 配置"
-      left-arrow
-      fixed
-      placeholder
-      class="admin-page__nav"
-      @click-left="$router.back()"
-    />
-
     <van-notice-bar
       left-icon="info-o"
-      text="演示版：配置保存在浏览器 LocalStorage，换设备或清缓存后需重新设置"
+      text="演示版：配置保存在浏览器 LocalStorage；右上角「AI 客服 H5」直接预览，未保存的修改不会生效"
     />
 
     <section class="admin-ui__block">
@@ -360,6 +369,33 @@ function goPreviewChat() {
 
         <div class="admin-ui__img-block">
           <div class="admin-ui__img-head">
+            <span class="admin-ui__item-label">会员默认头像</span>
+            <span class="admin-ui__item-hint"
+              >用于首页欢迎区、对话中「我」的消息头像，建议方形，JPG/PNG，&lt;
+              800KB</span
+            >
+          </div>
+          <div class="admin-ui__img-actions">
+            <van-uploader
+              :after-read="onMemberAvatarRead"
+              :max-count="1"
+              accept="image/*"
+            >
+              <van-button icon="photograph" size="small" round type="primary">
+                上传头像
+              </van-button>
+            </van-uploader>
+          </div>
+          <img
+            v-if="memberAvatarPreview"
+            :src="memberAvatarPreview"
+            alt="会员头像预览"
+            class="admin-ui__thumb admin-ui__thumb--round"
+          />
+        </div>
+
+        <div class="admin-ui__img-block">
+          <div class="admin-ui__img-head">
             <span class="admin-ui__item-label">助手头像</span>
             <span class="admin-ui__item-hint"
               >用于展示助手头像，建议方形，JPG/PNG，&lt; 800KB</span
@@ -473,14 +509,9 @@ function goPreviewChat() {
 
 <style scoped>
 .admin-ui {
-  min-height: 100vh;
+  min-height: 100%;
   padding-bottom: 32px;
   background: #f5f6f8;
-}
-
-.admin-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
 }
 
 .admin-ui__block {

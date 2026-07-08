@@ -10,6 +10,8 @@ import tags from '../src/mock/tags.json'
 import virtualQueue from '../src/mock/virtual_queue.json'
 import quiz from '../src/mock/quiz.json'
 import assistantSkills from '../src/mock/assistant/skills.json'
+import fieldCatalog from '../src/mock/assistant/field_catalog.json'
+import cardViews from '../src/mock/assistant/card_views.json'
 import {
   buildRuleContext,
   evaluateRules,
@@ -27,6 +29,7 @@ interface RecommendEntryRaw {
   promptHint?: string
   rules: RuleExpression[]
   priority: number
+  enabled?: boolean
 }
 
 export default [
@@ -77,8 +80,19 @@ export default [
       if (!personaId) return { code: 401, message: '未登录', data: null }
       const ctx = buildRuleContext(personaId)
       const list = (recommendEntries as RecommendEntryRaw[])
+        .filter((e) => e.enabled !== false)
         .filter((e) => evaluateRules(e.rules, ctx))
         .sort((a, b) => b.priority - a.priority)
+        .map(({ entryId, title, icon, target, targetPath, skillId, promptHint, priority }) => ({
+          entryId,
+          title,
+          icon,
+          target,
+          targetPath,
+          skillId,
+          promptHint,
+          priority,
+        }))
       return { code: 200, data: list }
     },
   },
@@ -86,6 +100,26 @@ export default [
     url: '/api/assistant/skills',
     method: 'get',
     response: () => ({ code: 200, data: assistantSkills }),
+  },
+  {
+    url: '/api/admin/field-catalog',
+    method: 'get',
+    response: () => ({ code: 200, data: fieldCatalog }),
+  },
+  {
+    url: '/api/admin/recommend-entries',
+    method: 'get',
+    response: () => ({ code: 200, data: recommendEntries }),
+  },
+  {
+    url: '/api/admin/welcome-templates',
+    method: 'get',
+    response: () => ({ code: 200, data: welcomeTemplates }),
+  },
+  {
+    url: '/api/admin/card-views',
+    method: 'get',
+    response: () => ({ code: 200, data: cardViews }),
   },
   {
     url: '/api/products/tickets',

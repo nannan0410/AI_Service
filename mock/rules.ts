@@ -1,31 +1,35 @@
-import type { PersonaId, UserSnapshot } from '../src/types/index'
+import type { PersonaId } from '../src/types/index'
+import type { RuleExpression } from '../src/types/businessConfig'
+import type { TagCatalogItem } from '../src/types/businessConfig'
+import { evaluateRule, evaluateRules, type RuleContext } from '../src/utils/ruleEngine'
+import { hasNewGuestCoupon, canClaimNewGuestCoupon } from '../src/utils/newGuestCoupon'
+import fieldCatalog from '../src/mock/assistant/field_catalog.json'
 import { getSnapshot, parsePersonaFromAuthHeader } from './_utils'
+import {
+  getUpcomingVisitOrders,
+  hasVisitToday,
+  pickNearestUpcomingVisitOrder,
+} from '../src/utils/upcomingVisitOrder'
 
-export interface RuleContext {
-  personaId: PersonaId | null
-  memberId: string
-  nickname: string
-  memberLevel: string
-  inPark: boolean
-  tags: string[]
-  hasPendingVisitOrder: boolean
-  hasInvoiceableOrders: boolean
-  visitorPhase: 'pre' | 'in_park' | 'post_same_day' | 'post_later'
+function resolveTagsForPersona(personaId: PersonaId): string[] {
+  return fieldCatalog.tags
+    .filter((tag: TagCatalogItem) => tag.demoPersonas?.includes(personaId))
+    .map((tag) => tag.tagId)
 }
 
-type RuleExpression =
-  | { op: 'eq'; field: keyof RuleContext | string; value: unknown }
-  | { op: 'in'; field: keyof RuleContext | string; values: unknown[] }
-  | { op: 'and'; rules: RuleExpression[] }
-  | { op: 'or'; rules: RuleExpression[] }
-
+/** Mock 侧规则上下文（不依赖 src 中带 @/ 别名的模块，避免 vite-plugin-mock 打包失败） */
 export function buildRuleContext(personaId: PersonaId): RuleContext {
   const snapshot = getSnapshot(personaId)
   const orders = snapshot.orders
   const now = Date.now()
   const thirtyDays = 30 * 24 * 60 * 60 * 1000
 
-  const hasPendingVisitOrder = orders.some((o) => o.status === 'paid')
+  const upcomingVisitOrders = getUpcomingVisitOrders(orders, new Date(now))
+  const hasPendingVisitOrder = upcomingVisitOrders.length > 0
+  const nextVisitDate = pickNearestUpcomingVisitOrder(orders, new Date(now))
+    ?.visitDate
+  const upcomingVisitOrderCount = upcomingVisitOrders.length
+  const hasVisitTodayOrder = hasVisitToday(orders, new Date(now))
   const hasInvoiceableOrders = orders.some((o) => {
     if (o.status !== 'completed' || o.invoiceStatus !== 'none') return false
     const completed = o.completedAt ? new Date(o.completedAt).getTime() : 0
@@ -39,52 +43,31 @@ export function buildRuleContext(personaId: PersonaId): RuleContext {
     visitorPhase = 'post_later'
   }
 
-  const tagsByPersona: Record<PersonaId, string[]> = {
-    demo_new: ['new_guest'],
-    demo_mid: ['family'],
-    demo_vip: ['family', 'high_value'],
-  }
-
   return {
     personaId,
     memberId: snapshot.memberInfo.memberId,
     nickname: snapshot.memberInfo.nickname,
     memberLevel: snapshot.memberInfo.level,
     inPark: snapshot.visitorState.inPark,
-    tags: tagsByPersona[personaId],
+    tags: resolveTagsForPersona(personaId),
     hasPendingVisitOrder,
+    nextVisitDate,
+    upcomingVisitOrderCount,
+    hasVisitToday: hasVisitTodayOrder,
     hasInvoiceableOrders,
+    hasNewGuestCoupon: hasNewGuestCoupon(snapshot.visitorState.coupons),
+    canClaimNewGuestCoupon: canClaimNewGuestCoupon({
+      personaId,
+      coupons: snapshot.visitorState.coupons,
+      registeredAt: snapshot.memberInfo.registeredAt,
+    }),
     visitorPhase,
   }
-}
-
-function getField(ctx: RuleContext, field: string): unknown {
-  if (field in ctx) return ctx[field as keyof RuleContext]
-  if (field === 'tags') return ctx.tags
-  return undefined
-}
-
-export function evaluateRule(rule: RuleExpression, ctx: RuleContext): boolean {
-  switch (rule.op) {
-    case 'eq':
-      return getField(ctx, rule.field) === rule.value
-    case 'in':
-      return rule.values.includes(getField(ctx, rule.field))
-    case 'and':
-      return rule.rules.every((r) => evaluateRule(r, ctx))
-    case 'or':
-      return rule.rules.some((r) => evaluateRule(r, ctx))
-    default:
-      return false
-  }
-}
-
-export function evaluateRules(rules: RuleExpression[], ctx: RuleContext): boolean {
-  return rules.every((r) => evaluateRule(r, ctx))
 }
 
 export function getPersonaFromHeaders(headers: Record<string, unknown>): PersonaId | null {
   return parsePersonaFromAuthHeader(headers.authorization as string | undefined)
 }
 
-export type { RuleExpression, UserSnapshot }
+export { evaluateRule, evaluateRules, type RuleContext }
+export type { RuleExpression }

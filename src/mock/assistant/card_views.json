@@ -1,0 +1,72 @@
+[
+  {
+    "cardType": "coupon",
+    "label": "优惠券卡片",
+    "maxItems": 3,
+    "sourceTools": ["getCoupons", "issueCoupon"],
+    "fields": [
+      { "fieldKey": "title", "label": "券名称", "visible": true, "order": 1 },
+      { "fieldKey": "value", "label": "面额", "visible": true, "order": 2, "format": "money" },
+      { "fieldKey": "condition", "label": "使用条件", "visible": true, "order": 3 },
+      { "fieldKey": "expireAt", "label": "有效期", "visible": true, "order": 4, "format": "date" }
+    ]
+  },
+  {
+    "cardType": "ticket",
+    "label": "票种卡片",
+    "maxItems": 3,
+    "sourceTools": ["getProductCatalog"],
+    "fields": [
+      { "fieldKey": "ticketName", "label": "票种名", "visible": true, "order": 1 },
+      { "fieldKey": "totalAmount", "label": "价格", "visible": true, "order": 2, "format": "money" },
+      { "fieldKey": "recommendedReason", "label": "推荐理由", "visible": true, "order": 3 },
+      { "fieldKey": "quantity", "label": "人数构成", "visible": false, "order": 4 }
+    ]
+  },
+  {
+    "cardType": "order",
+    "label": "订单卡片",
+    "maxItems": 5,
+    "sourceTools": ["getOrders", "createOrderDraft"],
+    "fields": [
+      { "fieldKey": "orderId", "label": "订单号", "visible": true, "order": 1 },
+      { "fieldKey": "ticketName", "label": "票种", "visible": true, "order": 2 },
+      { "fieldKey": "totalAmount", "label": "金额", "visible": true, "order": 3, "format": "money" },
+      { "fieldKey": "status", "label": "状态", "visible": true, "order": 4, "format": "badge" },
+      { "fieldKey": "source", "label": "订单来源", "visible": true, "order": 5 }
+    ]
+  },
+  {
+    "cardType": "guide",
+    "label": "游玩攻略卡片",
+    "maxItems": 1,
+    "sourceTools": ["generateTravelGuide"],
+    "fields": [
+      { "fieldKey": "title", "label": "标题", "visible": true, "order": 1 },
+      { "fieldKey": "visitDate", "label": "出行日期", "visible": true, "order": 2 },
+      { "fieldKey": "ticketName", "label": "关联票种", "visible": true, "order": 3 }
+    ]
+  },
+  {
+    "cardType": "activity",
+    "label": "园区项目卡片",
+    "maxItems": 5,
+    "sourceTools": ["getScenicActivities", "generateTravelGuide"],
+    "fields": [
+      { "fieldKey": "name", "label": "项目名称", "visible": true, "order": 1 },
+      { "fieldKey": "location", "label": "位置", "visible": true, "order": 2 },
+      { "fieldKey": "reason", "label": "推荐理由", "visible": true, "order": 3 }
+    ]
+  },
+  {
+    "cardType": "content",
+    "label": "内容块卡片",
+    "maxItems": 3,
+    "sourceTools": ["getContentBlocks", "generateTravelGuide"],
+    "fields": [
+      { "fieldKey": "title", "label": "标题", "visible": true, "order": 1 },
+      { "fieldKey": "body", "label": "正文", "visible": true, "order": 2 },
+      { "fieldKey": "type", "label": "类型", "visible": false, "order": 3 }
+    ]
+  }
+]

@@ -11,6 +11,7 @@ export type IdType = 'id_card' | 'passport' | 'hk_macao_pass' | 'taiwan_pass'
 export type OrderStatus = 'pending' | 'paid' | 'completed' | 'refunded'
 
 export type InvoiceStatus = 'none' | 'applied' | 'issued'
+export type ReviewStatus = 'none' | 'submitted'
 
 export type TicketTypeId =
   | 'adult'
@@ -19,7 +20,20 @@ export type TicketTypeId =
   | 'family_annual'
   | 'holiday_special'
 
-export type MessageType = 'text' | 'coupon' | 'ticket' | 'activity' | 'order' | 'system'
+export type MessageType =
+  | 'text'
+  | 'coupon'
+  | 'ticket'
+  | 'activity'
+  | 'order'
+  | 'content'
+  | 'visitor_pick'
+  | 'ticket_confirm'
+  | 'ticket_fallback'
+  | 'page_guide'
+  | 'review'
+  | 'guide'
+  | 'system'
 
 export type AssistantMotionId =
   | 'idle'
@@ -63,12 +77,17 @@ export interface VisitorPreferences {
 
 export interface Coupon {
   couponId: string
+  /** 券产品 ID（如 cp_prod_manual），与金额、标题无关 */
+  couponProductId?: string
   title: string
-  type: 'discount' | 'cash' | 'parking' | 'dining'
+  type: 'discount' | 'cash' | 'parking' | 'dining' | 'retail' | 'express'
   value: number
   condition?: string
   expireAt: string
   status: 'available' | 'used' | 'expired'
+  /** 快票/兑换券关联项目 */
+  redeemActivityId?: string
+  redeemActivityName?: string
 }
 
 export interface Order {
@@ -82,8 +101,24 @@ export interface Order {
   visitDate?: string
   completedAt?: string
   invoiceStatus: InvoiceStatus
+  reviewStatus?: ReviewStatus
   visitors?: CommonVisitor[]
   createdAt: string
+}
+
+export interface ReviewSubmitPayload {
+  orderId?: string
+  rating: number
+  tags?: string[]
+  content?: string
+  imageIds?: string[]
+}
+
+export interface ReviewSubmitResult {
+  reviewId: string
+  orderId: string
+  rewardIssued?: boolean
+  rewardCoupons?: Coupon[]
 }
 
 export interface VisitorState {
@@ -106,6 +141,8 @@ export interface MemberInfo {
   level: string
   points: number
   balance: number
+  /** 账号注册时间（ISO），用于新客券领取窗口判定 */
+  registeredAt?: string
 }
 
 export interface TicketCatalogItem {
@@ -118,12 +155,49 @@ export interface TicketCatalogItem {
   tags?: string[]
 }
 
+export type ActivityCategory = 'dining' | 'retail' | 'ride' | 'show'
+
+/** none=无需排队 waiting=排队中 paused=暂停排队（暂不接收新排队） */
+export type ActivityQueueStatus = 'none' | 'waiting' | 'paused'
+
+export type ActivityGuideContext = 'in_park' | 'pre_visit'
+
+export interface ActivityVirtualQueue {
+  enabled: boolean
+  isFree: boolean
+  /** 非免费排队时的价格（元） */
+  queuePrice?: number
+}
+
 export interface Activity {
   activityId: string
   name: string
+  category: ActivityCategory
   location: string
   timeRange: string
   tags: string[]
+  queueStatus: ActivityQueueStatus
+  waitMinutes?: number
+  /** 暂停排队时当前队伍长度（人数） */
+  pausedQueueLength?: number
+  /** 演出场次，仅 category=show */
+  showStartTimes?: string[]
+  /** 建议游玩时长，仅 show/ride */
+  recommendedDuration?: string
+  /** 热门项目（前期攻略中提示提早前往、预留排队时间） */
+  isHot?: boolean
+  virtualQueue?: ActivityVirtualQueue
+}
+
+export interface VirtualQueueOrder {
+  queueId: string
+  activityId: string
+  activityName: string
+  status: 'waiting' | 'called' | 'cancelled'
+  waitMinutes: number
+  position: number
+  isFree: boolean
+  queuePrice?: number
 }
 
 export interface ChatMessage {
@@ -136,15 +210,79 @@ export interface ChatMessage {
 }
 
 export interface TicketCardPayload {
+  productId?: string
+  ticketType: TicketTypeId
+  ticketName: string
+  quantity: { adult: number; child: number }
+  /** 商品原价（未抵扣） */
+  originalAmount?: number
+  /** 产品单价（来自票产品 mock） */
+  unitPrice?: number
+  /** 购买数量（成人票为张数，套票为套数） */
+  purchaseCount?: number
+  /** 购买单位：张 / 套 */
+  purchaseUnit?: '张' | '套'
+  totalAmount: number
+  discountAmount?: number
+  couponId?: string
+  recommendedReason?: string
+  visitDate?: string
+  /** 推荐卡片底部引导文案 */
+  footerHint?: string
+  /** 同一会话内多次推荐时，仅最新 quoteToken 可确认下单 */
+  quoteToken?: string
+  orderId?: string
+  status: 'quote' | 'confirm' | 'pending_pay' | 'paid'
+  selectable?: boolean
+  sessionId?: string
+}
+
+export interface TicketFallbackPayload {
+  kind: 'no_product' | 'multi_product'
+  party: { adult: number; child: number; elderly: number }
+  visitDate?: string
+  /** 多产品组合时的试算明细（仅展示） */
+  plan?: Array<{
+    productId: string
+    productName: string
+    quantity: { adult: number; child: number }
+  }>
+  listPath: string
+  sessionId?: string
+}
+
+export interface VisitorPickPayload {
+  sessionId: string
+  productId: string
   ticketType: TicketTypeId
   ticketName: string
   quantity: { adult: number; child: number }
   totalAmount: number
   discountAmount?: number
   couponId?: string
-  recommendedReason?: string
-  orderId?: string
-  status: 'quote' | 'pending_pay' | 'paid'
+  visitors: CommonVisitor[]
+}
+
+export interface OrderDraft {
+  draftId: string
+  productId: string
+  ticketType: TicketTypeId
+  ticketName: string
+  quantity: { adult: number; child: number }
+  /** 商品原价（未抵扣） */
+  originalAmount?: number
+  /** 产品单价 */
+  unitPrice?: number
+  purchaseCount?: number
+  purchaseUnit?: '张' | '套'
+  totalAmount: number
+  discountAmount?: number
+  couponId?: string
+  visitDate?: string
+  requiredVisitorCount: number
+  visitors: CommonVisitor[]
+  status: 'draft'
+  createdAt: string
 }
 
 export interface CouponCardPayload {
@@ -154,25 +292,118 @@ export interface CouponCardPayload {
   value: number
   condition?: string
   expireAt: string
+  status?: Coupon['status']
   action?: 'claim' | 'use' | 'view'
+  /** 可领券预览（尚未入账户） */
+  claimable?: boolean
+  redeemActivityId?: string
+  redeemActivityName?: string
+}
+
+/** 单条消息内聚合多张券推荐 */
+export interface CouponRecommendPayload {
+  items: CouponCardPayload[]
+  action: 'view'
 }
 
 export interface ActivityCardPayload {
   activityId: string
   name: string
+  category?: ActivityCategory
   location: string
   timeRange: string
   tags: string[]
+  queueStatus?: ActivityQueueStatus
+  waitMinutes?: number
+  pausedQueueLength?: number
+  showStartTimes?: string[]
+  recommendedDuration?: string
+  isHot?: boolean
+  virtualQueue?: ActivityVirtualQueue
+  /** 攻略卡片上下文：在园展示实时排队，前期攻略隐藏排队时长 */
+  guideContext?: ActivityGuideContext
   reason?: string
 }
 
 export interface OrderCardPayload {
   orderId: string
+  draftId?: string
+  ticketName?: string
   items: Array<{ name: string; qty: number; price: number }>
   totalAmount: number
   status: OrderStatus
+  source?: OrderSource
   createdAt: string
+  readOnly?: boolean
 }
+
+export interface ContentCardPayload {
+  contentId: string
+  type: 'traffic' | 'entry_notice' | 'faq' | 'guide' | 'strategy'
+  title: string
+  body: string
+}
+
+/** 对话内引导跳转 App/H5 功能页（停车缴费、开票等） */
+export interface PageGuideCardPayload {
+  title: string
+  description?: string
+  /** 停车缴费等场景：展示在按钮上方的车牌信息 */
+  plateNo?: string
+  path: string
+  buttonLabel: string
+  tag?: string
+}
+
+export interface ReviewOrderOption {
+  orderId: string
+  ticketName: string
+  visitDate?: string
+  completedAt?: string
+  totalAmount: number
+}
+
+/** 对话内服务点评表单 */
+export interface ReviewCardPayload {
+  cardId: string
+  orders: ReviewOrderOption[]
+  defaultOrderId?: string
+}
+
+export interface ReviewSubmitDraft {
+  orderId: string
+  rating: number
+  tags: string[]
+  content: string
+  imageIds: string[]
+}
+
+export interface TravelGuideSection {
+  title: string
+  body: string
+}
+
+export type TravelGuideScope = 'full' | 'in_park' | 'recommend'
+
+export interface TravelGuidePayload {
+  guideId: string
+  title: string
+  /** full：含交通+入园；in_park：园内路线；recommend：项目推荐（无交通/入园） */
+  scope?: TravelGuideScope
+  visitDate?: string
+  ticketName?: string
+  /** 出行游客总人数（成人 + 儿童） */
+  visitorCount?: number
+  traffic?: TravelGuideSection
+  entryNotice?: TravelGuideSection
+  dayPlan?: TravelGuideSection
+  activities: ActivityCardPayload[]
+  guideImageUrl?: string
+}
+
+export interface TravelGuideResult extends TravelGuidePayload {}
+
+export type ChatMessageDraft = Omit<ChatMessage, 'id' | 'createdAt'>
 
 export interface AssistantMotionConfig {
   actionId: AssistantMotionId
@@ -191,6 +422,8 @@ export interface AssistantUiConfig {
   chatBackgroundUrl: string
   /** 助手头像，用于顶部头像、静态头像展示 */
   assistantAvatarUrl: string
+  /** 会员默认头像，用于首页欢迎区、对话中用户消息等 */
+  memberDefaultAvatarUrl: string
   /** 欢迎页全身形象图，建议 9:16 */
   assistantCharacterUrl?: string
   dialogTitle: string
@@ -272,6 +505,8 @@ export interface TicketProduct {
   ticketTypeId?: TicketTypeId
   composition?: { adult: number; child: number }
   tags?: string[]
+  /** 购票卡片右上角推荐标签；留空则不展示 */
+  recommendLabel?: string
 }
 
 export interface AssistantSkillConfig {
@@ -311,11 +546,58 @@ export interface ReceiptOcrResult {
   pointsAwarded: number
 }
 
+export interface LlmToolCall {
+  id: string
+  type: 'function'
+  function: {
+    name: string
+    arguments: string
+  }
+}
+
 export interface LlmMessage {
-  role: 'system' | 'user' | 'assistant'
-  content: string
+  role: 'system' | 'user' | 'assistant' | 'tool'
+  content: string | null
+  tool_calls?: LlmToolCall[]
+  tool_call_id?: string
+  name?: string
 }
 
 export interface LlmChatResult {
   content: string
+  toolCallsUsed?: string[]
+  skillId?: string | null
+  cards?: ChatMessageDraft[]
+}
+
+export interface ToolJsonSchema {
+  type: 'object'
+  properties: Record<string, unknown>
+  required?: string[]
+}
+
+export interface ToolDefinition {
+  name: string
+  label: string
+  description: string
+  parameters: ToolJsonSchema
+}
+
+export interface ToolExecutionResult {
+  success: boolean
+  data?: unknown
+  error?: string
+  /** issueCoupon 等业务原因码，如 already_claimed */
+  issueReason?: string
+}
+
+export interface ToolExecutionCallbacks {
+  onToolStart?: (toolName: string, label: string) => void
+  onToolDone?: (toolName: string, success: boolean) => void
+}
+
+export interface SendChatOptions extends ToolExecutionCallbacks {
+  toolNames?: string[]
+  skill?: AssistantSkillConfig | null
+  temperature?: number
 }

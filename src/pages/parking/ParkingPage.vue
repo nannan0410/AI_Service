@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 import { showConfirmDialog, showToast } from "vant";
 import {
   fetchPlate,
@@ -10,6 +11,7 @@ import {
 
 type Mode = "select" | "bind" | "pay";
 
+const route = useRoute();
 const mode = ref<Mode>("select");
 const plateNo = ref<string | null>(null);
 const inputPlate = ref("");
@@ -19,6 +21,16 @@ const loading = ref(false);
 onMounted(async () => {
   const { data: res } = await fetchPlate();
   if (res.code === 200) plateNo.value = res.data.plateNo;
+
+  const modeQuery = String(route.query.mode ?? "");
+  if (plateNo.value && modeQuery === "pay") {
+    mode.value = "pay";
+    await loadParkingFee();
+    return;
+  }
+  if (!plateNo.value && modeQuery === "bind") {
+    mode.value = "bind";
+  }
 });
 
 function chooseHasPlate() {

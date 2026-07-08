@@ -7,6 +7,7 @@ export type AdminUiPatch = Partial<
     AssistantUiConfig,
     | 'chatBackgroundUrl'
     | 'assistantAvatarUrl'
+    | 'memberDefaultAvatarUrl'
     | 'assistantCharacterUrl'
     | 'dialogTitle'
     | 'defaultImageUrl'
@@ -57,6 +58,8 @@ export function mergeUiConfig(base: AssistantUiConfig): AssistantUiConfig {
 
   const idleAsset = merged.motions.find((m) => m.actionId === 'idle')?.assetUrl
   merged.assistantAvatarUrl = patch.assistantAvatarUrl ?? merged.assistantAvatarUrl ?? idleAsset
+  merged.memberDefaultAvatarUrl =
+    patch.memberDefaultAvatarUrl ?? merged.memberDefaultAvatarUrl ?? '/member/default-avatar.svg'
   merged.defaultImageUrl = patch.defaultImageUrl ?? merged.defaultImageUrl
 
   return merged

@@ -1,0 +1,50 @@
+{
+  "travel_guide": [
+    {
+      "intentId": "traffic",
+      "label": "交通指南",
+      "description": "单独问怎么去、停车、交通路线",
+      "keywords": ["交通指南", "怎么去", "怎么到景区", "停车位置"]
+    },
+    {
+      "intentId": "entry_notice",
+      "label": "入园提醒",
+      "description": "入园准备、要带什么、几点到",
+      "keywords": ["入园须知", "入园提醒", "要带什么"]
+    },
+    {
+      "intentId": "in_park",
+      "label": "园内路线",
+      "description": "在园区内根据位置与排队推荐今日路线",
+      "keywords": ["在园区内", "现在先玩哪里", "今日路线", "排队情况"]
+    },
+    {
+      "intentId": "recommend",
+      "label": "游玩项目推荐",
+      "description": "游玩攻略、规划路线、推荐玩什么，不含交通与入园",
+      "keywords": ["游玩攻略", "规划路线", "玩什么", "推荐项目"]
+    },
+    {
+      "intentId": "full",
+      "label": "完整出行攻略",
+      "description": "按订单或出行计划生成交通+入园+项目",
+      "keywords": ["出行攻略", "近期出游", "按订单做攻略", "完整出行"]
+    }
+  ],
+  "ticket_purchase": [
+    {
+      "intentId": "purchase_entry",
+      "label": "购票入口",
+      "description": "发起购票 Workflow 的入口说法",
+      "keywords": ["买票", "购票", "门票", "两大一小", "套票", "家庭票", "首次购票", "购票指引", "年卡"]
+    }
+  ],
+  "order_query": [
+    {
+      "intentId": "order_list",
+      "label": "订单查询",
+      "description": "查询订单列表与订票记录",
+      "keywords": ["订单", "查订单", "我的订单", "订票记录"]
+    }
+  ]
+}

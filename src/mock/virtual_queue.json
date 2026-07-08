@@ -5,7 +5,8 @@
     "activityName": "亲子漂流",
     "status": "waiting",
     "waitMinutes": 25,
-    "position": 12
+    "position": 12,
+    "isFree": true
   },
   {
     "queueId": "vq_002",
@@ -13,6 +14,46 @@
     "activityName": "极限过山车",
     "status": "waiting",
     "waitMinutes": 40,
-    "position": 28
+    "position": 28,
+    "isFree": false,
+    "queuePrice": 10
+  },
+  {
+    "queueId": "vq_003",
+    "activityId": "act_004",
+    "activityName": "萌宠乐园",
+    "status": "waiting",
+    "waitMinutes": 8,
+    "position": 5,
+    "isFree": true
+  },
+  {
+    "queueId": "vq_004",
+    "activityId": "act_012",
+    "activityName": "激流勇进",
+    "status": "waiting",
+    "waitMinutes": 0,
+    "position": 35,
+    "isFree": false,
+    "queuePrice": 15
+  },
+  {
+    "queueId": "vq_005",
+    "activityId": "act_013",
+    "activityName": "4D动感影院",
+    "status": "waiting",
+    "waitMinutes": 20,
+    "position": 16,
+    "isFree": false,
+    "queuePrice": 8
+  },
+  {
+    "queueId": "vq_006",
+    "activityId": "act_014",
+    "activityName": "摩天轮",
+    "status": "waiting",
+    "waitMinutes": 12,
+    "position": 9,
+    "isFree": true
   }
 ]

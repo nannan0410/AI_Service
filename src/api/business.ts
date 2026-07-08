@@ -4,18 +4,23 @@ import type {
   ApiResponse,
   AssistantSkillConfig,
   AssistantUiConfig,
+  CommonVisitor,
   ContentBlock,
   Coupon,
   MemberInfo,
   Order,
+  OrderDraft,
   ParkingQueryResult,
   ReceiptOcrResult,
   RecommendEntry,
-  TicketCatalogItem,
   TicketProduct,
+  TicketTypeId,
+  TravelGuideResult,
   UserTag,
+  VirtualQueueOrder,
   WelcomePageData,
 } from '@/types'
+import type { CardViewConfig, FieldCatalog, RecommendEntryConfig, WelcomeTemplateConfig } from '@/types/businessConfig'
 
 export function fetchMemberInfo() {
   return request.get<ApiResponse<MemberInfo>>('/api/member/info')
@@ -30,7 +35,46 @@ export function bindPlate(plateNo: string) {
 }
 
 export function fetchTicketCatalog() {
-  return request.get<ApiResponse<TicketCatalogItem[]>>('/api/tickets/catalog')
+  /** @deprecated 请使用 fetchTicketProducts('self') */
+  return fetchTicketProducts('self')
+}
+
+export function fetchCommonVisitors() {
+  return request.get<ApiResponse<CommonVisitor[]>>('/api/member/visitors')
+}
+
+export function issueCoupon(
+  couponProductId: string,
+  purpose: 'claim' | 'purchase' = 'purchase',
+) {
+  return request.post<ApiResponse<Coupon>>('/api/coupons/issue', { couponProductId, purpose })
+}
+
+export function createOrderDraft(payload: {
+  productId?: string
+  ticketType?: TicketTypeId
+  couponId?: string
+  visitorIdNumbers?: string[]
+  visitDate?: string
+  quantity?: { adult: number; child: number }
+  originalAmount?: number
+}) {
+  return request.post<ApiResponse<OrderDraft>>('/api/order/draft', payload)
+}
+
+export function updateOrderDraftVisitors(draftId: string, visitorIdNumbers: string[]) {
+  return request.patch<ApiResponse<OrderDraft>>('/api/order/draft', {
+    draftId,
+    visitorIdNumbers,
+  })
+}
+
+export function fetchOrderDraft(draftId: string) {
+  return request.get<ApiResponse<OrderDraft>>('/api/order/draft', { params: { draftId } })
+}
+
+export function submitOrder(draftId: string) {
+  return request.post<ApiResponse<Order>>('/api/order/submit', { draftId })
 }
 
 export function fetchCoupons(status?: string) {
@@ -58,12 +102,39 @@ export function payParking(payload: { plateNo: string; amount: number }) {
   return request.post<ApiResponse<{ success: boolean; paidAmount: number }>>('/api/parking/pay', payload)
 }
 
-export function fetchActivities(tag?: string) {
-  return request.get<ApiResponse<Activity[]>>('/api/activities', { params: { tag } })
+export function fetchActivities(params?: { tag?: string; category?: Activity['category'] }) {
+  return request.get<ApiResponse<Activity[]>>('/api/activities', { params })
+}
+
+export function fetchVirtualQueue() {
+  return request.get<ApiResponse<VirtualQueueOrder[]>>('/api/virtual-queue')
 }
 
 export function applyInvoice(orderId: string) {
   return request.post<ApiResponse<{ redirectUrl: string }>>('/api/invoice/apply', { orderId })
+}
+
+export function applyBatchInvoice(orderIds: string[]) {
+  return request.post<
+    ApiResponse<{ appliedCount: number; appliedOrderIds: string[]; batchId: string }>
+  >('/api/invoice/batch', { orderIds })
+}
+
+export function submitReview(payload: {
+  orderId?: string
+  rating: number
+  tags?: string[]
+  content?: string
+  imageIds?: string[]
+}) {
+  return request.post<ApiResponse<import('@/types').ReviewSubmitResult>>(
+    '/api/reviews/submit',
+    payload,
+  )
+}
+
+export function uploadReviewImage() {
+  return request.post<ApiResponse<{ imageId: string }>>('/api/reviews/upload')
 }
 
 export function ocrReceipt() {
@@ -86,6 +157,14 @@ export function fetchRecommendEntries() {
   return request.get<ApiResponse<RecommendEntry[]>>('/api/assistant/recommend-entries')
 }
 
+export function fetchRecommendEntriesConfig() {
+  return request.get<ApiResponse<RecommendEntryConfig[]>>('/api/admin/recommend-entries')
+}
+
+export function fetchWelcomeTemplatesConfig() {
+  return request.get<ApiResponse<WelcomeTemplateConfig[]>>('/api/admin/welcome-templates')
+}
+
 export function fetchTicketProducts(channel?: string) {
   return request.get<ApiResponse<TicketProduct[]>>('/api/products/tickets', {
     params: channel ? { channel } : undefined,
@@ -102,6 +181,25 @@ export function fetchUserTags() {
   return request.get<ApiResponse<UserTag[]>>('/api/member/tags')
 }
 
+export function fetchTravelGuide(scope?: 'full' | 'in_park' | 'recommend') {
+  return request.get<ApiResponse<TravelGuideResult>>('/api/travel/guide', {
+    params: scope ? { scope } : undefined,
+  })
+}
+
 export function fetchAssistantSkills() {
   return request.get<ApiResponse<AssistantSkillConfig[]>>('/api/assistant/skills')
+}
+
+export function fetchFieldCatalog() {
+  return request.get<ApiResponse<FieldCatalog>>('/api/admin/field-catalog')
+}
+
+export function fetchCardViews() {
+  return request.get<ApiResponse<CardViewConfig[]>>('/api/admin/card-views')
+}
+
+/** 演示版：重置全部演示账号 Mock 业务数据（订单、券、草稿、绑牌等） */
+export function resetDemoBusinessData() {
+  return request.post<ApiResponse<{ ok: boolean }>>('/api/demo/reset')
 }

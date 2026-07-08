@@ -47,10 +47,22 @@ const router = createRouter({
       meta: { title: '发票申请' },
     },
     {
+      path: '/invoice/batch',
+      name: 'invoice-batch',
+      component: () => import('@/pages/invoice/InvoiceBatchPage.vue'),
+      meta: { title: '批量开发票' },
+    },
+    {
       path: '/invoice/external',
       name: 'invoice-external',
       component: () => import('@/pages/invoice/InvoiceExternalPage.vue'),
       meta: { title: '开票' },
+    },
+    {
+      path: '/review',
+      name: 'review',
+      component: () => import('@/pages/review/ReviewPage.vue'),
+      meta: { title: '服务点评' },
     },
     {
       path: '/activity',
@@ -65,11 +77,39 @@ const router = createRouter({
       meta: { title: '小票上传' },
     },
     {
-      path: '/admin/ui',
-      name: 'admin-ui',
-      component: () => import('@/pages/admin/AdminUiPage.vue'),
-      meta: { public: true, title: '助手 UI 配置' },
+      path: '/order/submit',
+      name: 'order-submit',
+      component: () => import('@/pages/order/OrderSubmitPage.vue'),
+      meta: { title: '提交订单' },
     },
+    {
+      path: '/tickets',
+      name: 'tickets',
+      component: () => import('@/pages/tickets/TicketsPage.vue'),
+      meta: { title: '购票列表' },
+    },
+    {
+      path: '/config',
+      component: () => import('@/pages/config/ConfigLayout.vue'),
+      meta: { public: true, title: '后台配置' },
+      children: [
+        { path: '', redirect: '/config/ui' },
+        {
+          path: 'ui',
+          name: 'config-ui',
+          component: () => import('@/pages/admin/AdminUiPage.vue'),
+          meta: { public: true, title: '助手 UI 配置' },
+        },
+        {
+          path: 'business',
+          name: 'config-business',
+          component: () => import('@/pages/admin/AdminBusinessPage.vue'),
+          meta: { public: true, title: '业务场景配置' },
+        },
+      ],
+    },
+    { path: '/admin/ui', redirect: '/config/ui' },
+    { path: '/admin/business', redirect: '/config/business' },
     {
       path: '/profile',
       name: 'profile',

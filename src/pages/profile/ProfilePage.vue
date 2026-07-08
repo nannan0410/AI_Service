@@ -51,10 +51,10 @@ async function onLogout() {
       <van-cell title="演示身份" :value="authStore.personaId || '-'" />
       <van-cell
         class="profile__config-cell"
-        title="助手 UI 配置"
+        title="后台配置"
         is-link
-        to="/admin/ui"
-        label="背景、头像、主色"
+        to="/config"
+        label="助手 UI、Skill、快捷服务与游游推荐"
       />
     </van-cell-group>
     <div class="actions">

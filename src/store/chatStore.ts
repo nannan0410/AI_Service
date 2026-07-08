@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getUserStorage, setUserStorage, STORAGE_SUFFIX } from '@/utils/storage'
-import type { ChatMessage } from '@/types'
+import type { ChatMessage, ChatMessageDraft } from '@/types'
 
 function createWelcomeMessage(assistantNickname: string): ChatMessage {
   return {
@@ -54,6 +54,32 @@ export const useChatStore = defineStore('chat', () => {
     })
   }
 
+  function addAssistantCards(cards: ChatMessageDraft[]) {
+    cards.forEach((card, index) => {
+      addMessage({
+        ...card,
+        id: `msg_${Date.now()}_${index}`,
+        role: 'assistant',
+        createdAt: new Date().toISOString(),
+      })
+    })
+  }
+
+  function addSystemMessage(content: string) {
+    addMessage({
+      id: `msg_${Date.now()}`,
+      type: 'system',
+      role: 'system',
+      content,
+      createdAt: new Date().toISOString(),
+    })
+  }
+
+  function addAssistantReply(content: string, cards?: ChatMessageDraft[]) {
+    addAssistantMessage(content)
+    if (cards?.length) addAssistantCards(cards)
+  }
+
   function clearMessages(assistantNickname: string) {
     messages.value = [createWelcomeMessage(assistantNickname)]
     persist()
@@ -66,6 +92,9 @@ export const useChatStore = defineStore('chat', () => {
     addMessage,
     addUserMessage,
     addAssistantMessage,
+    addSystemMessage,
+    addAssistantCards,
+    addAssistantReply,
     clearMessages,
     persist,
   }

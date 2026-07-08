@@ -1,15 +1,17 @@
 {
   "name": "scenic-ai-assistant",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
-    "preview": "vite preview"
+    "build": "npm run typecheck && vite build",
+    "typecheck": "vue-tsc -b",
+    "preview": "vite preview --port 5172 --strictPort"
   },
   "dependencies": {
     "axios": "^1.7.9",
+    "html-to-image": "^1.11.13",
     "pinia": "^2.3.0",
     "vant": "^4.9.15",
     "vue": "^3.5.13",

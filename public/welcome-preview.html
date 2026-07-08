@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
+  />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>游游 · 欢迎页预览</title>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+    }
+
+    body {
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: #202124;
+      background: #f6fbff;
+      overscroll-behavior: none;
+    }
+
+    .page {
+      --primary: #07c160;
+      --primary-dark: #06ad56;
+      --input-height: 56px;
+      --footer-quick-height: 38px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      max-width: 430px;
+      height: 100vh;
+      height: 100dvh;
+      min-height: 100%;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .page__bg {
+      position: fixed;
+      inset: 0;
+      max-width: 430px;
+      margin: 0 auto;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.9), transparent 28%),
+        linear-gradient(
+          180deg,
+          rgba(215, 241, 255, 0.76) 0%,
+          rgba(255, 248, 237, 0.92) 62%,
+          #fffaf1 100%
+        );
+    }
+
+    /* ── Topbar ── */
+    .topbar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: calc(env(safe-area-inset-top, 0px) + 10px) 18px 10px;
+      background: rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .topbar__back {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 8px 22px rgba(58, 87, 112, 0.12);
+      color: #222;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .topbar__back:active {
+      opacity: 0.85;
+    }
+
+    .topbar__brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .topbar__avatar-shell {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(58, 87, 112, 0.12);
+    }
+
+    .topbar__avatar {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .topbar__text {
+      min-width: 0;
+    }
+
+    .topbar__name {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #111;
+      line-height: 1.2;
+    }
+
+    .topbar__title {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: #414a53;
+      line-height: 1.2;
+    }
+
+    .topbar__online {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: #2d8f57;
+      line-height: 1.2;
+    }
+
+    .topbar__online-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #07c160;
+      box-shadow: 0 0 0 2px rgba(7, 193, 96, 0.2);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 0.65; transform: scale(0.92); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    .preview-badge {
+      flex-shrink: 0;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 500;
+      color: #8a5a00;
+      background: rgba(255, 193, 7, 0.18);
+      border: 1px solid rgba(255, 193, 7, 0.35);
+      white-space: nowrap;
+    }
+
+    /* ── Main scroll ── */
+    .main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 20px 18px 8px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── Hero（气泡+人物一组，顶距 20px 由 .main 控制） ── */
+    .hero {
+      position: relative;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: flex-start;
+      margin-bottom: 0;
+      overflow: visible;
+    }
+
+    .hero__main {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 10px;
+      width: 100%;
+      height: 280px;
+    }
+
+    /* 人物背后一组云彩 */
+    .hero__cloud {
+      position: absolute;
+      z-index: 0;
+      right: 4px;
+      bottom: 72px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      opacity: 0.88;
+      filter: drop-shadow(0 4px 12px rgba(120, 168, 210, 0.2));
+      box-shadow:
+        28px 6px 0 -3px #fff,
+        54px 10px 0 -7px rgba(255, 255, 255, 0.96),
+        14px -16px 0 -5px rgba(255, 255, 255, 0.94),
+        -20px 4px 0 -4px rgba(255, 255, 255, 0.9);
+      pointer-events: none;
+      animation: cloud-drift 7s ease-in-out infinite;
+    }
+
+    @keyframes cloud-drift {
+      0%, 100% { transform: translateX(0) translateY(0); }
+      50% { transform: translateX(6px) translateY(-3px); }
+    }
+
+    .hero__bubble {
+      position: relative;
+      z-index: 2;
+      flex: 0 0 auto;
+      align-self: flex-start;
+      width: fit-content;
+      max-width: none;
+      min-width: 0;
+      box-sizing: border-box;
+      padding: 20px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 10px 24px rgba(95, 112, 132, 0.1);
+      line-height: 1.5;
+      animation: cloud-in 500ms ease both;
+    }
+
+    /* 三角尾巴 → 指向右侧人物头部方向 */
+    .hero__bubble::after {
+      content: "";
+      position: absolute;
+      right: -9px;
+      top: 28%;
+      margin-top: -8px;
+      width: 0;
+      height: 0;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+      border-left: 10px solid rgba(255, 255, 255, 0.92);
+      filter: drop-shadow(2px 3px 4px rgba(95, 112, 132, 0.07));
+    }
+
+    .hero__greeting {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      line-height: 1.5;
+    }
+
+    .hero__help {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .hero__abilities {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
+    }
+
+    .hero__ability-row {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+
+    .hero__ability-item {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #333;
+      white-space: nowrap;
+    }
+
+    .hero__ability-item::before {
+      content: "·";
+      flex-shrink: 0;
+      margin-right: 4px;
+      color: #bbb;
+    }
+
+    .hero__character-wrap {
+      position: relative;
+      z-index: 1;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      height: 280px;
+      overflow: visible;
+      pointer-events: none;
+      animation: char-in 800ms ease both;
+    }
+
+    .hero__character {
+      position: relative;
+      z-index: 1;
+      display: block;
+      width: auto;
+      height: 280px;
+      max-height: 280px;
+      object-fit: contain;
+      object-position: bottom right;
+      filter: drop-shadow(0 10px 18px rgba(145, 103, 68, 0.12));
+      animation: char-float 5s ease-in-out 800ms infinite;
+      transform-origin: 50% 100%;
+    }
+
+    @keyframes cloud-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes char-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes char-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* ── 游游推荐（纵向 AI 推荐流 · 首页核心区） ── */
+    /* 整体上移：首张卡片距人物底部 20px（head 高度 + margin-bottom ≈ 46px，负 margin 抵消） */
+    .recommend {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      margin-top: -26px;
+    }
+
+    .recommend__head {
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+
+    .recommend__title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 2px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #1a1a1a;
+      line-height: 1.3;
+    }
+
+    .recommend__subtitle {
+      margin: 0;
+      font-size: 12px;
+      color: #999;
+      line-height: 1.4;
+    }
+
+    .recommend__feed {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      padding-bottom: 4px;
+    }
+
+    .recommend-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 72px;
+      max-height: 88px;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 20px;
+      background: #fff;
+      box-shadow: 0 6px 20px rgba(77, 95, 117, 0.07);
+      text-align: left;
+      cursor: pointer;
+      animation: recommend-fade-in 400ms ease both;
+      transition:
+        transform 220ms ease,
+        box-shadow 220ms ease,
+        background 220ms ease;
+    }
+
+    .recommend-card:hover {
+      box-shadow: 0 10px 26px rgba(77, 95, 117, 0.1);
+    }
+
+    .recommend-card:active {
+      transform: scale(0.985);
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .recommend-card__icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      line-height: 1;
+      border-radius: 14px;
+      background: rgba(247, 248, 250, 0.95);
+    }
+
+    .recommend-card__body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .recommend-card__title {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #1f1f1f;
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .recommend-card__desc {
+      margin-top: 3px;
+      font-size: 12px;
+      color: #999;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .recommend-card__arrow {
+      flex-shrink: 0;
+      font-size: 16px;
+      font-weight: 300;
+      color: #c8ced4;
+      line-height: 1;
+      transition: color 220ms ease, transform 220ms ease;
+    }
+
+    .recommend-card:hover .recommend-card__arrow {
+      color: var(--primary);
+      transform: translateX(2px);
+    }
+
+    @keyframes recommend-fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .recommend__more {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      width: 100%;
+      margin-top: 2px;
+      padding: 8px 0 4px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      color: #999;
+      cursor: pointer;
+      transition: color 200ms ease;
+    }
+
+    .recommend__more:hover {
+      color: var(--primary);
+    }
+
+    .recommend__more span {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .recommend__more-list {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .recommend__more-list.is-expanded {
+      display: flex;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      position: relative;
+      z-index: 3;
+      flex-shrink: 0;
+      padding: 8px 18px calc(env(safe-area-inset-bottom, 0px) + 10px);
+      background: linear-gradient(
+        180deg,
+        rgba(255, 250, 241, 0),
+        rgba(255, 250, 241, 0.92) 18%,
+        #fffaf1 100%
+      );
+    }
+
+    /* 快捷服务：胶囊一行，贴输入框上方 */
+    .quick-services {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      height: auto;
+      min-height: var(--footer-quick-height);
+      margin-bottom: 8px;
+      padding: 0;
+    }
+
+    .quick-services__item {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 38px;
+      padding: 0 8px;
+      border: 1px solid rgba(7, 193, 96, 0.38);
+      border-radius: 20px;
+      background: rgba(7, 193, 96, 0.1);
+      cursor: pointer;
+      transition: background 180ms ease, border-color 180ms ease;
+    }
+
+    .quick-services__item:active {
+      background: rgba(7, 193, 96, 0.18);
+      border-color: rgba(7, 193, 96, 0.52);
+    }
+
+    .quick-services__icon {
+      flex-shrink: 0;
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .quick-services__label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #2d6b4a;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .ai-status {
+      min-height: 20px;
+      margin: 0 4px 8px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+      transition: opacity 220ms ease;
+    }
+
+    .ai-status.is-fading {
+      opacity: 0;
+    }
+
+    .input-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: var(--input-height);
+      padding: 0 6px 0 14px;
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 10px 24px rgba(73, 85, 100, 0.14);
+    }
+
+    .input-bar__icon {
+      flex-shrink: 0;
+      font-size: 20px;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .input-bar__field {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .input-bar__field::placeholder {
+      color: #acacac;
+      transition: opacity 220ms ease;
+    }
+
+    .input-bar__field.is-fading::placeholder {
+      opacity: 0;
+    }
+
+    .input-bar__send {
+      position: relative;
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #2dd284 0%, var(--primary) 55%, var(--primary-dark) 100%);
+      box-shadow: 0 8px 18px rgba(7, 193, 96, 0.28);
+      overflow: hidden;
+    }
+
+    .input-bar__send:active {
+      transform: scale(0.96);
+    }
+
+    .input-bar__send .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.45);
+      transform: scale(0);
+      animation: ripple 500ms ease-out;
+      pointer-events: none;
+    }
+
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 100px);
+      z-index: 99;
+      max-width: 280px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      background: rgba(50, 50, 51, 0.88);
+      color: #fff;
+      font-size: 13px;
+      line-height: 1.45;
+      text-align: center;
+      transform: translateX(-50%) translateY(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 240ms ease, transform 240ms ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 390px) {
+      .main { padding: 20px 14px 6px; }
+      .hero__main {
+        height: 268px;
+        gap: 8px;
+      }
+      .hero__bubble {
+        padding: 20px;
+        border-radius: 20px;
+      }
+      .hero__ability-row { gap: 28px; }
+      .hero__ability-item { font-size: 10px; }
+      .hero__ability-item::before { margin-right: 4px; }
+      .hero__character-wrap { height: 268px; }
+      .hero__character {
+        height: 268px;
+        max-height: 268px;
+      }
+      .recommend-card { padding: 12px 14px; min-height: 68px; }
+      .recommend-card__icon { width: 36px; height: 36px; font-size: 20px; }
+      .footer { padding-left: 14px; padding-right: 14px; }
+      .quick-services { gap: 6px; }
+      .quick-services__item { height: 36px; padding: 0 6px; border-radius: 18px; }
+      .quick-services__label { font-size: 10px; }
+      .quick-services__icon { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page" id="app">
+    <div class="page__bg" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <button class="topbar__back" type="button" aria-label="返回" id="btnBack">←</button>
+      <div class="topbar__brand">
+        <div class="topbar__avatar-shell">
+          <img class="topbar__avatar" src="/assistant/youyou_idle.png" alt="游游" />
+        </div>
+        <div class="topbar__text">
+          <div class="topbar__name">游游 <span aria-hidden="true">✨</span></div>
+          <p class="topbar__title">景区 AI 助手</p>
+          <p class="topbar__online">
+            <span class="topbar__online-dot"></span>
+            实时在线
+          </p>
+        </div>
+      </div>
+      <span class="preview-badge">UI 预览</span>
+    </header>
+
+    <main class="main">
+      <section class="hero" aria-label="欢迎介绍">
+        <div class="hero__main">
+          <div class="hero__bubble">
+            <p class="hero__greeting">我是游游 <span aria-hidden="true">✨</span></p>
+            <p class="hero__help">能帮你：</p>
+            <div class="hero__abilities" id="abilityList"></div>
+          </div>
+          <div class="hero__character-wrap">
+            <span class="hero__cloud" aria-hidden="true"></span>
+            <img
+              class="hero__character"
+              src="/assistant/youyou_explorer.png"
+              alt="游游导游形象"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="recommend" aria-label="游游推荐">
+        <header class="recommend__head">
+          <h2 class="recommend__title">游游推荐 <span aria-hidden="true">✨</span></h2>
+          <p class="recommend__subtitle">试试这些热门问题</p>
+        </header>
+        <div class="recommend__feed" id="recommendFeed"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <nav class="quick-services" id="quickServices" aria-label="快捷服务"></nav>
+      <p class="ai-status" id="aiStatus" aria-live="polite"></p>
+      <div class="input-bar">
+        <span class="input-bar__icon" aria-hidden="true">☺</span>
+        <input
+          class="input-bar__field"
+          id="chatInput"
+          type="text"
+          autocomplete="off"
+          enterkeyhint="send"
+        />
+        <button class="input-bar__send" type="button" id="btnSend" aria-label="发送">➤</button>
+      </div>
+    </footer>
+
+    <div class="toast" id="toast" role="status"></div>
+  </div>
+
+  <script>
+    (function () {
+      /** ── Mock 配置（预览用，正式版走后台） ── */
+      var ABILITY_ROWS = [
+        ["快速购票", "领取专属优惠"],
+        ["查询排队", "规划游玩路线"],
+      ];
+
+      /** 快捷服务：固定输入框上方，后台可配置 */
+      var QUICK_SERVICES = [
+        { icon: "🚗", title: "怎么去", action: "chat", prompt: "请给我一份到达景区的交通指南。" },
+        { icon: "🗺", title: "玩什么", action: "chat", prompt: "请帮我生成一份游玩攻略。" },
+        { icon: "🎫", title: "去买票", action: "chat", prompt: "我想买门票，两大一小有优惠吗？" },
+        { icon: "📦", title: "查订单", action: "page", path: "/orders" },
+      ];
+
+      /**
+       * 游游推荐 · 首页默认 3 条 + 展开 3 条
+       * { icon, title, desc, question }
+       */
+      var AI_RECOMMENDATIONS_DEFAULT = [
+        {
+          icon: "🎫",
+          title: "门票如何使用",
+          desc: "首次入园游客最常咨询的问题",
+          question: "请告诉我门票怎么使用、几点可以入园？",
+        },
+        {
+          icon: "🗺",
+          title: "帮我规划路线",
+          desc: "根据热门线路自动生成攻略",
+          question: "请帮我规划一条适合今天的游玩路线。",
+        },
+        {
+          icon: "🍜",
+          title: "景区有什么好吃的",
+          desc: "推荐热门餐饮和特色美食",
+          question: "景区里有什么推荐的美食？",
+        },
+      ];
+
+      var AI_RECOMMENDATIONS_MORE = [
+        {
+          icon: "🌤",
+          title: "今天适合游玩吗",
+          desc: "结合天气和景区情况推荐玩法",
+          question: "今天适合来景区游玩吗？天气和人流怎么样？",
+        },
+        {
+          icon: "🚗",
+          title: "停车场还有车位吗",
+          desc: "实时查询停车场状态",
+          question: "景区停车场在哪里？现在还有车位吗？",
+        },
+        {
+          icon: "🎭",
+          title: "下一场演出几点开始",
+          desc: "查看今日演出安排",
+          question: "今天有哪些演出？下一场几点开始？",
+        },
+      ];
+
+      var AI_STATUS_LINES = [
+        "✨ 游游正在了解景区实时信息",
+        "🌤 已同步天气和景区动态",
+        "🎭 已获取今日演出安排",
+        "🎫 已同步门票与优惠资讯",
+      ];
+
+      var PLACEHOLDER_LINES = [
+        "今天人多吗？",
+        "帮我规划路线",
+        "停车场还有位置吗？",
+        "我的订单在哪里？",
+        "附近有什么好玩的？",
+      ];
+
+      /** ── DOM ── */
+      var abilityList = document.getElementById("abilityList");
+      var quickServices = document.getElementById("quickServices");
+      var recommendFeed = document.getElementById("recommendFeed");
+      var aiStatusEl = document.getElementById("aiStatus");
+      var chatInput = document.getElementById("chatInput");
+      var btnSend = document.getElementById("btnSend");
+      var btnBack = document.getElementById("btnBack");
+      var toastEl = document.getElementById("toast");
+
+      var toastTimer = null;
+      var statusIndex = 0;
+      var placeholderIndex = 0;
+      var statusTimer = null;
+      var placeholderTimer = null;
+      var inputFocused = false;
+
+      /** ── Render ── */
+      ABILITY_ROWS.forEach(function (row) {
+        var rowEl = document.createElement("div");
+        rowEl.className = "hero__ability-row";
+        row.forEach(function (text) {
+          var item = document.createElement("span");
+          item.className = "hero__ability-item";
+          item.textContent = text;
+          rowEl.appendChild(item);
+        });
+        abilityList.appendChild(rowEl);
+      });
+
+      QUICK_SERVICES.forEach(function (entry) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "quick-services__item";
+        btn.innerHTML =
+          '<span class="quick-services__icon" aria-hidden="true">' +
+          entry.icon +
+          '</span><span class="quick-services__label">' +
+          entry.title +
+          "</span>";
+        btn.addEventListener("click", function () {
+          if (entry.action === "chat" && entry.prompt) {
+            sendQuestion(entry.prompt);
+            return;
+          }
+          showToast("预览模式 · 「" + entry.title + "」将跳转 " + (entry.path || ""));
+        });
+        quickServices.appendChild(btn);
+      });
+
+      function sendQuestion(question) {
+        showToast("预览模式 · 将发送并进入聊天：「" + question + "」");
+      }
+
+      function createRecommendCard(item, animIndex) {
+        var card = document.createElement("button");
+        card.type = "button";
+        card.className = "recommend-card";
+        if (animIndex >= 0) {
+          card.style.animationDelay = animIndex * 100 + "ms";
+        }
+        card.innerHTML =
+          '<span class="recommend-card__icon" aria-hidden="true">' +
+          item.icon +
+          '</span><span class="recommend-card__body">' +
+          '<span class="recommend-card__title">' +
+          item.title +
+          '</span><span class="recommend-card__desc">' +
+          item.desc +
+          '</span></span><span class="recommend-card__arrow" aria-hidden="true">›</span>';
+        card.addEventListener("click", function () {
+          sendQuestion(item.question);
+        });
+        return card;
+      }
+
+      function renderRecommendFeed() {
+        AI_RECOMMENDATIONS_DEFAULT.forEach(function (item, index) {
+          recommendFeed.appendChild(createRecommendCard(item, index));
+        });
+
+        var moreBtn = document.createElement("button");
+        moreBtn.type = "button";
+        moreBtn.className = "recommend__more";
+        moreBtn.innerHTML = '查看更多推荐 <span aria-hidden="true">›</span>';
+
+        var moreList = document.createElement("div");
+        moreList.className = "recommend__more-list";
+        moreList.setAttribute("aria-hidden", "true");
+
+        AI_RECOMMENDATIONS_MORE.forEach(function (item) {
+          moreList.appendChild(createRecommendCard(item, -1));
+        });
+
+        moreBtn.addEventListener("click", function () {
+          var expanded = moreList.classList.toggle("is-expanded");
+          moreList.setAttribute("aria-hidden", expanded ? "false" : "true");
+          if (expanded) {
+            moreBtn.innerHTML = '收起推荐 <span aria-hidden="true">›</span>';
+            moreList.querySelectorAll(".recommend-card").forEach(function (card, i) {
+              card.style.animation = "none";
+              void card.offsetHeight;
+              card.style.animation = "";
+              card.style.animationDelay = i * 100 + "ms";
+            });
+          } else {
+            moreBtn.innerHTML = '查看更多推荐 <span aria-hidden="true">›</span>';
+          }
+        });
+
+        recommendFeed.appendChild(moreBtn);
+        recommendFeed.appendChild(moreList);
+      }
+
+      renderRecommendFeed();
+
+      /** ── Rotating text helpers ── */
+      function setAiStatus(text) {
+        aiStatusEl.classList.add("is-fading");
+        window.setTimeout(function () {
+          aiStatusEl.textContent = text;
+          aiStatusEl.classList.remove("is-fading");
+        }, 220);
+      }
+
+      function setPlaceholder(text) {
+        if (inputFocused || chatInput.value.trim()) return;
+        chatInput.classList.add("is-fading");
+        window.setTimeout(function () {
+          chatInput.placeholder = text;
+          chatInput.classList.remove("is-fading");
+        }, 220);
+      }
+
+      function startRotators() {
+        aiStatusEl.textContent = AI_STATUS_LINES[0];
+        chatInput.placeholder = PLACEHOLDER_LINES[0];
+
+        statusTimer = window.setInterval(function () {
+          statusIndex = (statusIndex + 1) % AI_STATUS_LINES.length;
+          setAiStatus(AI_STATUS_LINES[statusIndex]);
+        }, 5000);
+
+        placeholderTimer = window.setInterval(function () {
+          if (inputFocused || chatInput.value.trim()) return;
+          placeholderIndex = (placeholderIndex + 1) % PLACEHOLDER_LINES.length;
+          setPlaceholder(PLACEHOLDER_LINES[placeholderIndex]);
+        }, 4000);
+      }
+
+      function stopRotators() {
+        if (statusTimer) window.clearInterval(statusTimer);
+        if (placeholderTimer) window.clearInterval(placeholderTimer);
+        statusTimer = null;
+        placeholderTimer = null;
+      }
+
+      /** ── Toast ── */
+      function showToast(message) {
+        toastEl.textContent = message;
+        toastEl.classList.add("is-visible");
+        if (toastTimer) window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(function () {
+          toastEl.classList.remove("is-visible");
+        }, 2600);
+      }
+
+      /** ── Ripple ── */
+      function spawnRipple(el, event) {
+        var rect = el.getBoundingClientRect();
+        var size = Math.max(rect.width, rect.height);
+        var ripple = document.createElement("span");
+        ripple.className = "ripple";
+        ripple.style.width = size + "px";
+        ripple.style.height = size + "px";
+        ripple.style.left = event.clientX - rect.left - size / 2 + "px";
+        ripple.style.top = event.clientY - rect.top - size / 2 + "px";
+        el.appendChild(ripple);
+        ripple.addEventListener("animationend", function () {
+          ripple.remove();
+        });
+      }
+
+      /** ── Events ── */
+      chatInput.addEventListener("focus", function () {
+        inputFocused = true;
+      });
+
+      chatInput.addEventListener("blur", function () {
+        inputFocused = false;
+      });
+
+      btnSend.addEventListener("click", function (e) {
+        spawnRipple(btnSend, e);
+        var text = chatInput.value.trim();
+        if (text) {
+          showToast("预览模式 · 将发送：「" + text + "」");
+          chatInput.value = "";
+        } else {
+          showToast("请输入问题，或点击上方「游游推荐」");
+        }
+      });
+
+      chatInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") {
+          btnSend.click();
+        }
+      });
+
+      btnBack.addEventListener("click", function () {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          showToast("预览页 · 独立 HTML，可从首页接入路由后返回");
+        }
+      });
+
+      window.addEventListener("pagehide", stopRotators);
+
+      startRotators();
+    })();
+  </script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import { useRouter } from "vue-router";
 import { fetchMemberInfo, fetchActivities } from "@/api/business";
 import { useAuthStore } from "@/store/authStore";
 import { useAssistantStore } from "@/store/assistantStore";
-import AssistantAvatar from "@/components/assistant/AssistantAvatar.vue";
+import MemberAvatar from "@/components/member/MemberAvatar.vue";
 import type { Activity, MemberInfo } from "@/types";
 
 const router = useRouter();
@@ -45,7 +45,7 @@ onMounted(async () => {
 
     <div class="home-page__body">
       <div class="home-page__welcome">
-        <AssistantAvatar :size="56" show-name />
+        <MemberAvatar :size="56" />
         <div class="home-page__welcome-text">
           <p class="home-page__hi">Hi，{{ authStore.userInfo?.nickname }}</p>
           <p class="home-page__level">
@@ -68,7 +68,7 @@ onMounted(async () => {
       </div>
 
       <div class="home-page__section">
-        <div class="home-page__section-title">推荐活动</div>
+        <div class="home-page__section-title">推荐项目</div>
         <van-cell-group inset class="home-page__activity-card">
           <van-cell
             v-for="act in activities"

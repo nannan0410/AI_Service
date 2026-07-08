@@ -18,10 +18,11 @@
     "coupons": [
       {
         "couponId": "cpn_mid_001",
+        "couponProductId": "cp_prod_parking",
         "title": "停车 5 元券",
         "type": "parking",
         "value": 5,
-        "expireAt": "2026-09-30",
+        "expireAt": "2026-07-10",
         "status": "available"
       },
       {
@@ -32,6 +33,38 @@
         "condition": "满 100 可用",
         "expireAt": "2026-08-31",
         "status": "available"
+      },
+      {
+        "couponId": "cpn_mid_food_guide",
+        "couponProductId": "cp_prod_dining_guide",
+        "title": "美食券",
+        "type": "dining",
+        "value": 15,
+        "condition": "满 69 可用",
+        "expireAt": "2026-12-31",
+        "status": "available"
+      },
+      {
+        "couponId": "cpn_mid_retail_guide",
+        "couponProductId": "cp_prod_retail_guide",
+        "title": "商品券",
+        "type": "retail",
+        "value": 30,
+        "condition": "满 128 可用",
+        "expireAt": "2026-12-31",
+        "status": "available"
+      },
+      {
+        "couponId": "cpn_mid_express_act002",
+        "couponProductId": "cp_prod_express_act002",
+        "title": "快票兑换券",
+        "type": "express",
+        "value": 1,
+        "condition": "兑换项目「极限过山车」一次",
+        "expireAt": "2026-12-31",
+        "status": "available",
+        "redeemActivityId": "act_002",
+        "redeemActivityName": "极限过山车"
       }
     ],
     "commonVisitors": [
@@ -64,16 +97,40 @@
   },
   "orders": [
     {
-      "orderId": "ORD20260515001",
+      "orderId": "ORD20260630001",
       "ticketType": "family_bundle",
       "ticketName": "家庭套票（2大1小）",
       "quantity": { "adult": 2, "child": 1 },
       "totalAmount": 669,
       "status": "paid",
       "source": "self",
-      "visitDate": "2026-06-15",
+      "visitDate": "2026-06-30",
       "invoiceStatus": "none",
-      "createdAt": "2026-05-15T10:00:00.000Z"
+      "createdAt": "2026-06-20T10:00:00.000Z"
+    },
+    {
+      "orderId": "ORD20260730001",
+      "ticketType": "adult",
+      "ticketName": "成人票（3张）",
+      "quantity": { "adult": 3, "child": 0 },
+      "totalAmount": 897,
+      "status": "paid",
+      "source": "self",
+      "visitDate": "2026-07-30",
+      "invoiceStatus": "none",
+      "createdAt": "2026-07-20T10:00:00.000Z"
+    },
+    {
+      "orderId": "ORD20260818001",
+      "ticketType": "family_bundle",
+      "ticketName": "家庭套票（2大1小）×2套",
+      "quantity": { "adult": 4, "child": 2 },
+      "totalAmount": 1338,
+      "status": "paid",
+      "source": "self",
+      "visitDate": "2026-08-18",
+      "invoiceStatus": "none",
+      "createdAt": "2026-08-05T10:00:00.000Z"
     }
   ]
 }

@@ -2,36 +2,166 @@
   {
     "activityId": "act_001",
     "name": "亲子漂流",
+    "category": "ride",
     "location": "漂流入口",
     "timeRange": "10:00-17:00",
-    "tags": ["亲子", "温和"]
+    "tags": ["亲子", "温和"],
+    "queueStatus": "waiting",
+    "waitMinutes": 25,
+    "recommendedDuration": "约 20 分钟",
+    "isHot": true,
+    "virtualQueue": { "enabled": true, "isFree": true }
   },
   {
     "activityId": "act_002",
-    "name": "极限过山车",   
+    "name": "极限过山车",
+    "category": "ride",
     "location": "极限区",
     "timeRange": "09:30-20:30",
-    "tags": ["刺激"]
+    "tags": ["刺激"],
+    "queueStatus": "waiting",
+    "waitMinutes": 40,
+    "recommendedDuration": "约 15 分钟",
+    "isHot": true,
+    "virtualQueue": { "enabled": true, "isFree": false, "queuePrice": 10 }
   },
   {
     "activityId": "act_003",
     "name": "水上灯光秀",
+    "category": "show",
     "location": "中心湖",
-    "timeRange": "19:30-20:00",
-    "tags": ["演出", "晚间"]
+    "timeRange": "19:00-20:30",
+    "tags": ["演出", "晚间"],
+    "queueStatus": "none",
+    "showStartTimes": ["20:00"],
+    "recommendedDuration": "约 30 分钟",
+    "isHot": true
   },
   {
     "activityId": "act_004",
     "name": "萌宠乐园",
+    "category": "ride",
     "location": "东区",
     "timeRange": "10:00-18:00",
-    "tags": ["亲子", "互动"]
+    "tags": ["亲子", "互动"],
+    "queueStatus": "none",
+    "recommendedDuration": "约 45 分钟",
+    "virtualQueue": { "enabled": true, "isFree": true }
   },
   {
     "activityId": "act_005",
     "name": "景区餐厅套餐",
+    "category": "dining",
     "location": "美食广场",
     "timeRange": "11:00-20:00",
-    "tags": ["餐饮"]
+    "tags": ["餐饮", "套餐"],
+    "queueStatus": "none"
+  },
+  {
+    "activityId": "act_006",
+    "name": "湖畔西餐厅",
+    "category": "dining",
+    "location": "中心湖畔",
+    "timeRange": "11:30-21:00",
+    "tags": ["餐饮", "景观"],
+    "queueStatus": "none"
+  },
+  {
+    "activityId": "act_007",
+    "name": "景区伴手礼店",
+    "category": "retail",
+    "location": "主出入口",
+    "timeRange": "09:00-21:00",
+    "tags": ["零售", "伴手礼"],
+    "queueStatus": "none"
+  },
+  {
+    "activityId": "act_008",
+    "name": "主题玩具屋",
+    "category": "retail",
+    "location": "欢乐大街",
+    "timeRange": "10:00-20:00",
+    "tags": ["零售", "亲子"],
+    "queueStatus": "none"
+  },
+  {
+    "activityId": "act_009",
+    "name": "花车巡游",
+    "category": "show",
+    "location": "欢乐大街环线",
+    "timeRange": "10:30-17:00",
+    "tags": ["演出", "巡游"],
+    "queueStatus": "none",
+    "showStartTimes": ["11:00", "14:00", "16:00"],
+    "recommendedDuration": "约 25 分钟",
+    "isHot": true
+  },
+  {
+    "activityId": "act_010",
+    "name": "旋转木马",
+    "category": "ride",
+    "location": "童话广场",
+    "timeRange": "09:30-20:00",
+    "tags": ["亲子", "温和"],
+    "queueStatus": "none",
+    "recommendedDuration": "约 10 分钟"
+  },
+  {
+    "activityId": "act_011",
+    "name": "碰碰车",
+    "category": "ride",
+    "location": "竞技乐园",
+    "timeRange": "10:00-20:00",
+    "tags": ["刺激", "互动"],
+    "queueStatus": "waiting",
+    "waitMinutes": 15,
+    "recommendedDuration": "约 12 分钟"
+  },
+  {
+    "activityId": "act_012",
+    "name": "激流勇进",
+    "category": "ride",
+    "location": "水世界",
+    "timeRange": "10:00-18:00",
+    "tags": ["刺激", "水上"],
+    "queueStatus": "paused",
+    "pausedQueueLength": 35,
+    "recommendedDuration": "约 18 分钟",
+    "isHot": true,
+    "virtualQueue": { "enabled": true, "isFree": false, "queuePrice": 15 }
+  },
+  {
+    "activityId": "act_013",
+    "name": "4D动感影院",
+    "category": "ride",
+    "location": "科技馆",
+    "timeRange": "10:00-19:00",
+    "tags": ["室内", "亲子"],
+    "queueStatus": "waiting",
+    "waitMinutes": 20,
+    "recommendedDuration": "约 25 分钟",
+    "virtualQueue": { "enabled": true, "isFree": false, "queuePrice": 8 }
+  },
+  {
+    "activityId": "act_014",
+    "name": "摩天轮",
+    "category": "ride",
+    "location": "观景台",
+    "timeRange": "10:00-21:00",
+    "tags": ["观光", "浪漫"],
+    "queueStatus": "none",
+    "recommendedDuration": "约 20 分钟",
+    "isHot": true,
+    "virtualQueue": { "enabled": true, "isFree": true }
+  },
+  {
+    "activityId": "act_015",
+    "name": "儿童城堡",
+    "category": "ride",
+    "location": "亲子王国",
+    "timeRange": "10:00-18:00",
+    "tags": ["亲子", "互动"],
+    "queueStatus": "none",
+    "recommendedDuration": "约 40 分钟"
   }
 ]

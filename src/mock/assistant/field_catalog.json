@@ -1,0 +1,122 @@
+{
+  "version": "1.0",
+  "fields": [
+    {
+      "fieldId": "personaId",
+      "label": "演示账号",
+      "valueType": "enum",
+      "source": "mock_api",
+      "enumOptions": [
+        { "value": "demo_new", "label": "新客" },
+        { "value": "demo_mid", "label": "中级会员" },
+        { "value": "demo_vip", "label": "高级会员" }
+      ],
+      "ruleEligible": true,
+      "group": "user"
+    },
+    {
+      "fieldId": "memberLevel",
+      "label": "会员等级",
+      "valueType": "string",
+      "source": "api",
+      "ruleEligible": true,
+      "group": "user"
+    },
+    {
+      "fieldId": "inPark",
+      "label": "是否在园",
+      "valueType": "boolean",
+      "source": "computed",
+      "computeHint": "visitorState.inPark",
+      "ruleEligible": true,
+      "group": "visit"
+    },
+    {
+      "fieldId": "visitorPhase",
+      "label": "游客阶段",
+      "valueType": "enum",
+      "source": "computed",
+      "enumOptions": [
+        { "value": "pre", "label": "出行前" },
+        { "value": "in_park", "label": "在园" },
+        { "value": "post_same_day", "label": "离园当日" },
+        { "value": "post_later", "label": "离园后" }
+      ],
+      "ruleEligible": true,
+      "group": "visit"
+    },
+    {
+      "fieldId": "hasPendingVisitOrder",
+      "label": "有待出行订单",
+      "valueType": "boolean",
+      "source": "computed",
+      "computeHint": "orders: paid/pending 且 visitDate >= 今天",
+      "ruleEligible": true,
+      "group": "order"
+    },
+    {
+      "fieldId": "hasInvoiceableOrders",
+      "label": "有可开票订单",
+      "valueType": "boolean",
+      "source": "computed",
+      "computeHint": "completed + invoiceStatus=none + 30天内",
+      "ruleEligible": true,
+      "group": "order"
+    },
+    {
+      "fieldId": "hasReviewableOrders",
+      "label": "有可评价订单",
+      "valueType": "boolean",
+      "source": "computed",
+      "computeHint": "completed + reviewStatus=none + 90天内",
+      "ruleEligible": true,
+      "group": "order"
+    },
+    {
+      "fieldId": "hasNewGuestCoupon",
+      "label": "已领新客专享券（可用）",
+      "valueType": "boolean",
+      "source": "computed",
+      "computeHint": "coupons 含 title=新客专享 20 元券 且 status=available",
+      "ruleEligible": true,
+      "group": "tag"
+    },
+    {
+      "fieldId": "canClaimNewGuestCoupon",
+      "label": "可领取新客专享券",
+      "valueType": "boolean",
+      "source": "computed",
+      "computeHint": "persona=demo_new 且注册 claimWindowDays 天内且未领过新客券",
+      "ruleEligible": true,
+      "group": "tag"
+    },
+    {
+      "fieldId": "tags",
+      "label": "用户标签",
+      "valueType": "string[]",
+      "source": "mock_api",
+      "ruleEligible": true,
+      "group": "tag"
+    }
+  ],
+  "tags": [
+    {
+      "tagId": "new_guest",
+      "name": "新客",
+      "description": "首次来访用户",
+      "demoPersonas": ["demo_new"]
+    },
+    {
+      "tagId": "family",
+      "name": "亲子",
+      "description": "携带儿童或偏好亲子项目",
+      "demoPersonas": ["demo_mid", "demo_vip"]
+    },
+    {
+      "tagId": "high_value",
+      "name": "高价值",
+      "description": "高等级会员或高消费用户",
+      "demoPersonas": ["demo_vip"]
+    }
+  ]
+}

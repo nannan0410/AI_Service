@@ -1,10 +1,11 @@
 {
   "chatBackgroundUrl": "/assistant/chat-bg.svg",
   "assistantAvatarUrl": "/assistant/youyou_idle.png",
+  "memberDefaultAvatarUrl": "/member/default-avatar.svg",
   "dialogTitle": "景区 AI 助手",
   "assistantName": "AI游游",
   "assistantNickname": "游游",
-  "defaultImageUrl": "/assistant/youyou.png",
+  "defaultImageUrl": "/assistant/youyou_explorer.png",
   "greeting": "嗨！我是游游~无论是买票、领券、查项目、看排队，还是规划路线，都可以交给我！",
   "primaryColor": "#07c160",
   "primaryColorLight": "#e8f8ef",

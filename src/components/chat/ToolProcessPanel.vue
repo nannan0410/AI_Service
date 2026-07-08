@@ -23,6 +23,8 @@ const runningLabel = computed(() => {
           :name="
             step.status === 'done'
               ? 'success'
+              : step.status === 'error'
+              ? 'cross'
               : step.status === 'running'
               ? 'clock-o'
               : 'circle'
@@ -30,6 +32,8 @@ const runningLabel = computed(() => {
           :color="
             step.status === 'done'
               ? 'var(--chat-primary)'
+              : step.status === 'error'
+              ? '#ee0a24'
               : step.status === 'running'
               ? '#1989fa'
               : '#ccc'

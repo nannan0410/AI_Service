@@ -1,9 +1,29 @@
 # AI 景区智能聊天助手（演示版）落地计划
 
-> **文档状态**：方案细化期（不写代码）  
-> **版本**：v0.6  
-> **更新日期**：2026-06-01  
+> **文档状态**：**实施中**（代码与文档同步维护）  
+> **版本**：v0.7  
+> **更新日期**：2026-06-30  
 > **依据**：[AI景区智能聊天助手PRD & Cursor开发文档](./AI景区智能聊天助手PRD%20&%20Cursor开发文档.docx)
+
+### 实施进度图例
+
+| 标记 | 含义 |
+|------|------|
+| ✅ | 已实现且可演示 |
+| 🚧 | 进行中 / 部分实现 |
+| ❌ | 未做（本期或 P3 预留） |
+| 📝 | 仅有 Mock/JSON，未接对话或页面 |
+
+### 进度快照（2026-06-23）
+
+| 域 | 状态 | 说明 |
+|----|------|------|
+| 游前 P1 | ✅ | 购票闭环、攻略、订单查询、新客领券、Admin UI/业务配置 |
+| 游中 P1/P2 | ❌📝 | 活动 API、排队/答题 JSON 有；Skill 多数未启用 |
+| 游后 P1 | 🚧 | 批量开票 ✅；停车对话引导 ✅；OCR 页有、未接对话 |
+| 推券 H2/H5 | ❌ | 欢迎主动气泡、游中/离园推券未做 |
+
+详细对照见 [`项目现状.md`](./项目现状.md)、[`业务场景配置与实现.md`](./业务场景配置与实现.md)。
 
 ---
 
@@ -22,7 +42,7 @@
 | 项 | 决策 |
 |---|---|
 | 业务后台 | 不接真实业务后台；数据 **独立 JSON 管理** + vite-plugin-mock |
-| 配置后台 | **不做 Admin UI**（Q7）；产品/助手/Skill/入口/内容均改 JSON |
+| 配置后台 | **简易 Admin** ✅ `/admin/ui` + `/admin/business`（LocalStorage 覆盖 JSON）；产品库仍 JSON 源 |
 | 终端形态 | 移动端 H5（Vant 4）；跳转契约按 **小程序语义** 文档化 |
 | 用户体系 | 强制微信 Mock 登录；3 演示账号 |
 | LLM | DeepSeek V4 Flash，独立配置文件 |
@@ -41,7 +61,7 @@
 | 21 | 虚拟排队 Mock | **2 个项目**处于排队中（Q4） | ✅ |
 | 22 | 游中互动 | **1 个答题 Demo**（Q5） | ✅ |
 | 23 | 批量开票 | 对话 **入口跳转** 至开票页（假页示意）（Q6） | ✅ |
-| 24 | 配置管理 | **JSON 先行**，不做 Admin（Q7） | ✅ |
+| 24 | 配置管理 | **JSON 源 + 简易 Admin**（Q7 演示版已扩展业务场景页） | ✅ |
 
 ---
 
@@ -217,7 +237,8 @@ interface RecommendEntry {
 
 | 条件 | 入口 | 账号 |
 |------|------|------|
-| `hasPendingVisitOrder` | 交通指南 | demo_mid |
+| `hasPendingVisitOrder`（`visitDate >= 今天`） | 交通指南、查看订单 | demo_mid |
+| `hasPendingVisitOrder` | 停车缴费 | 三演示账号 |
 | `inPark === true` | 今日路线 | demo_vip |
 | `hasInvoiceableOrders` | 批量开发票 | demo_vip |
 | `persona === demo_new` | 首次购票指引 | demo_new |
@@ -256,7 +277,9 @@ type RuleExpression =
 
 // 常用 field 示例
 // personaId, memberLevel, inPark, visitorPhase
-// hasPendingVisitOrder, hasInvoiceableOrders
+// hasPendingVisitOrder（paid/pending 且 visitDate >= 今天）
+// nextVisitDate, upcomingVisitOrderCount, hasVisitToday
+// hasInvoiceableOrders
 // tags[] 包含 新客/亲子/高价值
 ```
 
@@ -354,10 +377,10 @@ type VisitorPhase = 'pre' | 'in_park' | 'post_same_day' | 'post_later'
 ```
 WelcomePanel
 ├── chatBackgroundUrl（配置）
-├── defaultImageUrl + assistantNickname
-├── persona 专属标题 + 文案（welcome_templates.json）
-├── RecommendEntry chips（规则计算）
-└── 「开始对话」→ 插入 system 消息 / 清空欢迎层
+├── hero：defaultImageUrl + 能力文案（WelcomeHero）
+├── 「快捷服务」RecommendEntry chips（recommend_entries，规则计算，最多 4）
+├── 「游游推荐」suggestedQuestions（welcome_templates，默认 3 + 展开，最多 6）
+└── 底部输入框 → onStartChat / onSend 进入对话流
 ```
 
 ---
@@ -366,9 +389,19 @@ WelcomePanel
 
 | persona | 欢迎页重点 | 推荐入口（示例） |
 |---------|------------|------------------|
-| **demo_new** | 新客欢迎 + 新客券 | 首次购票指引、领券 |
-| **demo_mid** | 待出行订单 + visitDate | **交通指南**、查看订单 |
-| **demo_vip** | 在园态 + 会员权益 | 今日路线、附近优惠、会员券 |
+| **demo_new** | 新客欢迎 + 新客券 | 首次购票指引、领券、停车缴费 |
+| **demo_mid** | 待出行订单（**今日出行** / 最近日期） | **交通指南**、查看订单、**停车缴费**、游玩攻略 |
+| **demo_vip** | 在园态 + 会员权益 | 今日路线、会员券、停车缴费 |
+
+**demo_mid 订单 Mock**（`src/mock/users/demo_mid.json`，待出行按系统当前日期过滤）：
+
+| visitDate | 票种 |
+|-----------|------|
+| 2026-06-30 | 家庭套票（2大1小） |
+| 2026-07-30 | 成人票（3张） |
+| 2026-08-18 | 家庭套票（2大1小）×2套 |
+
+出行日当天游游推荐副标题显示 **「今日出行」**；攻略/规则默认绑定 **最近一笔未过期** 待出行订单。详见 [`内容数据配置说明.md`](./内容数据配置说明.md) §3.4。
 
 **文件**：`mock/assistant/welcome_templates.json`
 
@@ -395,9 +428,10 @@ type MessageType =
 
 | 动作 | 对话内 | 跳转 |
 |------|--------|------|
-| 选票、选游客、领券 | TicketCard、VisitorPicker、CouponCard | — |
-| 确认下单 | OrderCard「去提交订单」 | **H5 假页** `/order/submit` |
-| 勾选条款、支付 | — | 假页内 Mock 支付成功 → 回聊天 system 消息 |
+| 选票、领券、确认 | TicketCard、TicketConfirmCard、CouponCard | — |
+| 选实名出行人 | — | **H5 假页** `/order/submit`（草稿创建时可不带游客） |
+| 确认下单 | OrderCard 或确认后直接跳假页 | **H5 假页** `/order/submit` |
+| 勾选条款、支付 | — | 假页内 Mock 支付成功 → **`/orders?tab=1`**（待出行/已完成 Tab） |
 | 批量开票 | 对话入口 / RecommendEntry | **H5 假页** `/invoice/batch` |
 | 第三方开票 | 单笔发票 | `/invoice/external`（已有） |
 
@@ -405,7 +439,7 @@ type MessageType =
 
 | H5 假页 | 小程序等价路径（示例） | 参数 |
 |---------|------------------------|------|
-| `/order/submit` | `/pages/order/submit` | `orderDraftId`, `productId`, `visitors` |
+| `/order/submit` | `/pages/order/submit` | `orderDraftId`（含 productId、visitDate、quantity；游客下单页选择） |
 | `/invoice/batch` | `/pages/invoice/batch` | `orderIds[]` |
 | `/invoice/external` | WebView 第三方 URL | `orderId`, `amount` |
 
@@ -420,28 +454,30 @@ type MessageType =
 | 场景 | Skill | 流程摘要 |
 |------|-------|----------|
 | 欢迎 + 场景推荐 | `proactive_marketing` | 欢迎页 + 规则入口 + 推券 |
-| 购票 | `ticket_purchase` | 选 **自销** 票产品 → 选游客 → 领券到账号 → OrderCard → **跳 H5 提交订单假页** → 支付 → 回聊天 |
+| 购票 | `ticket_purchase` | **多轮**：问人数 → 问日期 → 无可用新客券时发购票10元券 → 推荐唯一 SKU → 确认 → 草稿（无游客）→ **H5 假页选游客** → 支付 |
 | 等级+折扣+券+标签推荐 | `scenic_recommend` | 规则过滤 + LLM 文案 + 商品卡片 |
 | 游玩攻略 | `travel_guide` | 基于订单生成：交通 + 入园 + 推荐项目；支持 **攻略图保存到本地**（演示：下载 Mock 图） |
 | OTA/TA 订单查询 | `order_query` | **只读** 展示第三方订单列表 |
 
-**购票详细流程**：
+**购票详细流程（2026-06 已实现多轮版）**：
 
 ```
-用户：「两大一小，有优惠吗」
-  → Skill ticket_purchase
-  → getProductCatalog(channel=self)
-  → 推荐 family_bundle 669
-  → getCoupons + 发券到账号
-  → 选 commonVisitors
-  → createOrderDraft → OrderCard
-  → 用户点「去提交订单」
-  → navigate /order/submit?draftId=xxx（H5 假页）
-  → 假页：条款勾选 + Mock 支付
-  → 返回 /chat：system「支付成功」+ 助手 nod
+用户：「首次购票指引」/「买票」
+  → ticket_purchase Workflow（purchaseStore 会话）
+  → Step1 问人数（2大1小 / 2大0小=成人票×2）
+  → Step2 问出行日期（支持模糊日期解析）
+  → Step3 无可用新客券 → issueCoupon(cp_prod_purchase 购票10元券)
+  → Step4 getProductCatalog + pickBestCoupon → TicketCard（单产品）
+  → 用户：「确认」→ TicketConfirmCard
+  → createOrderDraft（visitDate + quantity，visitorIdNumbers=[]）
+  → navigate /order/submit?draftId=xxx
+  → 假页选择 N 位实名出行人 → PATCH draft → Mock 支付 → `/orders?tab=1`
+  → 不可闭环（如 3大1小）→ ticket_fallback + 优享券 `cp_prod_manual` + `/tickets`
 ```
 
-**推荐规则示例**：`新客` → 推新客券；`亲子` → 推家庭套票；`高价值` → 推会员专享。
+**选品规则**：2大1小 → 家庭套票；N大0小 → 成人票×N。**营销券**：无可用新客券时发购票10元券。
+
+**推荐规则示例**：`新客` → 新客券（领券入口）；`亲子` → 家庭套票；`高价值` → 会员专享券。
 
 ---
 
@@ -455,7 +491,7 @@ type MessageType =
 | 失物招领 | `lost_found` | P3 |
 | **答题互动** | `quiz_interact` | **P2**（Q5：1 个 Demo） |
 | 知识图谱/明星/抽奖 | 预留 Skill | P3 不做 |
-| 一键路线 + 打卡 + 券奖励 | `route_plan` | **P2** |
+| 一键路线 + 打卡 + 券奖励 | `route_plan` | **P2** · **打卡单独立项 ②**，路线可后接 |
 
 **虚拟排队 Mock（Q4）**：
 
@@ -482,9 +518,9 @@ type MessageType =
 
 | 场景 | 说明 | 演示 |
 |------|------|------|
-| 服务点评 | 对话入口 → 假页星级+文本 | P2 |
+| 服务点评 | 对话入口 → 假页星级+文本 | P2 · ✅ |
 | 推荐好友 | 分享卡片 Mock | P3 |
-| **订单批量开发票** | 对话/RecommendEntry → **`/invoice/batch` 假页**（Q6） | **P1** |
+| **订单批量开发票** | 对话/RecommendEntry → **`/invoice/batch` 假页**（Q6） | **P1** ✅ |
 | OCR 积分 | 同上游后 | P1 |
 | 发券 + 快递零售周边 | 券卡片 + 商品 Mock | P3 |
 
@@ -492,24 +528,24 @@ type MessageType =
 
 ---
 
-## 九、Skill 清单（v0.6）
+## 九、Skill 清单（v0.7 — 含实现状态）
 
-| skillId | 名称 | phase | 优先级 |
-|---------|------|-------|--------|
-| `ticket_purchase` | 智能购票 | pre | P1 |
-| `travel_guide` | 游玩攻略 | pre | P1 |
-| `order_query` | 订单查询（含 OTA 只读） | pre/post | P1 |
-| `proactive_marketing` | 主动营销 | pre/in_park | P1 |
-| `scenic_recommend` | 园区/商品推荐 | pre/in_park | P1 |
-| `parking_pay` | 停车缴费 | in_park/post_same_day | P1 |
-| `retail_recommend` | 二消商餐推荐 | in_park | P1 |
-| `queue_recommend` | 虚拟排队推荐 | in_park | P2 |
-| `route_plan` | 路线+打卡 | in_park | P2 |
-| `quiz_interact` | 答题互动 | in_park | P2 |
-| `invoice_service` | 发票（含批量入口） | post_* | P1 |
-| `receipt_points` | 小票 OCR 积分 | post_* | P1 |
-| `review_service` | 服务点评 | post_later | P2 |
-| `lost_found` | 失物招领 | in_park | P3 |
+| skillId | 名称 | phase | 优先级 | 状态 |
+|---------|------|-------|--------|------|
+| `ticket_purchase` | 智能购票 | pre | P1 | ✅ Workflow + 假页 |
+| `travel_guide` | 游玩攻略 | pre | P1 | ✅ Workflow + NLU |
+| `order_query` | 订单查询（含 OTA 只读） | pre/post | P1 | ✅ Workflow |
+| `proactive_marketing` | 主动营销 | pre/in_park | P1 | ❌ Skill 未启用 |
+| `scenic_recommend` | 园区/商品推荐 | pre/in_park | P1 | ❌ Skill 未启用 |
+| `parking_pay` | 停车缴费 | in_park/post_same_day | P1 | ✅ Workflow + `/parking` 假页引导 |
+| `retail_recommend` | 二消商餐推荐 | in_park | P1 | ❌ 未配置 |
+| `queue_recommend` | 虚拟排队推荐 | in_park | P2 | 📝 Mock API 有 |
+| `route_plan` | 路线+打卡 | in_park | P2 | ❌（打卡见 §十九②） |
+| `quiz_interact` | 答题互动 | in_park | P2 | 📝 Mock JSON 有 |
+| `invoice_service` | 发票（含批量入口） | post_* | P1 | ✅ Workflow + 假页 + RecommendEntry |
+| `receipt_points` | 小票 OCR 积分 | post_* | P1 | 🚧 `/receipt` 页有，未接对话 |
+| `review_service` | 服务点评 | post_later | P2 | ✅ |
+| `lost_found` | 失物招领 | in_park | P3 | ❌ 不做 |
 
 ---
 
@@ -601,15 +637,18 @@ type MessageType =
 
 **验收**：改主色/换背景后，聊天页与欢迎页同步生效。
 
-### 阶段二：Tool Calling + 游前购票（≈7 天）
+### 阶段二：Tool Calling + 游前购票 ✅（已完成）
 
-- [ ] Skill 路由 + Tool 框架
-- [ ] 购票全流程 + **H5 提交订单假页**
-- [ ] 发券、选游客、OrderCard
-- [ ] OTA 订单只读展示
-- [ ] 游玩攻略卡片
+- [x] Skill 路由 + Tool 框架（含 P0-2 语义补全）
+- [x] 购票全流程 + **H5 提交订单假页** + 支付后进待出行 Tab
+- [x] 发券（新客 / 购票营销 / 兜底优享券）、OrderCard
+- [x] OTA 订单只读展示
+- [x] 游玩攻略卡片（含 P0-3 子意图 NLU、园内 `in_park`）
+- [x] 购票槽位 **LLM 优先**（P0-1）
+- [x] 无法闭环兜底 + `TicketFallbackCard` + `/tickets`
+- [x] **Admin 业务场景** `/admin/business`（Skill / RecommendEntry / 猜你想问）
 
-**验收**：demo_new 完整购票跳假页；OTA 订单仅展示。
+**验收**：demo_new 完整购票跳假页；OTA 订单仅展示。✅
 
 ### 阶段三：游中 + 游后当日（≈5 天）
 
@@ -621,12 +660,19 @@ type MessageType =
 
 ### 阶段四：游后 + 推送 + 打磨（≈5 天）
 
-- [ ] **批量开票假页**（Q6）
+- [x] **批量开票假页**（Q6）→ `/invoice/batch` + `POST /api/invoice/batch`
+- [x] **单笔开票** `/invoice` → `/invoice/external` + `POST /api/invoice/apply`
+- [x] **发票对话 Workflow** `invoice_service` → `PageGuideCard` 引导开票页
+- [x] **停车对话引导** `parking_pay` + `/parking` 假页
 - [ ] 点评假页、主动推送 ≥3 场景
-- [ ] 助手 6 形态 + Skill 驱动
-- [ ] 演示脚本 + 小程序跳转契约文档
+- [ ] 助手 6 形态 + Skill 驱动（部分 `linkedMotions` 已有）
+- [x] 演示脚本 + 小程序跳转契约文档（[`mini-program-routes.md`](./mini-program-routes.md)，持续更新）
 
-**验收**：三账号 §十二 矩阵均可演示。
+**验收**：三账号 §十四 矩阵均可演示。（🚧 游中/点评/推送待补；**发票链路已通**）
+
+### 阶段五：服务点评 + 园区打卡（计划 · 未开工）
+
+见 **§十九**。预计各 2–4 人日，**先假页 + Workflow + Mock**，不接真实 UGC 后台。
 
 ---
 
@@ -636,12 +682,13 @@ type MessageType =
 |---|------|------|------|
 | 0 | 任意 | 登录 | 进入首页 |
 | 1 | demo_new | 打开 /chat | 新客欢迎页 + 购票指引入口 |
-| 2 | demo_new | 对话购票 → 提交假页 | 家庭套票 + 跳 `/order/submit` |
+| 2 | demo_new | 对话购票 → 提交假页 | 多轮问人数日期 → 家庭套票或成人票×N → 下单页选游客 |
 | 3 | demo_mid | 打开 /chat | **交通指南**入口可见 |
 | 4 | demo_mid | 查看攻略 | 交通+入园+项目卡片 |
 | 5 | demo_vip | 在园推荐 | 二消/项目+券 |
 | 6 | demo_vip | 答题 | 1 套题完成得奖励 |
-| 7 | demo_vip | 批量开票 | 对话入口 → `/invoice/batch` 假页 |
+| 7 | demo_vip | 批量开票 | 欢迎「批量开发票」→ `/invoice/batch` 多选提交 ✅ |
+| 7b | demo_vip | 对话开票 | 「我要开发票」→ PageGuideCard → 开票页 ✅ |
 | 8 | demo_vip | OCR + 停车 | 积分 + 缴费 |
 
 ---
@@ -667,6 +714,92 @@ type MessageType =
 
 ---
 
+---
+
+## 十九、阶段五计划（服务点评 + 园区打卡）
+
+> **状态**：**① 服务点评 ✅ 已实现**（2026-07-07）；**② 园区打卡** 仍为方案。与 §8.2 `route_plan`、§8.4 `review_service` 对齐。
+
+### 19.1 共性原则
+
+| 原则 | 说明 |
+|------|------|
+| 对话不承载重表单 | 与购票/开票一致：对话 **查状态 + 引导卡片**，提交在 **H5 假页** |
+| Skill + Workflow 优先 | 演示版走 `shouldRun*Workflow` + 固定卡片，LLM 只做入口补全（P0-2） |
+| Mock 可验收 | 本地 JSON + Mock API；演示账号能走通一条 happy path |
+| 配置可扩展 | 点位/点评维度进 `src/mock/`，后续可挂 Admin（非本期） |
+
+---
+
+### 19.2 ① 服务点评（`review_service`）✅
+
+**目标**：游后（`visitorPhase: post_later` 或已完成订单用户）对本次游玩做 **星级 + 短评**，演示「离园后触达 → 假页提交 → Mock 成功」。
+
+**实现摘要**（2026-07-07）：`review_service` Skill、对话内 `ReviewCard`（多订单选择 + 单笔限评）、优质评价赠券（>20 字 + ≥2 图 → 餐饮 3 个月 + 当日停车）、`POST /api/reviews/submit`、RecommendEntry；`/review` 保留作兜底假页。
+
+| 维度 | 计划 |
+|------|------|
+| **Skill** | `review_service`（`skills.json` 新增，`enabled: true`，`phase: post_later`） |
+| **触发词** | 点评、评价、服务怎么样、写评价、满意度 |
+| **Workflow** | `runReviewServiceWorkflow`：可选 `getOrders` 取最近一笔 `completed` → 文案 + `PageGuideCard` → `/review` |
+| **意图** | `shouldRunReviewWorkflow`（正则）；P0-2 映射 `review_service` |
+| **假页** | `/review`：1–5 星、可选标签（环境/服务/项目）、文本框（≤200 字）、提交 Mock |
+| **API** | `POST /api/reviews/submit` `{ orderId?, rating, tags?, content }` → 写入 persona Mock / LocalStorage |
+| **RecommendEntry** | 可选 `review_entry`：`visitorPhase=post_later` 或规则「近 30 天有 completed 订单」；demo_vip 欢迎快捷服务 |
+| **卡片** | 复用 `page_guide`；或新增 `review_prompt` 轻量卡（仅入口） |
+| **推送（可选）** | 离园当日气泡：「游玩愉快吗？欢迎为本次行程点评」→ 同上 Workflow（阶段五后期） |
+
+**演示脚本**：demo_vip 登录 → `/chat` 说「我要点评」→ 引导卡 → `/review` 提交 → Toast 成功。
+
+**验收**：不编造订单；无已完成订单时提示「暂无可点评行程」。
+
+**预估**：2–3 人日（Skill + Workflow + 假页 + Mock + 文档 + 1 条 RecommendEntry）。
+
+---
+
+### 19.3 ② 园区打卡（`checkin_service` / 打卡 MVP）
+
+**目标**：在园用户（`inPark: true`，demo_vip）对 **指定景点/项目点位** 打卡，获得 **积分或小券** Mock 奖励；为后续 `route_plan`（一键路线 + 连续打卡）打底。
+
+| 维度 | 计划 |
+|------|------|
+| **Skill** | `checkin_service`（或暂命名 `spot_checkin`，`phase: in_park`） |
+| **触发词** | 打卡、签到、景点打卡、我在某某、打卡领券 |
+| **数据** | 新增 `src/mock/checkin/spots.json`：spotId、名称、关联 activityId、奖励（积分/券 productId） |
+| **Workflow** | `runCheckinWorkflow`：`getScenicActivities` 或读 spots → 列表/最近点位 → **对话内 CheckinCard** 或跳 `/checkin` |
+| **假页（二选一）** | **A** 对话 `CheckinCard` 选点位一键打卡；**B** `/checkin` 列表页（推荐 B，与开票页一致） |
+| **API** | `GET /api/checkin/spots`；`POST /api/checkin` `{ spotId }` → 记打卡记录、发券/加积分（Mock） |
+| **去重** | 同 spot 同日仅可打卡一次；已打卡展示「已签到」 |
+| **RecommendEntry** | `checkin_nearby`：`inPark=true`，标题「园区打卡」 |
+| **与 route_plan** | MVP 单点打卡；二期 `route_plan` = 推荐顺序 + 连续 N 点额外券 |
+
+**演示脚本**：demo_vip → 「我要打卡」→ `/checkin` → 选「极限过山车」→ 成功 + 小券/积分提示。
+
+**验收**：非在园 persona 提示「入园后可打卡」；重复打卡拦截。
+
+**预估**：3–4 人日（Mock 数据 + 列表页 + Workflow + 卡片 + 奖励逻辑 + 文档）。
+
+---
+
+### 19.4 建议实施顺序
+
+```
+① 服务点评（游后闭环，依赖少）
+        ↓
+② 园区打卡（在园，需 spots Mock + 在园态）
+        ↓
+（可选）route_plan 串联多打卡与路线奖励
+```
+
+### 19.5 阶段五不包含（明确砍掉）
+
+- 真实点评审核后台、图片上传点评
+- LBS 真实定位校验（演示用「在园」规则字段即可）
+- 打卡排行榜、社交分享
+- 主动推送 ≥3 场景的完整实现（仍归阶段四遗留，可与点评入口并行设计）
+
+---
+
 ## 十七、风险与应对
 
 | 风险 | 应对 |
@@ -685,6 +818,9 @@ type MessageType =
 | v0.1–v0.5 | 2026-06-01 | 见历史 |
 | v0.6 | 2026-06-01 | 全生命周期场景；配置域模型；欢迎页；Q1–Q7 确认；Skill/API 扩展；开发阶段调整 |
 | v0.6.1 | 2026-06-01 | 阶段 1.5/1.6：配置 JSON、欢迎页、**简易 Admin 助手 UI** |
+| v0.7 | 2026-06-23 | 实施进度标记；阶段二细化 ✅；**批量开票假页**；Skill 状态列 |
+| v0.7.1 | 2026-06-30 | demo_mid 三笔待出行订单；待出行按真实日期；欢迎「今日出行」；快捷服务停车缴费；项目池 15 项 + 攻略场景区分 |
+| v0.7.2 | 2026-07-07 | 发票全链路 ✅（对话 Workflow + 单笔/批量假页）；§十九 阶段五计划（服务点评 + 园区打卡） |
 
 ---
 
@@ -697,7 +833,7 @@ type MessageType =
 | Q3 | 标签 | **新客 / 亲子 / 高价值** |
 | Q4 | 虚拟排队 | **2 个项目** Mock |
 | Q5 | 游中互动 | **1 个答题** Demo |
-| Q6 | 批量发票 | 对话入口 → **开票假页** |
+| Q6 | 批量发票 | 对话入口 → **开票假页** ✅ |
 | Q7 | Admin | **简易 Admin 已做**（§1.6）；仅助手 UI；产品/Skill 仍 JSON |
 
 ---

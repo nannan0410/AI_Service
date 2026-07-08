@@ -3,19 +3,12 @@ import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { fetchOrders, applyInvoice } from "@/api/business";
 import type { Order } from "@/types";
+import { filterInvoiceableOrders } from "@/utils/invoiceableOrders";
 
 const router = useRouter();
 const orders = ref<Order[]>([]);
 
-const invoiceable = computed(() => {
-  const now = Date.now();
-  const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-  return orders.value.filter((o) => {
-    if (o.status !== "completed" || o.invoiceStatus !== "none") return false;
-    const completed = o.completedAt ? new Date(o.completedAt).getTime() : 0;
-    return completed > 0 && now - completed <= thirtyDays;
-  });
-});
+const invoiceable = computed(() => filterInvoiceableOrders(orders.value));
 
 onMounted(async () => {
   const { data: res } = await fetchOrders();

@@ -28,7 +28,8 @@
     "price": 669,
     "ticketTypeId": "family_bundle",
     "composition": { "adult": 2, "child": 1 },
-    "tags": ["亲子", "套票"]
+    "tags": ["亲子", "套票"],
+    "recommendLabel": "家庭套票"
   },
   {
     "productId": "tkt_annual",

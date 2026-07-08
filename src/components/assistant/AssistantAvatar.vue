@@ -41,6 +41,7 @@ const assistantName = computed(() => assistantStore.assistantNickname);
       :style="{ width: `${size}px`, height: `${size}px` }"
     >
       <img
+        :key="avatarSrc"
         :src="avatarSrc"
         :alt="assistantName"
         class="assistant-avatar__img"

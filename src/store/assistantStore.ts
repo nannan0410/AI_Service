@@ -7,6 +7,7 @@ import { mergeUiConfig, setAdminUiOverride, type AdminUiPatch } from '@/utils/ad
 import type { AssistantMotionId, AssistantUiConfig } from '@/types'
 
 export const useAssistantStore = defineStore('assistant', () => {
+  const apiBaseConfig = ref<AssistantUiConfig>(defaultUiConfig as AssistantUiConfig)
   const uiConfig = ref<AssistantUiConfig>(mergeUiConfig(defaultUiConfig as AssistantUiConfig))
   const motion = ref<AssistantMotionId>('idle')
   let motionTimer: ReturnType<typeof setTimeout> | null = null
@@ -19,30 +20,34 @@ export const useAssistantStore = defineStore('assistant', () => {
   const assistantName = computed(() => uiConfig.value.assistantName)
   const assistantNickname = computed(() => uiConfig.value.assistantNickname)
   const assistantAvatarUrl = computed(() => uiConfig.value.assistantAvatarUrl)
+  const memberDefaultAvatarUrl = computed(
+    () => uiConfig.value.memberDefaultAvatarUrl || '/member/default-avatar.svg',
+  )
   const defaultImageUrl = computed(() => uiConfig.value.defaultImageUrl)
   const currentMotionUrl = computed(() => {
     const found = uiConfig.value.motions.find((m) => m.actionId === motion.value)
     return found?.assetUrl || uiConfig.value.assistantAvatarUrl
   })
 
-  async function loadConfig(force = false) {
-    if (uiConfig.value && !force) return uiConfig.value
-    const { data: res } = await fetchAssistantUi()
-    if (res.code === 200) {
-      uiConfig.value = mergeUiConfig(res.data)
-      applyChatTheme(uiConfig.value)
-    }
+  function syncUiConfig(base = apiBaseConfig.value) {
+    uiConfig.value = mergeUiConfig(base)
+    applyChatTheme(uiConfig.value)
     return uiConfig.value
+  }
+
+  async function loadConfig(force = false) {
+    if (force) {
+      const { data: res } = await fetchAssistantUi()
+      if (res.code === 200) {
+        apiBaseConfig.value = res.data
+      }
+    }
+    return syncUiConfig()
   }
 
   function applyAdminPatch(patch: AdminUiPatch) {
     setAdminUiOverride(patch)
-    if (uiConfig.value) {
-      uiConfig.value = mergeUiConfig(uiConfig.value)
-      applyChatTheme(uiConfig.value)
-    } else {
-      loadConfig(true)
-    }
+    syncUiConfig()
   }
 
   function clearAdminPatch() {
@@ -79,6 +84,7 @@ export const useAssistantStore = defineStore('assistant', () => {
     assistantName,
     assistantNickname,
     assistantAvatarUrl,
+    memberDefaultAvatarUrl,
     defaultImageUrl,
     currentMotionUrl,
     loadConfig,

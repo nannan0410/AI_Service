@@ -1,8 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import axios from 'axios'
 import { wechatMockLogin, fetchMe, logout as logoutApi } from '@/api/auth'
 import { setToken, setAuthUser, clearAuth, getToken, getAuthUser } from '@/utils/auth'
+import { createDemoAuthResult, getDemoUserInfo, parsePersonaFromToken } from '@/utils/demoAuth'
 import type { PersonaId, UserInfo } from '@/types'
+
+function shouldUseLocalDemoLogin(error: unknown): boolean {
+  if (!import.meta.env.DEV) return false
+  if (!axios.isAxiosError(error)) return true
+  const status = error.response?.status
+  return !status || status === 404
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(getToken())
@@ -16,15 +25,23 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(personaId: PersonaId) {
     loading.value = true
     try {
-      const { data: res } = await wechatMockLogin(personaId)
-      if (res.code !== 200 || !res.data) {
-        throw new Error(res.message || '登录失败')
+      let authData
+      try {
+        const { data: res } = await wechatMockLogin(personaId)
+        if (res.code !== 200 || !res.data) {
+          throw new Error(res.message || '登录失败')
+        }
+        authData = res.data
+      } catch (error) {
+        if (!shouldUseLocalDemoLogin(error)) throw error
+        console.warn('[demo] Mock 登录接口不可用，使用本地演示登录', error)
+        authData = createDemoAuthResult(personaId)
       }
-      token.value = res.data.token
-      userInfo.value = res.data.userInfo
-      setToken(res.data.token)
-      setAuthUser(res.data.userInfo)
-      return res.data
+      token.value = authData.token
+      userInfo.value = authData.userInfo
+      setToken(authData.token)
+      setAuthUser(authData.userInfo)
+      return authData
     } finally {
       loading.value = false
     }
@@ -35,15 +52,18 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data: res } = await fetchMe()
       if (res.code !== 200 || !res.data) {
-        clearAuth()
-        token.value = null
-        userInfo.value = null
-        return false
+        throw new Error(res.message || '会话无效')
       }
       userInfo.value = res.data
       setAuthUser(res.data)
       return true
-    } catch {
+    } catch (error) {
+      const personaId = token.value ? parsePersonaFromToken(token.value) : null
+      if (personaId && shouldUseLocalDemoLogin(error)) {
+        userInfo.value = getDemoUserInfo(personaId)
+        setAuthUser(userInfo.value)
+        return true
+      }
       clearAuth()
       token.value = null
       userInfo.value = null
