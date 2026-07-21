@@ -21,8 +21,9 @@ import {
   resolveSuggestedQuestions,
 } from "@/utils/welcomeQuestions";
 import { MAX_QUICK_SERVICES, MAX_WELCOME_RECOMMEND } from "@/utils/welcomeLayout";
-import { resetDemoBusinessData } from "@/api/business";
+import { postDemoOps, resetDemoBusinessData, type DemoOpsAction } from "@/api/business";
 import { clearDemoClientStorage } from "@/utils/demoReset";
+import { useAuthStore } from "@/store/authStore";
 import type { AssistantSkillConfig, PersonaId, RecommendEntry } from "@/types";
 import type {
   FieldCatalogItem,
@@ -45,6 +46,13 @@ const router = useRouter();
 const assistantStore = useAssistantStore();
 const businessConfigStore = useBusinessConfigStore();
 const skillStore = useSkillStore();
+const authStore = useAuthStore();
+
+const currentPersonaLabel = computed(() => {
+  const id = authStore.personaId;
+  if (!id) return "未登录";
+  return DEMO_PERSONA_OPTIONS.find((item) => item.value === id)?.label ?? id;
+});
 
 const activeTab = ref<"skill" | "entry">("skill");
 const workingSkills = ref<AssistantSkillConfig[]>([]);
@@ -762,6 +770,54 @@ async function onClearDemoData() {
   }
 }
 
+const DEMO_OPS_ITEMS: Array<{
+  action: DemoOpsAction;
+  title: string;
+  confirm: string;
+}> = [
+  {
+    action: "clear_new_guest_coupon",
+    title: "清空新人券",
+    confirm: "将清空当前账号的新人专享券，可再次演示领取。",
+  },
+  {
+    action: "ensure_today_paid_order",
+    title: "当日待出行订单",
+    confirm: "将为当前账号 upsert 一笔今日待出行订单（paid）。",
+  },
+  {
+    action: "ensure_today_completed_order",
+    title: "当日已核销订单",
+    confirm: "将为当前账号 upsert 一笔今日已核销订单（completed，可开票/点评）。",
+  },
+  {
+    action: "reset_invoice_status",
+    title: "重置开票状态",
+    confirm: "将当前账号全部订单的发票状态重置为未开票。",
+  },
+];
+
+async function onDemoOps(action: DemoOpsAction, title: string, confirm: string) {
+  if (!authStore.personaId) {
+    appToast("请先登录演示账号");
+    return;
+  }
+  await showConfirmDialog({
+    title,
+    message: `当前账号：${currentPersonaLabel.value}\n${confirm}`,
+  });
+  try {
+    const { data: res } = await postDemoOps(action);
+    if (res.code !== 200) {
+      appToast(res.message || "操作失败");
+      return;
+    }
+    appToast(res.message || "已完成（请重新打开聊天页查看）");
+  } catch {
+    appToast("操作失败，请确认已登录且开发服务已启动");
+  }
+}
+
 function goPreviewChat() {
   persistAll("已保存，正在打开聊天页…").then(() => {
     setTimeout(() => router.push("/chat"), 400);
@@ -971,6 +1027,24 @@ function goPreviewChat() {
         清除演示信息
       </button>
     </div>
+
+    <section class="admin-ui__block admin-business__demo-ops">
+      <p class="admin-ui__block-title">演示快捷工具（当前账号）</p>
+      <p class="admin-business__hint admin-business__hint--block">
+        作用于已登录账号：{{ currentPersonaLabel }}。订单操作为 upsert，重复点击不会堆单。改完后请重新打开聊天页查看。
+      </p>
+      <div class="admin-business__demo-ops-grid">
+        <button
+          v-for="item in DEMO_OPS_ITEMS"
+          :key="item.action"
+          type="button"
+          class="admin-ui__btn admin-ui__btn--outline admin-business__demo-ops-btn"
+          @click="onDemoOps(item.action, item.title, item.confirm)"
+        >
+          {{ item.title }}
+        </button>
+      </div>
+    </section>
 
     <!-- Skill 编辑 -->
     <van-popup
@@ -1615,6 +1689,23 @@ function goPreviewChat() {
   background: #fff;
   color: #ee0a24;
   border: 1px solid #ee0a24;
+}
+
+.admin-business__demo-ops {
+  margin-top: 8px;
+  padding-bottom: 8px;
+}
+
+.admin-business__demo-ops-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.admin-business__demo-ops-btn {
+  margin: 0;
+  width: 100%;
+  box-shadow: none;
 }
 
 .admin-business__editor {

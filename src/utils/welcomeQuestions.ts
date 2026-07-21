@@ -1,7 +1,10 @@
 import type { Coupon, PersonaId } from '@/types'
 import type { RuleExpression, WelcomeQuestionConfig, WelcomeTemplateConfig } from '@/types/businessConfig'
 import { filterNewGuestClaimWelcomeItems } from '@/utils/newGuestCoupon'
-import { buildDemoRuleContext } from '@/utils/demoRuleContext'
+import {
+  buildDemoRuleContext,
+  type DemoRuleLiveOverrides,
+} from '@/utils/demoRuleContext'
 import { evaluateRules } from '@/utils/ruleEngine'
 import {
   buildWelcomeTemplateVars,
@@ -99,7 +102,13 @@ export function resolveSuggestedQuestions(
   },
   welcomeCtx?: WelcomeTemplateVarContext,
 ): WelcomeQuestionConfig[] {
-  const ctx = buildDemoRuleContext(personaId)
+  const live: DemoRuleLiveOverrides = {
+    coupons: couponCtx.coupons,
+    registeredAt: couponCtx.registeredAt,
+    orders: welcomeCtx?.orders,
+    nickname: welcomeCtx?.nickname,
+  }
+  const ctx = buildDemoRuleContext(personaId, live)
   const matched = questions
     .filter((question) => question.enabled !== false)
     .filter((question) => evaluateRules(question.rules ?? [], ctx))

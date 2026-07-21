@@ -1,6 +1,9 @@
 import type { PersonaId, RecommendEntry } from '@/types'
 import type { RecommendEntryConfig } from '@/types/businessConfig'
-import { buildDemoRuleContext } from '@/utils/demoRuleContext'
+import {
+  buildDemoRuleContext,
+  type DemoRuleLiveOverrides,
+} from '@/utils/demoRuleContext'
 import { evaluateRules } from '@/utils/ruleEngine'
 
 export function toRecommendEntry(config: RecommendEntryConfig): RecommendEntry {
@@ -20,8 +23,9 @@ export function toRecommendEntry(config: RecommendEntryConfig): RecommendEntry {
 export function resolveActiveRecommendEntries(
   entries: RecommendEntryConfig[],
   personaId: PersonaId,
+  live?: DemoRuleLiveOverrides,
 ): RecommendEntry[] {
-  const ctx = buildDemoRuleContext(personaId)
+  const ctx = buildDemoRuleContext(personaId, live)
   return entries
     .filter((entry) => entry.enabled !== false)
     .filter((entry) => evaluateRules(entry.rules, ctx))

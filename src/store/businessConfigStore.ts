@@ -192,9 +192,19 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     }
   }
 
-  function getActiveRecommendEntries(personaId: PersonaId): RecommendEntry[] {
+  function getActiveRecommendEntries(
+    personaId: PersonaId,
+    live?: {
+      coupons?: import('@/types').Coupon[]
+      orders?: import('@/types').Order[]
+      registeredAt?: string
+      nickname?: string
+      memberLevel?: string
+      inPark?: boolean
+    },
+  ): RecommendEntry[] {
     const merged = syncRecommendEntries()
-    return resolveActiveRecommendEntries(merged, personaId)
+    return resolveActiveRecommendEntries(merged, personaId, live)
   }
 
   function getWelcomeTemplate(personaId: PersonaId): WelcomeTemplateConfig | undefined {

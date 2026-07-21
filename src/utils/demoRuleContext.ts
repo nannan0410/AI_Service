@@ -1,6 +1,12 @@
-import type { PersonaId, UserSnapshot } from '@/types'
+import type { Coupon, Order, PersonaId, UserSnapshot } from '@/types'
 import type { RuleContext } from '@/utils/ruleEngine'
-import { hasNewGuestCoupon, canClaimNewGuestCoupon } from '@/utils/newGuestCoupon'
+import {
+  buildDemoNewRegisteredAt,
+  canClaimNewGuestCoupon,
+  findNewGuestCoupon,
+  hasNewGuestCoupon,
+  isWithinNewGuestClaimWindow,
+} from '@/utils/newGuestCoupon'
 import { filterInvoiceableOrders } from '@/utils/invoiceableOrders'
 import { filterReviewableOrders } from '@/utils/reviewableOrders'
 import defaultFieldCatalog from '@/mock/assistant/field_catalog.json'
@@ -21,6 +27,15 @@ const snapshots: Record<PersonaId, UserSnapshot> = {
   demo_vip: demoVip as UserSnapshot,
 }
 
+/** 与 mock ensureDemoNewRegistrationFresh 对齐：静态 JSON 注册日过期时自愈，避免预览/规则误判 */
+function ensureDemoNewRegistrationFresh(snapshot: UserSnapshot): void {
+  if (findNewGuestCoupon(snapshot.visitorState.coupons)) return
+  if (isWithinNewGuestClaimWindow(snapshot.memberInfo.registeredAt)) return
+  snapshot.memberInfo.registeredAt = buildDemoNewRegisteredAt()
+}
+
+ensureDemoNewRegistrationFresh(snapshots.demo_new)
+
 function resolveTagsForPersona(personaId: PersonaId): string[] {
   const catalog = defaultFieldCatalog as FieldCatalog
   return catalog.tags
@@ -28,10 +43,26 @@ function resolveTagsForPersona(personaId: PersonaId): string[] {
     .map((tag) => tag.tagId)
 }
 
+/** 聊天页实时态（Mock 内存快照）覆盖静态 JSON，避免清空券后规则仍读旧数据 */
+export type DemoRuleLiveOverrides = {
+  coupons?: Coupon[]
+  orders?: Order[]
+  registeredAt?: string
+  inPark?: boolean
+  nickname?: string
+  memberLevel?: string
+}
+
 /** Demo 版：基于 mock 用户快照构建规则上下文（客户端预览与 Chat 过滤共用） */
-export function buildDemoRuleContext(personaId: PersonaId): RuleContext {
+export function buildDemoRuleContext(
+  personaId: PersonaId,
+  live?: DemoRuleLiveOverrides,
+): RuleContext {
   const snapshot = snapshots[personaId]
-  const orders = snapshot.orders
+  const orders = live?.orders ?? snapshot.orders
+  const coupons = live?.coupons ?? snapshot.visitorState.coupons
+  const registeredAt = live?.registeredAt ?? snapshot.memberInfo.registeredAt
+  const inPark = live?.inPark ?? snapshot.visitorState.inPark
   const now = Date.now()
 
   const upcomingVisitOrders = getUpcomingVisitOrders(orders, new Date(now))
@@ -44,7 +75,7 @@ export function buildDemoRuleContext(personaId: PersonaId): RuleContext {
   const hasReviewableOrders = filterReviewableOrders(orders, now).length > 0
 
   let visitorPhase: RuleContext['visitorPhase'] = 'pre'
-  if (snapshot.visitorState.inPark) {
+  if (inPark) {
     visitorPhase = 'in_park'
   } else if (hasInvoiceableOrders || orders.some((o) => o.status === 'completed')) {
     visitorPhase = 'post_later'
@@ -53,9 +84,9 @@ export function buildDemoRuleContext(personaId: PersonaId): RuleContext {
   return {
     personaId,
     memberId: snapshot.memberInfo.memberId,
-    nickname: snapshot.memberInfo.nickname,
-    memberLevel: snapshot.memberInfo.level,
-    inPark: snapshot.visitorState.inPark,
+    nickname: live?.nickname ?? snapshot.memberInfo.nickname,
+    memberLevel: live?.memberLevel ?? snapshot.memberInfo.level,
+    inPark,
     tags: resolveTagsForPersona(personaId),
     hasPendingVisitOrder,
     nextVisitDate,
@@ -63,11 +94,11 @@ export function buildDemoRuleContext(personaId: PersonaId): RuleContext {
     hasVisitToday: hasVisitTodayOrder,
     hasInvoiceableOrders,
     hasReviewableOrders,
-    hasNewGuestCoupon: hasNewGuestCoupon(snapshot.visitorState.coupons),
+    hasNewGuestCoupon: hasNewGuestCoupon(coupons),
     canClaimNewGuestCoupon: canClaimNewGuestCoupon({
       personaId,
-      coupons: snapshot.visitorState.coupons,
-      registeredAt: snapshot.memberInfo.registeredAt,
+      coupons,
+      registeredAt,
     }),
     visitorPhase,
   }

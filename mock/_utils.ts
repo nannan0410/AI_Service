@@ -33,6 +33,7 @@ import {
 import type { Activity } from '../src/types/index'
 import {
   NEW_GUEST_COUPON_PRODUCT_ID,
+  NEW_GUEST_COUPON_TITLE,
   buildDemoNewRegisteredAt,
   findNewGuestCoupon,
   isWithinNewGuestClaimWindow,
@@ -806,6 +807,162 @@ export function getUserInfo(personaId: PersonaId) {
     memberId: label.memberId,
     personaId,
     nickname: label.nickname,
+  }
+}
+
+function todayIsoDate(ref = new Date()): string {
+  const y = ref.getFullYear()
+  const m = String(ref.getMonth() + 1).padStart(2, '0')
+  const d = String(ref.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+/** 演示快捷：当前账号 upsert 用固定 orderId，重复点击不堆单 */
+export const DEMO_TODAY_PAID_ORDER_ID = 'ORD_DEMO_TODAY_PAID'
+export const DEMO_TODAY_COMPLETED_ORDER_ID = 'ORD_DEMO_TODAY_DONE'
+
+export type DemoOpsAction =
+  | 'clear_new_guest_coupon'
+  | 'ensure_today_paid_order'
+  | 'ensure_today_completed_order'
+  | 'reset_invoice_status'
+
+export type DemoOpsResult = {
+  ok: true
+  action: DemoOpsAction
+  personaId: PersonaId
+  message: string
+  order?: Order
+  removedCouponCount?: number
+  resetInvoiceCount?: number
+}
+
+/** 清空当前账号新人券（可再领）；同时刷新注册时间为昨天，避免领取窗口已过仍不可见入口 */
+export function clearNewGuestCoupon(personaId: PersonaId): DemoOpsResult {
+  const snapshot = getMutableSnapshot(personaId)
+  const before = snapshot.visitorState.coupons.length
+  snapshot.visitorState.coupons = snapshot.visitorState.coupons.filter(
+    (item) =>
+      item.couponProductId !== NEW_GUEST_COUPON_PRODUCT_ID &&
+      item.title !== NEW_GUEST_COUPON_TITLE,
+  )
+  const removedCouponCount = before - snapshot.visitorState.coupons.length
+  if (personaId === 'demo_new') {
+    ensureDemoNewRegistrationFresh(snapshot)
+  }
+  return {
+    ok: true,
+    action: 'clear_new_guest_coupon',
+    personaId,
+    removedCouponCount,
+    message:
+      removedCouponCount > 0
+        ? `已清空 ${removedCouponCount} 张新人券，可再次领取`
+        : '当前账号无新人券（已确保领取窗口有效）',
+  }
+}
+
+function upsertDemoOrder(personaId: PersonaId, order: Order): Order {
+  const snapshot = getMutableSnapshot(personaId)
+  const index = snapshot.orders.findIndex((item) => item.orderId === order.orderId)
+  if (index >= 0) {
+    snapshot.orders[index] = order
+  } else {
+    snapshot.orders.unshift(order)
+  }
+  snapshot.visitorState.recentOrders = snapshot.orders
+  return cloneSnapshot(order)
+}
+
+/** upsert 当日待出行订单（paid + visitDate=今天） */
+export function ensureTodayPaidOrder(personaId: PersonaId): DemoOpsResult {
+  const today = todayIsoDate()
+  const order: Order = {
+    orderId: DEMO_TODAY_PAID_ORDER_ID,
+    ticketType: 'family_bundle',
+    ticketName: '家庭套票（2大1小）· 演示待出行',
+    quantity: { adult: 2, child: 1 },
+    totalAmount: 669,
+    status: 'paid',
+    source: 'self',
+    visitDate: today,
+    invoiceStatus: 'none',
+    createdAt: new Date().toISOString(),
+  }
+  const saved = upsertDemoOrder(personaId, order)
+  return {
+    ok: true,
+    action: 'ensure_today_paid_order',
+    personaId,
+    order: saved,
+    message: `已设置当日待出行订单（${today}）`,
+  }
+}
+
+/** upsert 当日已核销订单（completed + visitDate=今天） */
+export function ensureTodayCompletedOrder(personaId: PersonaId): DemoOpsResult {
+  const today = todayIsoDate()
+  const now = new Date().toISOString()
+  const order: Order = {
+    orderId: DEMO_TODAY_COMPLETED_ORDER_ID,
+    ticketType: 'family_bundle',
+    ticketName: '家庭套票（2大1小）· 演示已核销',
+    quantity: { adult: 2, child: 1 },
+    totalAmount: 669,
+    status: 'completed',
+    source: 'self',
+    visitDate: today,
+    completedAt: now,
+    invoiceStatus: 'none',
+    reviewStatus: 'none',
+    createdAt: now,
+  }
+  const saved = upsertDemoOrder(personaId, order)
+  return {
+    ok: true,
+    action: 'ensure_today_completed_order',
+    personaId,
+    order: saved,
+    message: `已设置当日已核销订单（${today}）`,
+  }
+}
+
+/** 当前账号全部订单发票状态重置为未开票 */
+export function resetInvoiceStatus(personaId: PersonaId): DemoOpsResult {
+  const snapshot = getMutableSnapshot(personaId)
+  let resetInvoiceCount = 0
+  for (const order of snapshot.orders) {
+    if (order.invoiceStatus !== 'none') {
+      order.invoiceStatus = 'none'
+      resetInvoiceCount += 1
+    }
+  }
+  return {
+    ok: true,
+    action: 'reset_invoice_status',
+    personaId,
+    resetInvoiceCount,
+    message:
+      resetInvoiceCount > 0
+        ? `已将 ${resetInvoiceCount} 笔订单重置为未开票`
+        : '当前订单均为未开票，无需重置',
+  }
+}
+
+export function runDemoOps(personaId: PersonaId, action: DemoOpsAction): DemoOpsResult {
+  switch (action) {
+    case 'clear_new_guest_coupon':
+      return clearNewGuestCoupon(personaId)
+    case 'ensure_today_paid_order':
+      return ensureTodayPaidOrder(personaId)
+    case 'ensure_today_completed_order':
+      return ensureTodayCompletedOrder(personaId)
+    case 'reset_invoice_status':
+      return resetInvoiceStatus(personaId)
+    default: {
+      const _exhaustive: never = action
+      throw new Error(`未知演示操作: ${_exhaustive}`)
+    }
   }
 }
 

@@ -239,3 +239,23 @@ export function fetchCardViews() {
 export function resetDemoBusinessData() {
   return request.post<ApiResponse<{ ok: boolean }>>('/api/demo/reset')
 }
+
+export type DemoOpsAction =
+  | 'clear_new_guest_coupon'
+  | 'ensure_today_paid_order'
+  | 'ensure_today_completed_order'
+  | 'reset_invoice_status'
+
+/** 演示版：当前登录账号快捷运维（清空新人券 / upsert 当日订单 / 重置开票状态） */
+export function postDemoOps(action: DemoOpsAction) {
+  return request.post<
+    ApiResponse<{
+      ok: boolean
+      action: DemoOpsAction
+      personaId: string
+      message: string
+      removedCouponCount?: number
+      resetInvoiceCount?: number
+    }>
+  >('/api/demo/ops', { action })
+}

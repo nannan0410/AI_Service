@@ -143,7 +143,13 @@ const suggestedQuestions = computed(() => {
 const recommendEntries = computed(() => {
   const personaId = (authStore.personaId || "demo_new") as PersonaId;
   return businessConfigStore
-    .getActiveRecommendEntries(personaId)
+    .getActiveRecommendEntries(personaId, {
+      coupons: userCoupons.value,
+      orders: userOrders.value,
+      registeredAt: memberInfo.value?.registeredAt,
+      nickname: memberInfo.value?.nickname,
+      memberLevel: memberInfo.value?.level,
+    })
     .slice(0, MAX_QUICK_SERVICES);
 });
 
