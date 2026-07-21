@@ -240,7 +240,7 @@ interface RecommendEntry {
 | `hasPendingVisitOrder`（`visitDate >= 今天`） | 交通指南、查看订单 | demo_mid |
 | `hasPendingVisitOrder` | 停车缴费 | 三演示账号 |
 | `inPark === true` | 今日路线 | demo_vip |
-| `hasInvoiceableOrders` | 批量开发票 | demo_vip |
+| `hasInvoiceableOrders` | 开发票（对话引导） | demo_vip |
 | `persona === demo_new` | 首次购票指引 | demo_new |
 
 **文件**：`mock/assistant/recommend_entries.json`
@@ -432,7 +432,7 @@ type MessageType =
 | 选实名出行人 | — | **H5 假页** `/order/submit`（草稿创建时可不带游客） |
 | 确认下单 | OrderCard 或确认后直接跳假页 | **H5 假页** `/order/submit` |
 | 勾选条款、支付 | — | 假页内 Mock 支付成功 → **`/orders?tab=1`**（待出行/已完成 Tab） |
-| 批量开票 | 对话入口 / RecommendEntry | **H5 假页** `/invoice/batch` |
+| 批量开票 | 对话「开发票」/快捷 chat →「立即开票」 | **H5 假页** `/invoice/batch` |
 | 第三方开票 | 单笔发票 | `/invoice/external`（已有） |
 
 ### 7.2 小程序契约（文档注明，演示 H5 模拟）
@@ -520,11 +520,11 @@ type MessageType =
 |------|------|------|
 | 服务点评 | 对话入口 → 假页星级+文本 | P2 · ✅ |
 | 推荐好友 | 分享卡片 Mock | P3 |
-| **订单批量开发票** | 对话/RecommendEntry → **`/invoice/batch` 假页**（Q6） | **P1** ✅ |
+| **订单批量开发票** | 对话/快捷「开发票」→ 引导卡「立即开票」→ **`/invoice/batch` 假页**（Q6） | **P1** ✅ |
 | OCR 积分 | 同上游后 | P1 |
 | 发券 + 快递零售周边 | 券卡片 + 商品 Mock | P3 |
 
-**批量开票（Q6）**：不在对话内多选；聊天说「开发票」或点推荐入口 → 跳转 **批量开票假页**（订单多选 + 提交示意）。
+**批量开票（Q6）**：不在对话内多选；聊天说「开发票」或点快捷「开发票」→ **先对话引导**（文案 +「立即开票」）→ 再跳转 **批量开票假页**（订单多选 + 提交示意）。
 
 ---
 
@@ -662,8 +662,10 @@ type MessageType =
 
 - [x] **批量开票假页**（Q6）→ `/invoice/batch` + `POST /api/invoice/batch`
 - [x] **单笔开票** `/invoice` → `/invoice/external` + `POST /api/invoice/apply`
-- [x] **发票对话 Workflow** `invoice_service` → `PageGuideCard` 引导开票页
+- [x] **发票对话 Workflow** `invoice_service` → 有单「立即开票」→ `/invoice/batch`；无单纯文案
+- [x] **快捷开发票** RecommendEntry → chat 发「开发票」（不直跳假页）
 - [x] **停车对话引导** `parking_pay` + `/parking` 假页
+- [x] **演出推荐 Workflow** `scenic_recommend` → 单条 `scene_recommend`
 - [ ] 点评假页、主动推送 ≥3 场景
 - [ ] 助手 6 形态 + Skill 驱动（部分 `linkedMotions` 已有）
 - [x] 演示脚本 + 小程序跳转契约文档（[`mini-program-routes.md`](./mini-program-routes.md)，持续更新）
@@ -687,8 +689,9 @@ type MessageType =
 | 4 | demo_mid | 查看攻略 | 交通+入园+项目卡片 |
 | 5 | demo_vip | 在园推荐 | 二消/项目+券 |
 | 6 | demo_vip | 答题 | 1 套题完成得奖励 |
-| 7 | demo_vip | 批量开票 | 欢迎「批量开发票」→ `/invoice/batch` 多选提交 ✅ |
-| 7b | demo_vip | 对话开票 | 「我要开发票」→ PageGuideCard → 开票页 ✅ |
+| 7 | demo_vip | 批量开票 | 快捷「开发票」→ 对话引导 → `/invoice/batch` 多选提交 ✅ |
+| 7b | demo_vip | 对话开票 | 「开发票」→「您当前有X笔…」+「立即开票」→ 批量页 ✅ |
+| 7c | 任意 | 演出推荐 | 「演出推荐」/「今天有演出吗」→ 单条 scene_recommend ✅ |
 | 8 | demo_vip | OCR + 停车 | 积分 + 缴费 |
 
 ---
@@ -821,6 +824,7 @@ type MessageType =
 | v0.7 | 2026-06-23 | 实施进度标记；阶段二细化 ✅；**批量开票假页**；Skill 状态列 |
 | v0.7.1 | 2026-06-30 | demo_mid 三笔待出行订单；待出行按真实日期；欢迎「今日出行」；快捷服务停车缴费；项目池 15 项 + 攻略场景区分 |
 | v0.7.2 | 2026-07-07 | 发票全链路 ✅（对话 Workflow + 单笔/批量假页）；§十九 阶段五计划（服务点评 + 园区打卡） |
+| v0.7.3 | 2026-07-21 | 发票引导文案统一；快捷开发票走对话；演出/餐饮零售 `scene_recommend` 单条合并；demo_vip 可开票 Mock |
 
 ---
 

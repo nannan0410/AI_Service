@@ -11,16 +11,6 @@
     "priority": 10
   },
   {
-    "entryId": "new_guest_coupon",
-    "title": "领取新客券",
-    "icon": "coupon-o",
-    "target": "chat",
-    "promptHint": "请帮我领取新客专享优惠券",
-    "enabled": true,
-    "rules": [{ "op": "eq", "field": "canClaimNewGuestCoupon", "value": true }],
-    "priority": 9
-  },
-  {
     "entryId": "traffic_guide",
     "title": "交通指南",
     "icon": "location-o",
@@ -28,18 +18,41 @@
     "skillId": "travel_guide",
     "promptHint": "怎么去景区，交通指南",
     "enabled": true,
-    "rules": [{ "op": "eq", "field": "hasPendingVisitOrder", "value": true }],
+    "rules": [
+      {
+        "op": "in",
+        "field": "personaId",
+        "values": ["demo_new", "demo_mid"]
+      }
+    ],
     "priority": 10
   },
   {
-    "entryId": "view_orders",
-    "title": "查看订单",
-    "icon": "orders-o",
-    "target": "page",
-    "targetPath": "/orders?tab=1",
+    "entryId": "member_coupon",
+    "title": "会员专属券",
+    "icon": "gem-o",
+    "target": "chat",
+    "skillId": "proactive_marketing",
+    "promptHint": "请查看我当前可用的会员券，并推荐现在最适合使用哪张。",
     "enabled": true,
-    "rules": [{ "op": "eq", "field": "hasPendingVisitOrder", "value": true }],
-    "priority": 8
+    "rules": [
+      {
+        "op": "in",
+        "field": "personaId",
+        "values": ["demo_vip", "demo_mid"]
+      }
+    ],
+    "priority": 10
+  },
+  {
+    "entryId": "new_guest_coupon",
+    "title": "领取新客券",
+    "icon": "coupon-o",
+    "target": "chat",
+    "promptHint": "请帮我领取新客专享优惠券",
+    "enabled": true,
+    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_new" }],
+    "priority": 9
   },
   {
     "entryId": "parking_pay",
@@ -59,27 +72,6 @@
     "priority": 9
   },
   {
-    "entryId": "travel_strategy",
-    "title": "游玩攻略",
-    "icon": "notes-o",
-    "target": "chat",
-    "skillId": "travel_guide",
-    "promptHint": "请推荐适合今天的游玩项目和路线，不需要交通和入园信息",
-    "enabled": true,
-    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_mid" }],
-    "priority": 7
-  },
-  {
-    "entryId": "member_coupon",
-    "title": "会员专属券",
-    "icon": "gem-o",
-    "target": "chat",
-    "promptHint": "请查看我当前可用的会员券，并推荐现在最适合使用哪张。",
-    "enabled": true,
-    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_vip" }],
-    "priority": 10
-  },
-  {
     "entryId": "today_route",
     "title": "今日推荐路线",
     "icon": "location-o",
@@ -87,18 +79,52 @@
     "skillId": "travel_guide",
     "promptHint": "我现在在园区内，请根据当前位置和排队情况推荐今日路线。",
     "enabled": true,
-    "rules": [{ "op": "eq", "field": "inPark", "value": true }],
+    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_mid" }],
     "priority": 9
   },
   {
-    "entryId": "batch_invoice",
-    "title": "批量开发票",
-    "icon": "bill-o",
+    "entryId": "view_orders",
+    "title": "查看订单",
+    "icon": "orders-o",
     "target": "page",
-    "targetPath": "/invoice/batch",
+    "targetPath": "/orders?tab=1",
     "enabled": true,
-    "rules": [{ "op": "eq", "field": "hasInvoiceableOrders", "value": true }],
+    "rules": [
+      {
+        "op": "in",
+        "field": "personaId",
+        "values": ["demo_mid", "demo_vip"]
+      }
+    ],
     "priority": 8
+  },
+  {
+    "entryId": "batch_invoice",
+    "title": "开发票",
+    "icon": "bill-o",
+    "target": "chat",
+    "skillId": "invoice_service",
+    "promptHint": "开发票",
+    "enabled": true,
+    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_vip" }],
+    "priority": 8
+  },
+  {
+    "entryId": "travel_strategy",
+    "title": "游玩攻略",
+    "icon": "notes-o",
+    "target": "chat",
+    "skillId": "travel_guide",
+    "promptHint": "请推荐适合今天的游玩项目和路线，不需要交通和入园信息",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "in",
+        "field": "personaId",
+        "values": ["demo_mid", "demo_vip"]
+      }
+    ],
+    "priority": 7
   },
   {
     "entryId": "review_service",
@@ -108,7 +134,7 @@
     "skillId": "review_service",
     "promptHint": "我要点评最近一次游玩体验",
     "enabled": true,
-    "rules": [{ "op": "eq", "field": "hasReviewableOrders", "value": true }],
+    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_vip" }],
     "priority": 7
   }
 ]

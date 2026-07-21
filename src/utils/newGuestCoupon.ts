@@ -41,7 +41,8 @@ export const COUPON_STATUS_LABEL: Record<Coupon['status'], string> = {
 
 /** 是否为「领取新客券」类意图（非购票顺带发券） */
 export function isNewGuestCouponClaimIntent(message: string): boolean {
-  if (/两大一小|2大1小|买票|购票|门票|套票|家庭票|年卡/.test(message)) return false
+  if (/两大一小|2大1小|买票|购票|套票|家庭票|年卡/.test(message)) return false
+  if (/(?:买|购|订).{0,6}门票|门票.{0,6}(?:买|购|订)/.test(message)) return false
   return (
     /领取|领券|领新.?券|新客券|新人券|怎么领/.test(message) ||
     (/新客|新人/.test(message) && /券|优惠券/.test(message))

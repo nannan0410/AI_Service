@@ -57,9 +57,13 @@ H5 演示版与微信小程序的路径对照，供产品化对接参考。
 |----|----------------|
 | `/invoice/batch` | `/pages/invoice/batch` |
 
-**行为**：展示 30 天内已完成且 `invoiceStatus=none` 的订单；多选后 `POST /api/invoice/batch`（body: `{ orderIds: string[] }`），Mock 将订单标为 `applied`，成功后回 `/invoice`。
+**行为**：展示 30 天内已完成且 `invoiceStatus=none` 的订单；多选后 `POST /api/invoice/batch`（body: `{ orderIds: string[] }`），Mock 将订单标为 `applied`，成功后回 `/invoice`。顶栏/底栏与 H5 内容同宽。
 
-**入口**：RecommendEntry `batch_invoice` → `targetPath: "/invoice/batch"`（规则 `hasInvoiceableOrders=true`，demo_vip）。
+**入口**：
+
+1. 对话「开发票」→ Workflow 引导卡「立即开票」→ 本页  
+2. 快捷推荐 `batch_invoice`（标题「开发票」）→ chat 自动发「开发票」→ 同上（**不直跳**本页）  
+3. 规则展示账号：demo_vip（可开票订单 Mock 见 `demo_vip.json`）
 
 ## 第三方开票
 

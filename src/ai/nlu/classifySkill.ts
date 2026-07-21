@@ -33,7 +33,7 @@ ${catalog}
 3. 买票、票种、人数、下单、套票 → ticket_purchase
 4. 交通、怎么去、攻略、入园准备、游玩路线、停车位置 → travel_guide
 5. 停车费、交车费、停车缴费、绑定车牌 → parking_pay（不是问停车场在哪）
-6. 今日演出、下一场几点、灯光秀、花车巡游 → scenic_recommend
+6. 今日演出、演出推荐、下一场几点、灯光秀、花车巡游 → scenic_recommend
 7. 开发票、开票、报销、发票 → invoice_service
 8. 点评、评价、服务怎么样、写评价、满意度 → review_service
 9. 有什么券、优惠活动、推荐优惠 → proactive_marketing（不含新客领券）

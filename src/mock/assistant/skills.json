@@ -4,7 +4,7 @@
     "name": "智能购票",
     "description": "识别票种与人数，推荐最优套餐并引导下单",
     "enabled": true,
-    "triggerKeywords": ["买票", "购票", "门票", "两大一小", "年卡", "套票", "家庭票", "首次购票", "购票指引"],
+    "triggerKeywords": ["买票", "购票", "买门票", "两大一小", "年卡", "套票", "家庭票", "首次购票", "购票指引"],
     "tools": ["getProductCatalog", "getCoupons", "issueCoupon", "createOrderDraft", "getMemberInfo"],
     "promptAddon": "你是购票专家。多轮引导：先问人数（含老人/小孩）→ 再问出行日期 → 无可用新客券时可发购票10元券 → 按人数推荐唯一票产品（2大0小=成人票×张数，2大1小=家庭套票）→ 用户在推荐卡上点击「确认并生成订单」后生成订单草稿。下单页再选手实名出行人。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "nod", "onFail": "shake" }
@@ -54,11 +54,32 @@
   {
     "skillId": "proactive_marketing",
     "name": "主动营销",
-    "description": "查询并推荐账户可用优惠券与活动",
+    "description": "查询并推荐账户可用优惠券与活动；餐饮/零售询问与下单意图顺势推券",
     "enabled": true,
-    "triggerKeywords": ["优惠", "活动", "有什么券", "优惠券", "会员优惠", "附近优惠"],
-    "tools": ["getCoupons", "getScenicActivities"],
-    "promptAddon": "用户询问有什么券、优惠活动时，调用 getCoupons 展示可用券；不要代替新客领券 Workflow。",
+    "triggerKeywords": [
+      "优惠",
+      "活动",
+      "有什么券",
+      "优惠券",
+      "会员券",
+      "会员优惠",
+      "附近优惠",
+      "有什么优惠",
+      "专属券",
+      "美食",
+      "餐饮",
+      "伴手礼",
+      "纪念品",
+      "零售",
+      "商店",
+      "店铺",
+      "套餐",
+      "点餐",
+      "想买",
+      "下单"
+    ],
+    "tools": ["getCoupons", "getScenicActivities", "issueCoupon"],
+    "promptAddon": "用户询问优惠券、餐饮/美食、零售/伴手礼，或表达购买/下单意图时：调用 getCoupons / getScenicActivities，并顺势推荐或发放场景券；不要代替新客领券 Workflow，也不要代替购票 Workflow。",
     "linkedMotions": { "onStart": "wave", "onSuccess": "point" }
   },
   {
@@ -74,11 +95,11 @@
   {
     "skillId": "scenic_recommend",
     "name": "园区推荐",
-    "description": "查询今日演出场次、推荐游玩项目",
+    "description": "查询今日/明日演出场次、推荐游玩项目",
     "enabled": true,
-    "triggerKeywords": ["演出", "下一场", "灯光秀", "花车", "巡游", "场次", "表演"],
+    "triggerKeywords": ["演出", "明天有演出", "今日演出", "下一场", "灯光秀", "花车", "巡游", "场次", "表演"],
     "tools": ["getScenicActivities"],
-    "promptAddon": "用户询问今日演出、下一场几点开始时，调用 getScenicActivities(category=show) 并按 showStartTimes 与当前时间筛选；不要编造场次。其他项目推荐可结合 getScenicActivities。",
+    "promptAddon": "用户询问今天/明天有没有演出、下一场几点开始时，调用 getScenicActivities(category=show) 并按 showStartTimes 展示场次；明日可标注当日最早一场作推荐；不要编造场次。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "point" }
   },
   {

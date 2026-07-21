@@ -3,14 +3,9 @@ import { onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useAssistantStore } from "@/store/assistantStore";
 
-const { size } = withDefaults(
-  defineProps<{
-    size?: number;
-  }>(),
-  {
-    size: 36,
-  }
-);
+const { size = 36 } = defineProps<{
+  size?: number;
+}>();
 
 const assistantStore = useAssistantStore();
 const { memberDefaultAvatarUrl } = storeToRefs(assistantStore);

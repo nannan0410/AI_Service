@@ -42,7 +42,7 @@ async function onLogout() {
       fixed
       placeholder
       class="profile-page__nav"
-      @click-left="$router.back()"
+      @click-left="router.replace('/')"
     />
     <van-cell-group inset class="profile">
       <van-cell title="昵称" :value="authStore.userInfo?.nickname" />

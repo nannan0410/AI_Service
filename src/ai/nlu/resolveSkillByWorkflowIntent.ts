@@ -6,8 +6,13 @@ import { shouldRunReviewWorkflow } from '@/utils/reviewIntent'
 import { shouldRunParkingPayWorkflow } from '@/utils/parkingPayIntent'
 import { shouldRunProactiveMarketingWorkflow } from '@/utils/proactiveMarketingIntent'
 import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
-import { isTicketPurchaseIntent } from '@/utils/ticketPurchaseIntent'
-import { shouldRunTravelGuideWorkflow } from '@/utils/travelGuideIntent'
+import {
+  isTicketPurchaseIntent,
+} from '@/utils/ticketPurchaseIntent'
+import {
+  isTravelGuidePreferredOverTicket,
+  shouldRunTravelGuideWorkflow,
+} from '@/utils/travelGuideIntent'
 import type { AssistantSkillConfig } from '@/types'
 
 /**
@@ -22,8 +27,16 @@ export function resolveSkillByWorkflowIntent(
   if (shouldRunParkingPayWorkflow(message)) {
     return getSkillById(skills, 'parking_pay') ?? null
   }
+  // 入园 FAQ / 游玩推荐等优先于购票（避免「门票怎么用」误进选票）
+  if (isTravelGuidePreferredOverTicket(message)) {
+    return getSkillById(skills, 'travel_guide') ?? null
+  }
   if (isTicketPurchaseIntent(message)) {
     return getSkillById(skills, 'ticket_purchase') ?? null
+  }
+  // 餐饮/零售/查券营销优先于宽泛攻略，避免美食询问落到 LLM 闲聊
+  if (shouldRunProactiveMarketingWorkflow(message)) {
+    return getSkillById(skills, 'proactive_marketing') ?? null
   }
   if (shouldRunTravelGuideWorkflow(message)) {
     return getSkillById(skills, 'travel_guide') ?? null
@@ -40,9 +53,6 @@ export function resolveSkillByWorkflowIntent(
   if (shouldRunReviewWorkflow(message)) {
     return getSkillById(skills, 'review_service') ?? null
   }
-  if (shouldRunProactiveMarketingWorkflow(message)) {
-    return getSkillById(skills, 'proactive_marketing') ?? null
-  }
 
   return null
 }
@@ -50,12 +60,13 @@ export function resolveSkillByWorkflowIntent(
 export function shouldSkipLlmSkillRouting(message: string): boolean {
   if (shouldRunNewGuestCouponWorkflow(message)) return true
   if (shouldRunParkingPayWorkflow(message)) return true
+  if (isTravelGuidePreferredOverTicket(message)) return true
   if (isTicketPurchaseIntent(message)) return true
+  if (shouldRunProactiveMarketingWorkflow(message)) return true
   if (shouldRunTravelGuideWorkflow(message)) return true
   if (shouldRunOrderQueryWorkflow(message)) return true
   if (shouldRunShowScheduleWorkflow(message)) return true
   if (shouldRunInvoiceWorkflow(message)) return true
   if (shouldRunReviewWorkflow(message)) return true
-  if (shouldRunProactiveMarketingWorkflow(message)) return true
   return false
 }

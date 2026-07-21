@@ -68,8 +68,24 @@ function normalizeRecommendEntry(entry: RecommendEntryConfig): RecommendEntryCon
   return {
     ...entry,
     enabled: entry.enabled !== false,
-    rules: entry.rules?.length ? [...entry.rules] : [],
+    rules: cloneRuleList(entry.rules),
   }
+}
+
+function cloneRuleList(rules: RecommendEntryConfig['rules'] | undefined): RecommendEntryConfig['rules'] {
+  if (!rules?.length) return []
+  return rules.map((rule) => {
+    if (rule.op === 'in') {
+      return { op: 'in', field: rule.field, values: [...(rule.values ?? [])] }
+    }
+    if (rule.op === 'and' || rule.op === 'or') {
+      return { op: rule.op, rules: cloneRuleList(rule.rules) }
+    }
+    if (rule.op === 'contains') {
+      return { op: 'contains', field: rule.field, value: rule.value }
+    }
+    return { op: 'eq', field: rule.field, value: rule.value }
+  })
 }
 
 /** 按 entryId 合并本地覆盖 */
@@ -88,7 +104,8 @@ export function mergeRecommendEntriesConfig(
     return normalizeRecommendEntry({
       ...entry,
       ...patch,
-      rules: patch.rules?.length ? [...patch.rules] : [...entry.rules],
+      // 显式空数组表示「无规则 / 始终展示」，勿回退到 base
+      rules: patch.rules !== undefined ? cloneRuleList(patch.rules) : cloneRuleList(entry.rules),
     })
   })
 

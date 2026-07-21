@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { showConfirmDialog } from "vant";
 import { appToast } from "@/utils/toast";
@@ -16,6 +16,7 @@ import {
 import { previewRecommendEntries } from "@/utils/recommendEntries";
 import {
   cloneWelcomeTemplates,
+  findFlatQuestionIndex,
   flattenWelcomeQuestions,
   resolveSuggestedQuestions,
   unflattenWelcomeQuestions,
@@ -105,7 +106,10 @@ const editEntryForm = ref({
   skillId: "",
   promptHint: "",
   ruleField: "personaId",
+  /** eq 单值；boolean / enum / string */
   ruleValue: "demo_new" as string | boolean,
+  /** personaId 多选时写入 in 规则 */
+  rulePersonaValues: ["demo_new"] as string[],
 });
 
 const editQuestionForm = ref({
@@ -124,6 +128,20 @@ const BADGE_COLOR_PRESETS = ["#54c783", "#4aa3ff", "#ffb020", "#ff6b6b"];
 
 const workingQuestions = computed(() =>
   flattenWelcomeQuestions(workingWelcomeTemplates.value),
+);
+
+/** 配置列表按优先级降序（与预览 / 聊天页一致） */
+const sortedWorkingEntries = computed(() =>
+  [...workingEntries.value].sort((a, b) => b.priority - a.priority),
+);
+
+const sortedWorkingQuestions = computed(() =>
+  [...workingQuestions.value].sort((a, b) => {
+    if (a.personaId !== b.personaId) {
+      return a.personaId.localeCompare(b.personaId);
+    }
+    return (b.priority ?? 0) - (a.priority ?? 0);
+  }),
 );
 
 const primaryColor = computed(() => assistantStore.primaryColor);
@@ -214,12 +232,23 @@ function cloneSkills(skills: AssistantSkillConfig[]): AssistantSkillConfig[] {
 function cloneEntries(
   entries: RecommendEntryConfig[]
 ): RecommendEntryConfig[] {
-  return entries.map((entry) => ({
-    ...entry,
-    rules: entry.rules?.length
-      ? entry.rules.map((rule) => ({ ...rule }))
-      : [],
-  }));
+  return entries
+    .map((entry) => ({
+      ...entry,
+      rules: (entry.rules ?? []).map((rule) => {
+        if (rule.op === "in") {
+          return { op: "in" as const, field: rule.field, values: [...(rule.values ?? [])] };
+        }
+        if (rule.op === "and" || rule.op === "or") {
+          return {
+            op: rule.op,
+            rules: rule.rules.map((child) => ({ ...child })),
+          };
+        }
+        return { ...rule };
+      }),
+    }))
+    .sort((a, b) => b.priority - a.priority);
 }
 
 function personaLabel(personaId: PersonaId) {
@@ -238,31 +267,80 @@ function skillStatusLabel(skill: AssistantSkillConfig) {
 
 function entryRuleSummary(entry: RecommendEntryConfig) {
   const rule = entry.rules[0];
-  if (!rule || rule.op !== "eq") return "未配置规则";
-  return `${rule.field} = ${String(rule.value)}`;
+  if (!rule) return "无规则（始终展示）";
+  if (rule.op === "eq") {
+    const fieldMeta = ruleEligibleFields.value.find((f) => f.fieldId === rule.field);
+    const fieldLabel = fieldMeta?.label ?? rule.field;
+    if (typeof rule.value === "boolean") {
+      return `${fieldLabel} = ${rule.value ? "是" : "否"}`;
+    }
+    if (rule.field === "personaId") {
+      return `${fieldLabel} = ${personaLabel(rule.value as PersonaId)}`;
+    }
+    return `${fieldLabel} = ${String(rule.value)}`;
+  }
+  if (rule.op === "in") {
+    const fieldMeta = ruleEligibleFields.value.find((f) => f.fieldId === rule.field);
+    const fieldLabel = fieldMeta?.label ?? rule.field;
+    const values = rule.values ?? [];
+    if (rule.field === "personaId") {
+      return `${fieldLabel} ∈ ${values.map((v) => personaLabel(v as PersonaId)).join("、")}`;
+    }
+    return `${fieldLabel} ∈ ${values.map(String).join("、")}`;
+  }
+  if (rule.op === "and" || rule.op === "or") {
+    return `${rule.op.toUpperCase()}（${rule.rules?.length ?? 0} 条）`;
+  }
+  return "复杂规则";
 }
 
-function buildEntryRule(): RuleExpression {
-  const { ruleField, ruleValue } = editEntryForm.value;
-  return { op: "eq", field: ruleField, value: ruleValue };
-}
-
-function syncRuleValueForField(fieldId: string) {
+function defaultRuleValueForField(fieldId: string): string | boolean {
   const meta = ruleEligibleFields.value.find((f) => f.fieldId === fieldId);
-  if (!meta) return;
-  if (meta.valueType === "boolean") {
-    editEntryForm.value.ruleValue = true;
-  } else if (meta.valueType === "enum" && meta.enumOptions?.length) {
-    editEntryForm.value.ruleValue = meta.enumOptions[0].value;
+  if (!meta) return "";
+  if (meta.valueType === "boolean") return true;
+  if (meta.valueType === "enum" && meta.enumOptions?.length) {
+    return meta.enumOptions[0].value;
+  }
+  return "";
+}
+
+/** 仅在用户切换字段时重置条件值，避免打开编辑器时覆盖已有规则 */
+function onRuleFieldChange(fieldId: string) {
+  editEntryForm.value.ruleField = fieldId;
+  const next = defaultRuleValueForField(fieldId);
+  editEntryForm.value.ruleValue = next;
+  if (fieldId === "personaId") {
+    editEntryForm.value.rulePersonaValues = [
+      typeof next === "string" ? next : "demo_new",
+    ];
   } else {
-    editEntryForm.value.ruleValue = "";
+    editEntryForm.value.rulePersonaValues = [];
   }
 }
 
-watch(
-  () => editEntryForm.value.ruleField,
-  (fieldId) => syncRuleValueForField(fieldId)
-);
+function buildEntryRule(): RuleExpression {
+  const { ruleField, ruleValue, rulePersonaValues } = editEntryForm.value;
+  if (ruleField === "personaId") {
+    const values = rulePersonaValues.length
+      ? [...rulePersonaValues]
+      : [typeof ruleValue === "string" ? ruleValue : "demo_new"];
+    if (values.length > 1) {
+      return { op: "in", field: "personaId", values };
+    }
+    return { op: "eq", field: "personaId", value: values[0] };
+  }
+  return { op: "eq", field: ruleField, value: ruleValue };
+}
+
+function togglePersonaRuleValue(personaId: string) {
+  const current = editEntryForm.value.rulePersonaValues;
+  if (current.includes(personaId)) {
+    if (current.length <= 1) return;
+    editEntryForm.value.rulePersonaValues = current.filter((id) => id !== personaId);
+  } else {
+    editEntryForm.value.rulePersonaValues = [...current, personaId];
+  }
+}
 
 onMounted(async () => {
   await Promise.all([
@@ -375,10 +453,34 @@ function onToggleSkillEnabled(index: number, enabled: boolean) {
   workingSkills.value[index] = { ...workingSkills.value[index], enabled };
 }
 
-function openEntryEditor(index: number) {
+function openEntryEditor(entryId: string) {
+  const index = workingEntries.value.findIndex((item) => item.entryId === entryId);
+  if (index < 0) return;
   editingEntryIndex.value = index;
   const entry = workingEntries.value[index];
   const rule = entry.rules[0];
+
+  let ruleField = "personaId";
+  let ruleValue: string | boolean = "demo_new";
+  let rulePersonaValues = ["demo_new"];
+
+  if (rule?.op === "eq") {
+    ruleField = String(rule.field);
+    ruleValue = rule.value as string | boolean;
+    if (ruleField === "personaId" && typeof ruleValue === "string") {
+      rulePersonaValues = [ruleValue];
+    }
+  } else if (rule?.op === "in") {
+    ruleField = String(rule.field);
+    const values = (rule.values ?? []).map(String);
+    if (ruleField === "personaId" && values.length) {
+      rulePersonaValues = values;
+      ruleValue = values[0];
+    } else if (values.length) {
+      ruleValue = values[0];
+    }
+  }
+
   editEntryForm.value = {
     entryId: entry.entryId,
     title: entry.title,
@@ -389,12 +491,9 @@ function openEntryEditor(index: number) {
     targetPath: entry.targetPath ?? "",
     skillId: entry.skillId ?? "",
     promptHint: entry.promptHint ?? "",
-    ruleField:
-      rule && rule.op === "eq" ? String(rule.field) : "personaId",
-    ruleValue:
-      rule && rule.op === "eq"
-        ? (rule.value as string | boolean)
-        : "demo_new",
+    ruleField,
+    ruleValue,
+    rulePersonaValues,
   };
   entryEditorVisible.value = true;
 }
@@ -407,27 +506,43 @@ function closeEntryEditor() {
 function confirmEntryEditor() {
   if (editingEntryIndex.value < 0) return;
   const current = workingEntries.value[editingEntryIndex.value];
+  const parsedPriority = Number(editEntryForm.value.priority);
   workingEntries.value[editingEntryIndex.value] = {
     ...current,
     title: editEntryForm.value.title.trim() || current.title,
     icon: editEntryForm.value.icon.trim() || current.icon,
     enabled: editEntryForm.value.enabled,
-    priority: Number(editEntryForm.value.priority) || current.priority,
+    priority: Number.isFinite(parsedPriority) ? parsedPriority : current.priority,
     target: editEntryForm.value.target,
     targetPath: editEntryForm.value.targetPath.trim() || undefined,
     skillId: editEntryForm.value.skillId.trim() || undefined,
     promptHint: editEntryForm.value.promptHint.trim() || undefined,
     rules: [buildEntryRule()],
   };
+  // 保存后按优先级重排，保证列表顺序与预览一致
+  workingEntries.value = [...workingEntries.value].sort(
+    (a, b) => b.priority - a.priority,
+  );
   closeEntryEditor();
-  appToast("入口已更新到待保存列表");
+  // 立即写入 LocalStorage，避免只点「确定」未点底部「保存」导致重登后不生效
+  void persistEntriesOnly("快捷服务已保存，请用对应演示账号打开聊天欢迎页验证");
 }
 
-function onToggleEntryEnabled(index: number, enabled: boolean) {
+async function persistEntriesOnly(successMessage: string) {
+  businessConfigStore.saveRecommendEntriesOverride(
+    cloneEntries(workingEntries.value),
+  );
+  appToast(successMessage);
+}
+
+function onToggleEntryEnabled(entryId: string, enabled: boolean) {
+  const index = workingEntries.value.findIndex((item) => item.entryId === entryId);
+  if (index < 0) return;
   workingEntries.value[index] = {
     ...workingEntries.value[index],
     enabled,
   };
+  void persistEntriesOnly(enabled ? "已启用并保存" : "已关闭并保存");
 }
 
 function openQuestionEditor(flatIndex: number) {
@@ -462,6 +577,7 @@ function applyFlatQuestions(nextFlat: ReturnType<typeof flattenWelcomeQuestions>
 function confirmQuestionEditor() {
   if (editingQuestionFlatIndex.value < 0) return;
   const current = workingQuestions.value[editingQuestionFlatIndex.value];
+  const parsedPriority = Number(editQuestionForm.value.priority);
   const nextFlat = workingQuestions.value.map((item, index) =>
     index === editingQuestionFlatIndex.value
       ? {
@@ -474,7 +590,9 @@ function confirmQuestionEditor() {
           icon: editQuestionForm.value.icon.trim() || current.icon,
           badgeColor: editQuestionForm.value.badgeColor.trim() || current.badgeColor,
           enabled: editQuestionForm.value.enabled,
-          priority: Number(editQuestionForm.value.priority) || current.priority || 0,
+          priority: Number.isFinite(parsedPriority)
+            ? parsedPriority
+            : (current.priority ?? 0),
         }
       : item,
   );
@@ -585,7 +703,7 @@ function goPreviewChat() {
   <div class="admin-ui" :style="themeVars">
     <van-notice-bar
       left-icon="info-o"
-      text="演示版：配置保存在浏览器 LocalStorage；右上角「AI 客服 H5」直接预览，未保存的修改不会生效"
+      text="演示版：快捷服务规则改完点「确定」即写入本机；须用规则匹配的演示账号登录后打开聊天欢迎页。最多展示 4 个（按优先级）。"
     />
 
     <van-tabs v-model:active="activeTab" class="admin-business__tabs">
@@ -631,23 +749,23 @@ function goPreviewChat() {
       <van-tab title="欢迎页入口" name="entry">
         <section class="admin-ui__block">
           <p class="admin-ui__block-title">
-            快捷服务（{{ workingEntries.length }}，展示最多 {{ MAX_QUICK_SERVICES }} 个）
+            快捷服务（{{ workingEntries.length }}，展示最多 {{ MAX_QUICK_SERVICES }} 个，按优先级降序）
           </p>
           <div class="admin-ui__panel admin-ui__panel--card">
             <van-cell
-              v-for="(entry, index) in workingEntries"
+              v-for="entry in sortedWorkingEntries"
               :key="entry.entryId"
               :title="entry.title"
               :label="`${entry.entryId} · 优先级 ${entry.priority} · ${entryRuleSummary(entry)}`"
               is-link
-              @click="openEntryEditor(index)"
+              @click="openEntryEditor(entry.entryId)"
             >
               <template #value>
                 <van-switch
                   :model-value="entry.enabled !== false"
                   size="20px"
                   @click.stop
-                  @update:model-value="onToggleEntryEnabled(index, $event)"
+                  @update:model-value="onToggleEntryEnabled(entry.entryId, $event)"
                 />
               </template>
             </van-cell>
@@ -656,23 +774,40 @@ function goPreviewChat() {
 
         <section class="admin-ui__block">
           <p class="admin-ui__block-title">
-            游游推荐（{{ workingQuestions.length }}，每账号最多 {{ MAX_WELCOME_RECOMMEND }} 条）
+            游游推荐（{{ workingQuestions.length }}，每账号最多 {{ MAX_WELCOME_RECOMMEND }} 条，按优先级降序）
           </p>
           <div class="admin-ui__panel admin-ui__panel--card">
             <van-cell
-              v-for="(question, index) in workingQuestions"
+              v-for="question in sortedWorkingQuestions"
               :key="`${question.personaId}-${question.id}`"
               :title="question.text"
               :label="`${personaLabel(question.personaId)} · ${question.id} · 优先级 ${question.priority ?? 0}`"
               is-link
-              @click="openQuestionEditor(index)"
+              @click="
+                openQuestionEditor(
+                  findFlatQuestionIndex(
+                    workingQuestions,
+                    question.personaId,
+                    question.id,
+                  ),
+                )
+              "
             >
               <template #value>
                 <van-switch
                   :model-value="question.enabled !== false"
                   size="20px"
                   @click.stop
-                  @update:model-value="onToggleQuestionEnabled(index, $event)"
+                  @update:model-value="
+                    onToggleQuestionEnabled(
+                      findFlatQuestionIndex(
+                        workingQuestions,
+                        question.personaId,
+                        question.id,
+                      ),
+                      $event,
+                    )
+                  "
                 />
               </template>
             </van-cell>
@@ -694,7 +829,7 @@ function goPreviewChat() {
               {{ preview.contextSummary }}
             </p>
             <p class="admin-business__preview-label">
-              快捷服务（按顺序，最多 {{ MAX_QUICK_SERVICES }} 个）
+              快捷服务（优先级降序，最多 {{ MAX_QUICK_SERVICES }} 个）
             </p>
             <van-cell
               v-for="entry in preview.quickServices"
@@ -946,7 +1081,7 @@ function goPreviewChat() {
           <van-field v-model="editEntryForm.title" label="标题" />
           <van-field
             v-model="editEntryForm.priority"
-            label="优先级"
+            label="优先级（越大越靠前）"
             type="digit"
             placeholder="数字越大越靠前"
           />
@@ -1017,12 +1152,20 @@ function goPreviewChat() {
           </div>
 
           <div class="admin-business__section">
-            <p class="admin-business__section-title">触发规则（单条 eq）</p>
+            <p class="admin-business__section-title">触发规则</p>
+            <p class="admin-business__hint admin-business__hint--block">
+              数字越大越靠前；规则字段除「演示账号」外，按各账号当前上下文（在园、待出行订单等）求值。
+            </p>
             <van-cell title="条件字段">
               <template #value>
                 <select
-                  v-model="editEntryForm.ruleField"
                   class="admin-business__select"
+                  :value="editEntryForm.ruleField"
+                  @change="
+                    onRuleFieldChange(
+                      ($event.target as HTMLSelectElement).value,
+                    )
+                  "
                 >
                   <option
                     v-for="field in ruleEligibleFields"
@@ -1034,8 +1177,30 @@ function goPreviewChat() {
                 </select>
               </template>
             </van-cell>
+            <div
+              v-if="editEntryForm.ruleField === 'personaId'"
+              class="admin-business__persona-rules"
+            >
+              <p class="admin-business__section-title">适用演示账号（可多选）</p>
+              <van-cell
+                v-for="opt in DEMO_PERSONA_OPTIONS"
+                :key="opt.value"
+                :title="opt.label"
+                clickable
+                @click="togglePersonaRuleValue(opt.value)"
+              >
+                <template #right-icon>
+                  <van-checkbox
+                    :model-value="
+                      editEntryForm.rulePersonaValues.includes(opt.value)
+                    "
+                    @click.stop="togglePersonaRuleValue(opt.value)"
+                  />
+                </template>
+              </van-cell>
+            </div>
             <van-cell
-              v-if="selectedRuleFieldMeta?.valueType === 'boolean'"
+              v-else-if="selectedRuleFieldMeta?.valueType === 'boolean'"
               title="条件值"
             >
               <template #value>
@@ -1361,6 +1526,10 @@ function goPreviewChat() {
 .admin-business__hint--section {
   padding: 0 16px 8px;
   margin: 0;
+}
+
+.admin-business__persona-rules {
+  padding-bottom: 8px;
 }
 
 .admin-business__sub-intent {

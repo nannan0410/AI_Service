@@ -1,13 +1,19 @@
 import { llmConfig } from '@config/llm.config'
 import type { Stage2SkillId } from '@/ai/skills/utils'
-import { isTicketPurchaseIntent } from '@/utils/ticketPurchaseIntent'
+import {
+  isTicketPurchaseIntent,
+  shouldInterruptPurchaseSession,
+} from '@/utils/ticketPurchaseIntent'
 import { shouldRunOrderQueryWorkflow } from '@/utils/orderQueryIntent'
 import { shouldRunInvoiceWorkflow } from '@/utils/invoiceIntent'
 import { shouldRunReviewWorkflow } from '@/utils/reviewIntent'
 import { shouldRunParkingPayWorkflow } from '@/utils/parkingPayIntent'
 import { shouldRunProactiveMarketingWorkflow } from '@/utils/proactiveMarketingIntent'
 import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
-import { shouldRunTravelGuideWorkflow } from '@/utils/travelGuideIntent'
+import {
+  isTravelGuidePreferredOverTicket,
+  shouldRunTravelGuideWorkflow,
+} from '@/utils/travelGuideIntent'
 import type { SkillRouteResult } from './resolveSkillRoute'
 
 /** P0-2 增强：高置信度 LLM 语义路由是否可进入 Workflow */
@@ -37,6 +43,8 @@ export function shouldRunTicketWorkflowFromRoute(
   message: string,
   hasPurchaseSession: boolean,
 ): boolean {
+  // 明确其它业务意图打断购票会话
+  if (shouldInterruptPurchaseSession(message)) return false
   if (hasPurchaseSession) return true
   if (route.skill?.skillId !== 'ticket_purchase') return false
   return isTicketPurchaseIntent(message) || isLlmWorkflowEntry(route, 'ticket_purchase')
@@ -46,6 +54,8 @@ export function shouldRunTravelGuideWorkflowFromRoute(
   route: SkillRouteResult,
   message: string,
 ): boolean {
+  // 门票 FAQ 等可能被关键词误标为购票，仍按攻略走
+  if (isTravelGuidePreferredOverTicket(message)) return true
   if (route.skill?.skillId !== 'travel_guide') return false
   return shouldRunTravelGuideWorkflow(message) || isLlmWorkflowEntry(route, 'travel_guide')
 }
@@ -95,6 +105,8 @@ export function shouldRunProactiveMarketingWorkflowFromRoute(
   message: string,
 ): boolean {
   if (route.skill?.skillId !== 'proactive_marketing') return false
+  // 关键词已命中本 Skill 时直接进 Workflow，避免「优惠券」等短句意图正则漏匹配
+  if (route.source === 'keyword') return true
   return (
     shouldRunProactiveMarketingWorkflow(message) ||
     isLlmWorkflowEntry(route, 'proactive_marketing')

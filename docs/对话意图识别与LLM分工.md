@@ -80,9 +80,10 @@
 
 | 项 | 说明 |
 |----|------|
-| 入口条件 | `purchaseStore.session !== null` **或**（Skill=`ticket_purchase` **且** `isTicketPurchaseIntent`） |
-| 入口正则 | `shouldRunTicketWorkflow`：买票、两大一小、首次购票等 |
+| 入口条件 | `purchaseStore.session !== null`（且未被其它明确意图打断）**或**（Skill=`ticket_purchase` **且** `isTicketPurchaseIntent`） |
+| 入口正则 | `shouldRunTicketWorkflow`：买票、两大一小、首次购票、买/购/订+门票等；**不含**裸门票 FAQ；**不含**人数/日期启发式冷启动 |
 | 会话内 | `parsePartyFromMessage`、`parseVisitDateFromMessage`；确认靠推荐卡按钮 |
+| 会话打断 | `shouldInterruptPurchaseSession`：明确攻略 / 营销 / 停车 / 订单 / 演出 / 发票 / 点评 / 领券 |
 | 状态机 | `ask_party` → `ask_date` → `recommend` → `confirm` |
 | 文件 | `src/ai/workflow/ticketPurchase.ts`、`src/store/purchaseStore.ts` |
 
@@ -111,8 +112,8 @@
 
 | 项 | 说明 |
 |----|------|
-| 入口 | Skill=`invoice_service` + `shouldRunInvoiceWorkflow` |
-| 行为 | `getOrders` → 可开票列表 → `PageGuideCard` → `/invoice` 或 `/invoice/batch` |
+| 入口 | Skill=`invoice_service` + `shouldRunInvoiceWorkflow`；快捷推荐发「开发票」 |
+| 行为 | `getOrders` → 可开票：文案「您当前有X笔订单可以申请开票」+「立即开票」→ `/invoice/batch`；0 笔：「当前没有可申请开票的订单。」 |
 | 文件 | `src/utils/invoiceIntent.ts`、`src/ai/workflow/invoiceService.ts` |
 
 ### 3.6 停车缴费
@@ -122,6 +123,14 @@
 | 入口 | Skill=`parking_pay` + 停车缴费正则 |
 | 行为 | 查绑定车牌 → `PageGuideCard` → `/parking` |
 | 文件 | `src/ai/workflow/parkingPay.ts`（及 `parkingIntent` 等） |
+
+### 3.7 演出项目推荐
+
+| 项 | 说明 |
+|----|------|
+| 入口 | Skill=`scenic_recommend` + `shouldRunShowScheduleWorkflow` |
+| 行为 | `getScenicActivities` → **单条** `scene_recommend`；`dayKind`：today / tomorrow / day_after / general（「演出推荐」等） |
+| 文件 | `src/utils/showScheduleIntent.ts`、`src/utils/showSchedule.ts`、`src/ai/workflow/showSchedule.ts` |
 
 ---
 
@@ -136,13 +145,14 @@
 | `ticket_purchase` | 买票、购票、两大一小、首次购票… | `skills.json` |
 | `travel_guide` | 交通、攻略、怎么去、入园须知… | `skills.json` |
 | `order_query` | 订单、查订单、OTA… | `skills.json` |
-| `invoice_service` | 发票、开票、报销、批量开票 | `skills.json` |
+| `invoice_service` | 发票、开票、报销、开发票、批量开票 | `skills.json` |
 | `parking_pay` | 停车缴费、交停车费、车牌… | `skills.json` |
+| `scenic_recommend` | 今日演出、演出推荐、灯光秀、花车… | `skills.json` |
 
 作用：为 **LLM 路径** 注入 `promptAddon` 与 Tool 白名单。Workflow 命中时，Skill 主要参与 **入口判断**，不参与槽位填充。
 
-未启用 Skill（`enabled: false`）：主动营销、园区推荐等 — 只能靠 LLM 通用模式或离线正则。  
-**已启用 Workflow**：购票、攻略、订单、**发票**、停车等见 `skills.json` + `src/ai/workflow/*`。
+未启用 Skill（`enabled: false`）：部分扩展场景 — 只能靠 LLM 通用模式或离线正则。  
+**已启用 Workflow**：购票、攻略、订单、**发票**、停车、**演出场次**、点评、主动营销等见 `skills.json` + `src/ai/workflow/*`。
 
 ---
 
@@ -417,6 +427,7 @@ npx vite-node scripts/test-travel-guide-intent-route.mts
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-21 | 发票对话：X笔+立即开票→批量页；0笔固定文案；演出 `scene_recommend` / general；快捷开发票走 chat |
 | 2026-06-19 | 园内路线子场景：`in_park` 意图，猜你想问「现在先玩哪里」不含交通/入园 |
 | 2026-06-24 | P0-2 增强：高置信度 LLM Skill 进入 Workflow |
 | 2026-06-24 | P0-3：攻略子意图 LLM + 过程面板 |

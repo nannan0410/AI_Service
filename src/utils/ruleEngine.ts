@@ -30,10 +30,19 @@ function getField(ctx: RuleContext, field: string): unknown {
 
 export function evaluateRule(rule: RuleExpression, ctx: RuleContext): boolean {
   switch (rule.op) {
-    case 'eq':
-      return getField(ctx, rule.field) === rule.value
-    case 'in':
-      return rule.values.includes(getField(ctx, rule.field))
+    case 'eq': {
+      const fieldValue = getField(ctx, rule.field)
+      // 演示账号等字符串字段统一转字符串，避免 select 值类型不一致
+      if (typeof fieldValue === 'string' || typeof rule.value === 'string') {
+        return String(fieldValue) === String(rule.value)
+      }
+      return fieldValue === rule.value
+    }
+    case 'in': {
+      if (!Array.isArray(rule.values)) return false
+      const fieldValue = getField(ctx, rule.field)
+      return rule.values.some((item) => String(item) === String(fieldValue))
+    }
     case 'contains': {
       const fieldValue = getField(ctx, rule.field)
       if (Array.isArray(fieldValue)) return fieldValue.includes(rule.value)

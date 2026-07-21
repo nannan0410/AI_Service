@@ -26,6 +26,7 @@ import {
   shouldRunInvoiceWorkflow,
   shouldRunReviewWorkflow,
   shouldRunProactiveMarketingWorkflow,
+  shouldRunOrderQueryWorkflow,
 } from "@/ai/workflow";
 import { isLikelyGeneralMessage } from "@/ai/nlu/isLikelyGeneralMessage";
 import {
@@ -38,6 +39,7 @@ import {
   shouldRunReviewWorkflowFromRoute,
   shouldRunProactiveMarketingWorkflowFromRoute,
 } from "@/ai/nlu/skillWorkflowGate";
+import { shouldInterruptPurchaseSession } from "@/utils/ticketPurchaseIntent";
 import { createOrderDraft, fetchCoupons, fetchMemberInfo, fetchOrders, submitReview } from "@/api/business";
 import { buildMergedCouponMessage } from "@/utils/couponRecommend";
 import { qualifiesReviewReward } from "@/utils/reviewForm";
@@ -174,8 +176,7 @@ onMounted(async () => {
   await Promise.all([
     assistantStore.loadConfig(true),
     skillStore.loadSkills(),
-    businessConfigStore.loadRecommendEntries(true),
-    businessConfigStore.loadWelcomeTemplates(true),
+    businessConfigStore.loadAll(true),
     loadUserCoupons(),
   ]);
   if (authStore.memberId) {
@@ -184,6 +185,15 @@ onMounted(async () => {
   showWelcomePanel.value = true;
   assistantStore.setMotion("wave", 2200);
 });
+
+watch(
+  () => authStore.personaId,
+  async (personaId) => {
+    if (!personaId) return;
+    await businessConfigStore.loadRecommendEntries(true);
+    await loadUserCoupons();
+  },
+);
 
 watch(showWelcomePanel, (visible) => {
   if (visible) loadUserCoupons();
@@ -223,6 +233,14 @@ async function onConfirmClearChat() {
   } catch {
     /* 用户点击「我再想想」 */
   }
+}
+
+function returnToWelcome() {
+  input.value = "";
+  pendingPrompt.value = null;
+  chatStore.sending = false;
+  assistantStore.setMotion("wave", 2200);
+  showWelcomePanel.value = true;
 }
 
 function clearChatAndReturnWelcome() {
@@ -501,8 +519,13 @@ async function onSend() {
       text,
       purchaseStore.session !== null,
     );
-    const useTravelGuideWorkflow = shouldRunTravelGuideWorkflowFromRoute(skillRoute, text);
-    const useOrderQueryWorkflow = shouldRunOrderQueryWorkflowFromRoute(skillRoute, text);
+    const useTravelGuideWorkflow = shouldRunTravelGuideWorkflowFromRoute(
+      skillRoute,
+      text,
+    );
+    const useOrderQueryWorkflow =
+      shouldRunOrderQueryWorkflow(text) ||
+      shouldRunOrderQueryWorkflowFromRoute(skillRoute, text);
     const useParkingPayWorkflow =
       shouldRunParkingPayWorkflow(text) ||
       shouldRunParkingPayWorkflowFromRoute(skillRoute, text);
@@ -519,6 +542,14 @@ async function onSend() {
       shouldRunProactiveMarketingWorkflow(text) ||
       shouldRunProactiveMarketingWorkflowFromRoute(skillRoute, text);
 
+    // 明确其它业务意图时结束购票会话，避免续跑劫持
+    if (
+      purchaseStore.session &&
+      shouldInterruptPurchaseSession(text)
+    ) {
+      purchaseStore.clearSession();
+    }
+
     const workflowCallbacks = {
       onToolStart: (toolName: string, label: string) => {
         aiStore.addToolStep(toolName, label);
@@ -528,8 +559,13 @@ async function onSend() {
       },
     };
 
+    // 明确攻略优先于购票；餐饮营销优先于宽泛攻略
     const result = useNewGuestCouponWorkflow
       ? await runNewGuestCouponWorkflow(text, workflowCallbacks)
+      : useParkingPayWorkflow
+        ? await runParkingPayWorkflow(text, workflowCallbacks)
+      : useTravelGuideWorkflow
+        ? await runTravelGuideWorkflow(text, personaId, workflowCallbacks)
       : useTicketWorkflow
       ? purchaseStore.session
         ? await continueTicketPurchaseWorkflow(
@@ -547,18 +583,14 @@ async function onSend() {
               purchaseStore.session,
             );
           })()
-      : useParkingPayWorkflow
-        ? await runParkingPayWorkflow(text, workflowCallbacks)
+      : useProactiveMarketingWorkflow
+        ? await runProactiveMarketingWorkflow(text, workflowCallbacks)
       : useShowScheduleWorkflow
         ? await runShowScheduleWorkflow(text, workflowCallbacks)
       : useInvoiceWorkflow
         ? await runInvoiceServiceWorkflow(text, workflowCallbacks)
       : useReviewWorkflow
         ? await runReviewServiceWorkflow(text, workflowCallbacks)
-      : useProactiveMarketingWorkflow
-        ? await runProactiveMarketingWorkflow(text, workflowCallbacks)
-      : useTravelGuideWorkflow
-        ? await runTravelGuideWorkflow(text, personaId, workflowCallbacks)
         : useOrderQueryWorkflow
           ? await runOrderQueryWorkflow(text, workflowCallbacks)
           : await sendChatMessage(
@@ -587,7 +619,7 @@ async function onSend() {
     } else {
       chatStore.addAssistantReply(result.content, result.cards);
     }
-    if (result.cards?.some((card) => card.type === "coupon")) {
+    if (result.cards?.some((card) => card.type === "coupon" || card.type === "scene_recommend")) {
       await loadUserCoupons();
     }
     aiStore.finish(true);
@@ -618,15 +650,24 @@ async function onSend() {
         <van-icon name="arrow-left" size="20" />
       </button>
 
-      <button
-        v-if="!showWelcomePanel"
-        class="chat-page__restore"
-        type="button"
-        aria-label="清除聊天记录"
-        @click="onConfirmClearChat"
-      >
-        <img src="/restore.svg" alt="" class="chat-page__restore-icon" />
-      </button>
+      <div v-if="!showWelcomePanel" class="chat-page__top-actions">
+        <button
+          class="chat-page__top-action"
+          type="button"
+          aria-label="返回欢迎页"
+          @click="returnToWelcome"
+        >
+          <van-icon name="home-o" size="20" />
+        </button>
+        <button
+          class="chat-page__top-action"
+          type="button"
+          aria-label="清除聊天记录"
+          @click="onConfirmClearChat"
+        >
+          <img src="/restore.svg" alt="" class="chat-page__restore-icon" />
+        </button>
+      </div>
 
       <div class="chat-page__brand">
         <div class="chat-page__avatar-shell">
@@ -792,16 +833,23 @@ async function onSend() {
   opacity: 0.88;
 }
 
-.chat-page__restore {
+.chat-page__top-actions {
   position: absolute;
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-page__top-action {
   width: 36px;
   height: 36px;
   padding: 0;
   border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 50%;
+  color: #323233;
   background: rgba(255, 255, 255, 0.78);
   box-shadow: 0 8px 22px rgba(58, 87, 112, 0.12);
   display: flex;
@@ -814,7 +862,7 @@ async function onSend() {
   height: 23px;
 }
 
-.chat-page__restore:active {
+.chat-page__top-action:active {
   opacity: 0.88;
 }
 

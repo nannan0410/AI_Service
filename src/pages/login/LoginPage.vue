@@ -4,12 +4,14 @@ import { useRoute, useRouter } from "vue-router";
 import { showToast } from "vant";
 import { useAuthStore } from "@/store/authStore";
 import { useAssistantStore } from "@/store/assistantStore";
+import { useBusinessConfigStore } from "@/store/businessConfigStore";
 import type { PersonaId } from "@/types";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const assistantStore = useAssistantStore();
+const businessConfigStore = useBusinessConfigStore();
 
 const showPersonaSheet = ref(false);
 const pageStyle = computed(() => ({
@@ -23,13 +25,15 @@ const assistantNickname = computed(() => assistantStore.assistantNickname);
 const personaOptions: Array<{ id: PersonaId; name: string; desc: string }> = [
   { id: "demo_new", name: "新用户", desc: "零订单、无车牌" },
   { id: "demo_mid", name: "中级会员", desc: "有未游玩订单" },
-  { id: "demo_vip", name: "高级会员", desc: "有已完成订单" },
+  { id: "demo_vip", name: "高级会员", desc: "有可开票/已完成订单" },
 ];
 
 async function onSelectPersona(personaId: PersonaId) {
   showPersonaSheet.value = false;
   try {
     await authStore.login(personaId);
+    // 登录后合并后台 LocalStorage 覆盖，确保欢迎页快捷服务规则生效
+    await businessConfigStore.loadAll(true);
     showToast("登录成功");
     const redirect = (route.query.redirect as string) || "/";
     router.replace(redirect);

@@ -25,6 +25,7 @@ export type MessageType =
   | 'coupon'
   | 'ticket'
   | 'activity'
+  | 'scene_recommend'
   | 'order'
   | 'content'
   | 'visitor_pick'
@@ -323,6 +324,17 @@ export interface ActivityCardPayload {
   /** 攻略卡片上下文：在园展示实时排队，前期攻略隐藏排队时长 */
   guideContext?: ActivityGuideContext
   reason?: string
+}
+
+/** 餐饮/零售/演出场景推荐：合并为一条消息 */
+export interface SceneRecommendPayload {
+  scene: 'dining' | 'retail' | 'show'
+  /** 演出查询日（仅 scene=show） */
+  dayKind?: 'today' | 'tomorrow' | 'day_after' | 'general'
+  /** 当日是否仍有未开演场次（仅 scene=show 且 dayKind=today） */
+  hasRemainingSlots?: boolean
+  coupon?: CouponCardPayload
+  activities: ActivityCardPayload[]
 }
 
 export interface OrderCardPayload {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { showToast } from "vant";
 import type {
   ActivityCardPayload,
   ChatMessage,
@@ -7,6 +8,7 @@ import type {
   CouponCardPayload,
   CouponRecommendPayload,
   OrderCardPayload,
+  SceneRecommendPayload,
   TicketCardPayload,
   TicketFallbackPayload,
   PageGuideCardPayload,
@@ -29,6 +31,7 @@ import ActivityCard from "@/components/chat/cards/ActivityCard.vue";
 import GuideCard from "@/components/chat/cards/GuideCard.vue";
 import VisitorPicker from "@/components/chat/cards/VisitorPicker.vue";
 import { isCouponRecommendPayload } from "@/utils/couponRecommend";
+import { ACTIVITY_CATEGORY_LABELS } from "@/utils/activityDisplay";
 
 defineProps<{
   message: ChatMessage;
@@ -105,6 +108,21 @@ function asActivity(payload: unknown): ActivityCardPayload {
   return payload as ActivityCardPayload;
 }
 
+function asSceneRecommend(payload: unknown): SceneRecommendPayload {
+  return payload as SceneRecommendPayload;
+}
+
+function onSceneActivityView() {
+  showToast("跳转到店铺购物车或介绍页面");
+}
+
+function activityTagLabel(item: ActivityCardPayload): string {
+  if (item.category && ACTIVITY_CATEGORY_LABELS[item.category]) {
+    return ACTIVITY_CATEGORY_LABELS[item.category];
+  }
+  return "项目";
+}
+
 function asGuide(payload: unknown): TravelGuidePayload {
   return payload as TravelGuidePayload;
 }
@@ -131,6 +149,7 @@ const cardTypes = new Set([
   "order",
   "content",
   "activity",
+  "scene_recommend",
   "visitor_pick",
   "guide",
 ]);
@@ -279,6 +298,49 @@ const cardTypes = new Set([
 
     <div v-else-if="message.type === 'activity'" class="bubble bubble--assistant bubble-card">
       <ActivityCard :payload="asActivity(message.payload)" />
+    </div>
+
+    <div
+      v-else-if="message.type === 'scene_recommend'"
+      class="bubble bubble--assistant bubble-card-box"
+    >
+      <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
+      <template v-if="asSceneRecommend(message.payload).coupon">
+        <CouponCard
+          :payload="asSceneRecommend(message.payload).coupon!"
+          embedded
+        />
+        <van-button
+          size="small"
+          type="primary"
+          plain
+          round
+          block
+          class="bubble-card-box__action"
+          @click="openCouponPage"
+        >
+          点击查看
+        </van-button>
+      </template>
+      <div
+        v-for="item in asSceneRecommend(message.payload).activities"
+        :key="item.activityId"
+        class="bubble-card-box__scene-item"
+      >
+        <ActivityCard :payload="item" :tag="activityTagLabel(item)" embedded />
+        <van-button
+          v-if="asSceneRecommend(message.payload).scene !== 'show'"
+          size="small"
+          type="primary"
+          plain
+          round
+          block
+          class="bubble-card-box__action"
+          @click="onSceneActivityView"
+        >
+          查看
+        </van-button>
+      </div>
     </div>
 
     <div v-else-if="message.type === 'guide'" class="bubble bubble--assistant bubble-card-box">
@@ -450,6 +512,12 @@ const cardTypes = new Set([
 }
 
 .bubble-card-box__coupon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bubble-card-box__scene-item {
   display: flex;
   flex-direction: column;
   gap: 8px;

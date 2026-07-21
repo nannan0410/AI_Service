@@ -161,6 +161,36 @@ async function maybeIssueMarketingCoupon(
   }
 }
 
+/** 明确购票意图时，在追问人数/日期阶段就提前推券，不必等到推荐票种 */
+async function replyWithEarlyMarketingCoupon(
+  session: PurchaseSession,
+  content: string,
+  callbacks?: ToolExecutionCallbacks,
+): Promise<LlmChatResult> {
+  if (session.marketingIssued) {
+    return { content, skillId: 'ticket_purchase', toolCallsUsed: [] }
+  }
+
+  try {
+    callbacks?.onToolStart?.('getCoupons', '查询可用优惠券')
+    const coupons = await unwrapApi(fetchCoupons())
+    callbacks?.onToolDone?.('getCoupons', true)
+    const marketing = await maybeIssueMarketingCoupon(session, coupons, callbacks)
+    if (marketing.marketingCard) {
+      return {
+        content,
+        skillId: 'ticket_purchase',
+        toolCallsUsed: ['getCoupons', 'issueCoupon'],
+        cards: [marketing.marketingCard],
+      }
+    }
+  } catch {
+    callbacks?.onToolDone?.('getCoupons', false)
+  }
+
+  return { content, skillId: 'ticket_purchase', toolCallsUsed: [] }
+}
+
 async function maybeIssueFallbackCoupon(
   session: PurchaseSession,
   coupons: Coupon[],
@@ -401,26 +431,25 @@ export async function runTicketPurchaseWorkflow(
   if (!isPartyComplete(session.party)) {
     session.step = 'ask_party'
     if (slotsChanged) {
-      return {
-        content: '我还不太确定出行人数，请告诉我几位成人、是否有儿童或老人同行。',
-        skillId: 'ticket_purchase',
-        toolCallsUsed: [],
-      }
+      return replyWithEarlyMarketingCoupon(
+        session,
+        '我还不太确定出行人数，请告诉我几位成人、是否有儿童或老人同行。',
+        callbacks,
+      )
     }
-    return { content: askPartyMessage(), skillId: 'ticket_purchase', toolCallsUsed: [] }
+    return replyWithEarlyMarketingCoupon(session, askPartyMessage(), callbacks)
   }
 
   if (!session.visitDate) {
     session.step = 'ask_date'
     if (dateUpdated) {
-      return {
-        content:
-          '出行日期需要晚于今天，请重新告诉我，例如「7 月 5 日」「这周末」或「8 月中旬」。',
-        skillId: 'ticket_purchase',
-        toolCallsUsed: [],
-      }
+      return replyWithEarlyMarketingCoupon(
+        session,
+        '出行日期需要晚于今天，请重新告诉我，例如「7 月 5 日」「这周末」或「8 月中旬」。',
+        callbacks,
+      )
     }
-    return { content: askDateMessage(session), skillId: 'ticket_purchase', toolCallsUsed: [] }
+    return replyWithEarlyMarketingCoupon(session, askDateMessage(session), callbacks)
   }
 
   if (session.step === 'recommend' && !slotsChanged) {

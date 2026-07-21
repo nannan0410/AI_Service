@@ -3,7 +3,8 @@
  * H5 批量开票假页
  *
  * 小程序等价路径：/pages/invoice/batch
- * 入口：欢迎页 RecommendEntry「批量开发票」、对话引导（后续 invoice_service Skill）
+ * 入口：对话「开发票」引导卡「立即开票」、或快捷推荐发「开发票」后再跳转
+ * （不再由 RecommendEntry 直跳本页）
  */
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
@@ -83,8 +84,6 @@ async function onSubmit() {
     <van-nav-bar
       title="批量开发票"
       left-arrow
-      fixed
-      placeholder
       class="invoice-batch-page__nav"
       @click-left="$router.back()"
     />
@@ -101,37 +100,39 @@ async function onSubmit() {
     <van-empty v-else-if="invoiceable.length === 0" description="暂无可批量开票的订单" />
 
     <template v-else>
-      <div class="invoice-batch-page__toolbar">
-        <van-checkbox v-model="allSelected">全选（{{ invoiceable.length }} 笔）</van-checkbox>
-        <span class="invoice-batch-page__hint">仅展示 30 天内已完成且未开票订单</span>
-      </div>
+      <div class="invoice-batch-page__body">
+        <div class="invoice-batch-page__toolbar">
+          <van-checkbox v-model="allSelected">全选（{{ invoiceable.length }} 笔）</van-checkbox>
+          <span class="invoice-batch-page__hint">仅展示 30 天内已完成且未开票订单</span>
+        </div>
 
-      <van-checkbox-group v-model="selected">
-        <van-cell-group inset>
-          <van-cell
-            v-for="order in invoiceable"
-            :key="order.orderId"
-            clickable
-            @click="toggleRow(order.orderId)"
-          >
-            <template #title>
-              <div class="invoice-batch-page__row">
-                <van-checkbox
-                  :name="order.orderId"
-                  @click.stop
-                />
-                <div class="invoice-batch-page__info">
-                  <div class="invoice-batch-page__name">{{ order.ticketName }}</div>
-                  <div class="invoice-batch-page__meta">
-                    {{ order.orderId }} · 完成于 {{ order.completedAt?.slice(0, 10) }}
+        <van-checkbox-group v-model="selected">
+          <van-cell-group inset>
+            <van-cell
+              v-for="order in invoiceable"
+              :key="order.orderId"
+              clickable
+              @click="toggleRow(order.orderId)"
+            >
+              <template #title>
+                <div class="invoice-batch-page__row">
+                  <van-checkbox
+                    :name="order.orderId"
+                    @click.stop
+                  />
+                  <div class="invoice-batch-page__info">
+                    <div class="invoice-batch-page__name">{{ order.ticketName }}</div>
+                    <div class="invoice-batch-page__meta">
+                      {{ order.orderId }} · 完成于 {{ order.completedAt?.slice(0, 10) }}
+                    </div>
                   </div>
+                  <div class="invoice-batch-page__amount">¥{{ order.totalAmount }}</div>
                 </div>
-                <div class="invoice-batch-page__amount">¥{{ order.totalAmount }}</div>
-              </div>
-            </template>
-          </van-cell>
-        </van-cell-group>
-      </van-checkbox-group>
+              </template>
+            </van-cell>
+          </van-cell-group>
+        </van-checkbox-group>
+      </div>
 
       <div class="invoice-batch-page__footer">
         <div class="invoice-batch-page__summary">
@@ -155,18 +156,25 @@ async function onSubmit() {
 
 <style scoped>
 .page {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: #f7f8fa;
-  padding-bottom: 120px;
 }
 
-.invoice-batch-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.invoice-batch-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .invoice-batch-page__loading {
   margin-top: 48px;
+}
+
+.invoice-batch-page__body {
+  flex: 1;
+  padding-bottom: 12px;
 }
 
 .invoice-batch-page__toolbar {
@@ -215,12 +223,11 @@ async function onSubmit() {
 }
 
 .invoice-batch-page__footer {
-  position: fixed;
-  left: 50%;
+  position: sticky;
   bottom: 0;
-  transform: translateX(-50%);
+  z-index: 10;
   width: 100%;
-  max-width: 430px;
+  margin-top: auto;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
