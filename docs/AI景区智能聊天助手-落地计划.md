@@ -379,7 +379,7 @@ WelcomePanel
 ├── chatBackgroundUrl（配置）
 ├── hero：defaultImageUrl + 能力文案（WelcomeHero）
 ├── 「快捷服务」RecommendEntry chips（recommend_entries，规则计算，最多 4）
-├── 「游游推荐」suggestedQuestions（welcome_templates，默认 3 + 展开，最多 6）
+├── 「游游推荐」suggestedQuestions（welcome_questions + rules，默认 3 + 展开，最多 6）
 └── 底部输入框 → onStartChat / onSend 进入对话流
 ```
 
@@ -535,12 +535,12 @@ type MessageType =
 | `ticket_purchase` | 智能购票 | pre | P1 | ✅ Workflow + 假页 |
 | `travel_guide` | 游玩攻略 | pre | P1 | ✅ Workflow + NLU |
 | `order_query` | 订单查询（含 OTA 只读） | pre/post | P1 | ✅ Workflow |
-| `proactive_marketing` | 主动营销 | pre/in_park | P1 | ❌ Skill 未启用 |
-| `scenic_recommend` | 园区/商品推荐 | pre/in_park | P1 | ❌ Skill 未启用 |
+| `proactive_marketing` | 主动营销 | pre/in_park | P1 | ✅ 查券 + 餐饮/零售推券 |
+| `scenic_recommend` | 园区/演出推荐 | pre/in_park | P1 | ✅ 演出场次 Workflow |
 | `parking_pay` | 停车缴费 | in_park/post_same_day | P1 | ✅ Workflow + `/parking` 假页引导 |
-| `retail_recommend` | 二消商餐推荐 | in_park | P1 | ❌ 未配置 |
-| `queue_recommend` | 虚拟排队推荐 | in_park | P2 | 📝 Mock API 有 |
-| `route_plan` | 路线+打卡 | in_park | P2 | ❌（打卡见 §十九②） |
+| `retail_recommend` | 二消商餐推荐 | in_park | P1 | ✅ 并入 `proactive_marketing` |
+| `queue_recommend` | 虚拟排队推荐 | in_park | P2 | ✅ Workflow + `/queue/take` `/queue/pay` |
+| `route_plan` | 路线+打卡 | in_park | P2 | 🚧 打卡 MVP=`checkin_service` ✅；路线串联未做 |
 | `quiz_interact` | 答题互动 | in_park | P2 | 📝 Mock JSON 有 |
 | `invoice_service` | 发票（含批量入口） | post_* | P1 | ✅ Workflow + 假页 + RecommendEntry |
 | `receipt_points` | 小票 OCR 积分 | post_* | P1 | 🚧 `/receipt` 页有，未接对话 |
@@ -652,11 +652,13 @@ type MessageType =
 
 ### 阶段三：游中 + 游后当日（≈5 天）
 
-- [ ] 二消推荐、虚拟排队、路线 P2
+- [x] **虚拟排队推荐** `queue_recommend`（免费包 / 付费单 / 点名；取号假页）
+- [x] **园区打卡** `checkin_service`（见阶段五 / §十九）
+- [ ] 二消地理围栏、路线串联 P2
 - [ ] 答题 Demo 1 套
-- [ ] 停车、OCR、离园
+- [ ] OCR、离园推送
 
-**验收**：demo_vip 游中推荐+答题可走通。
+**验收**：demo_vip 游中虚拟排队 + 打卡可走通。✅（答题/围栏仍待）
 
 ### 阶段四：游后 + 推送 + 打磨（≈5 天）
 
@@ -721,7 +723,7 @@ type MessageType =
 
 ## 十九、阶段五计划（服务点评 + 园区打卡）
 
-> **状态**：**① 服务点评 ✅ 已实现**（2026-07-07）；**② 园区打卡** 仍为方案。与 §8.2 `route_plan`、§8.4 `review_service` 对齐。
+> **状态**：**① 服务点评 ✅**；**② 园区打卡 ✅**（2026-07-21）。与 §8.2 `route_plan`、§8.4 `review_service` 对齐；`route_plan` 串联仍为后续。
 
 ### 19.1 共性原则
 
@@ -759,27 +761,27 @@ type MessageType =
 
 ---
 
-### 19.3 ② 园区打卡（`checkin_service` / 打卡 MVP）
+### 19.3 ② 园区打卡（`checkin_service` / 打卡 MVP）✅
 
 **目标**：在园用户（`inPark: true`，demo_vip）对 **指定景点/项目点位** 打卡，获得 **积分或小券** Mock 奖励；为后续 `route_plan`（一键路线 + 连续打卡）打底。
 
-| 维度 | 计划 |
+**实现摘要**（2026-07-21）：`checkin_service` Skill、`runCheckinWorkflow`（在园引导「立即打卡」→ `/checkin`；非在园提示入园后可打卡）、假页列表打卡、同点当日去重、积分 + 可选 `cp_prod_checkin` 小券、RecommendEntry `checkin_nearby`（`inPark=true`）。
+
+| 维度 | 计划 / 实现 |
 |------|------|
-| **Skill** | `checkin_service`（或暂命名 `spot_checkin`，`phase: in_park`） |
-| **触发词** | 打卡、签到、景点打卡、我在某某、打卡领券 |
-| **数据** | 新增 `src/mock/checkin/spots.json`：spotId、名称、关联 activityId、奖励（积分/券 productId） |
-| **Workflow** | `runCheckinWorkflow`：`getScenicActivities` 或读 spots → 列表/最近点位 → **对话内 CheckinCard** 或跳 `/checkin` |
-| **假页（二选一）** | **A** 对话 `CheckinCard` 选点位一键打卡；**B** `/checkin` 列表页（推荐 B，与开票页一致） |
-| **API** | `GET /api/checkin/spots`；`POST /api/checkin` `{ spotId }` → 记打卡记录、发券/加积分（Mock） |
+| **Skill** | `checkin_service`（`phase: in_park`，`enabled: true`） |
+| **触发词** | 打卡、签到、景点打卡、园区打卡、打卡领券、我要打卡 |
+| **数据** | `src/mock/checkin/spots.json`（4 点：过山车/漂流/灯光秀/萌宠） |
+| **Workflow** | `runCheckinWorkflow` → `GET /api/checkin/spots` → `PageGuideCard` → `/checkin` |
+| **假页** | `/checkin` 列表页（路径 B） |
+| **API** | `GET /api/checkin/spots`；`POST /api/checkin` `{ spotId }` |
 | **去重** | 同 spot 同日仅可打卡一次；已打卡展示「已签到」 |
-| **RecommendEntry** | `checkin_nearby`：`inPark=true`，标题「园区打卡」 |
+| **RecommendEntry** | `checkin_nearby`：`inPark=true`，标题「园区打卡」，chat 发「我要打卡」 |
 | **与 route_plan** | MVP 单点打卡；二期 `route_plan` = 推荐顺序 + 连续 N 点额外券 |
 
-**演示脚本**：demo_vip → 「我要打卡」→ `/checkin` → 选「极限过山车」→ 成功 + 小券/积分提示。
+**演示脚本**：demo_vip → 「我要打卡」→ `/checkin` → 选「极限过山车」→ 成功 + 积分/小券提示。
 
 **验收**：非在园 persona 提示「入园后可打卡」；重复打卡拦截。
-
-**预估**：3–4 人日（Mock 数据 + 列表页 + Workflow + 卡片 + 奖励逻辑 + 文档）。
 
 ---
 
@@ -825,6 +827,7 @@ type MessageType =
 | v0.7.2 | 2026-07-07 | 发票全链路 ✅（对话 Workflow + 单笔/批量假页）；§十九 阶段五计划（服务点评 + 园区打卡） |
 | v0.7.3 | 2026-07-21 | 发票引导文案统一；快捷开发票走对话；演出/餐饮零售 `scene_recommend` 单条合并；demo_vip 可开票 Mock |
 | v0.7.4 | 2026-07-21 | §19.2 服务点评增补「帮我写评价」（LLM / 离线模板草稿） |
+| v0.7.5 | 2026-07-21 | §19.3 园区打卡 MVP（`checkin_service` + `/checkin` + 积分/小券） |
 
 ---
 

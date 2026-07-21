@@ -1,4 +1,8 @@
 import type {
+  CheckinSpot,
+  CheckinSpotView,
+  CheckinSpotsResult,
+  CheckinSubmitResult,
   CommonVisitor,
   Coupon,
   Order,
@@ -8,6 +12,9 @@ import type {
   TicketTypeId,
   TravelGuideResult,
   UserSnapshot,
+  VirtualQueueCatalog,
+  VirtualQueueOrder,
+  VirtualQueueTakeResult,
 } from '../src/types/index'
 import demoNew from '../src/mock/users/demo_new.json'
 import demoMid from '../src/mock/users/demo_mid.json'
@@ -16,6 +23,8 @@ import couponProducts from '../src/mock/products/coupon_products.json'
 import ticketProducts from '../src/mock/products/tickets.json'
 import contentBlocks from '../src/mock/content/blocks.json'
 import activities from '../src/mock/activities.json'
+import checkinSpots from '../src/mock/checkin/spots.json'
+import virtualQueueSeed from '../src/mock/virtual_queue.json'
 import {
   activityToCardPayload,
   buildActivityRecommendReason,
@@ -32,6 +41,14 @@ import { qualifiesReviewReward } from '../src/utils/reviewForm'
 
 const REVIEW_DINING_PRODUCT_ID = 'cp_prod_review_dining'
 const REVIEW_PARKING_PRODUCT_ID = 'cp_prod_review_parking'
+
+type CheckinRecord = { spotId: string; date: string; checkinId: string; checkedAt: string }
+
+const checkinRecordsByPersona: Record<PersonaId, CheckinRecord[]> = {
+  demo_new: [],
+  demo_mid: [],
+  demo_vip: [],
+}
 
 function formatDateOffset(days: number): string {
   const d = new Date()
@@ -82,6 +99,7 @@ function issueReviewRewardCoupons(personaId: PersonaId): Coupon[] {
 
   return issued
 }
+import { isNearCheckinSpot } from '../src/utils/checkinLocation'
 import { pickNearestUpcomingVisitOrder } from '../src/utils/upcomingVisitOrder'
 
 export type IssueCouponPurpose = 'claim' | 'purchase'
@@ -599,6 +617,185 @@ export function submitReview(
   }
 }
 
+export function listCheckinSpots(personaId: PersonaId): CheckinSpotsResult {
+  const snapshot = getSnapshot(personaId)
+  const today = formatTodayDate()
+  const records = checkinRecordsByPersona[personaId] ?? []
+  const checkedToday = new Set(
+    records.filter((item) => item.date === today).map((item) => item.spotId),
+  )
+  const spots: CheckinSpotView[] = (checkinSpots as CheckinSpot[]).map((spot) => ({
+    ...spot,
+    checkedInToday: checkedToday.has(spot.spotId),
+  }))
+  return {
+    inPark: snapshot.visitorState.inPark === true,
+    currentLocation: snapshot.visitorState.currentLocation || '',
+    spots,
+    checkedCountToday: checkedToday.size,
+  }
+}
+
+/** 可变虚拟排队订单（演示会话内） */
+const virtualQueueByPersona: Record<PersonaId, VirtualQueueOrder[]> = {
+  demo_new: JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[],
+  demo_mid: JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[],
+  demo_vip: JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[],
+}
+
+function cloneVirtualQueueSeed(): VirtualQueueOrder[] {
+  return JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[]
+}
+
+export function getVirtualQueueOrders(personaId: PersonaId): VirtualQueueOrder[] {
+  return virtualQueueByPersona[personaId] ?? cloneVirtualQueueSeed()
+}
+
+export function getVirtualQueueCatalog(personaId: PersonaId): VirtualQueueCatalog {
+  const snapshot = getMutableSnapshot(personaId)
+  const list = (activities as Activity[]).filter((item) => item.virtualQueue?.enabled)
+  return {
+    inPark: snapshot.visitorState.inPark === true,
+    activities: list,
+  }
+}
+
+export function takeVirtualQueue(
+  personaId: PersonaId,
+  activityId: string,
+  mode: 'free' | 'paid',
+):
+  | { ok: true; data: VirtualQueueTakeResult }
+  | { ok: false; message: string } {
+  const snapshot = getMutableSnapshot(personaId)
+  if (!snapshot.visitorState.inPark) {
+    return { ok: false, message: '入园后才可使用虚拟排队' }
+  }
+
+  const activity = (activities as Activity[]).find((item) => item.activityId === activityId)
+  if (!activity?.virtualQueue?.enabled) {
+    return { ok: false, message: '该项目不支持虚拟排队' }
+  }
+
+  const vq = activity.virtualQueue
+  if (mode === 'free' && !vq.isFree) {
+    return { ok: false, message: '该项目为付费快速排队，请走支付取号' }
+  }
+  if (mode === 'paid' && vq.isFree) {
+    return { ok: false, message: '该项目支持免费取号，无需支付' }
+  }
+
+  const orders = virtualQueueByPersona[personaId] ?? cloneVirtualQueueSeed()
+  virtualQueueByPersona[personaId] = orders
+
+  const existing = orders.find(
+    (item) => item.activityId === activityId && item.status === 'waiting',
+  )
+  if (existing) {
+    return {
+      ok: true,
+      data: {
+        queueId: existing.queueId,
+        activityId: existing.activityId,
+        activityName: existing.activityName,
+        isFree: existing.isFree,
+        waitMinutes: existing.waitMinutes,
+        position: existing.position,
+        queuePrice: existing.queuePrice,
+      },
+    }
+  }
+
+  const queueId = `vq_${Date.now().toString(36)}`
+  const order: VirtualQueueOrder = {
+    queueId,
+    activityId: activity.activityId,
+    activityName: activity.name,
+    status: 'waiting',
+    waitMinutes: activity.waitMinutes ?? (mode === 'paid' ? 5 : 15),
+    position: mode === 'paid' ? 3 : 12,
+    isFree: vq.isFree,
+    queuePrice: vq.isFree ? undefined : vq.queuePrice,
+  }
+  orders.unshift(order)
+
+  return {
+    ok: true,
+    data: {
+      queueId: order.queueId,
+      activityId: order.activityId,
+      activityName: order.activityName,
+      isFree: order.isFree,
+      waitMinutes: order.waitMinutes,
+      position: order.position,
+      queuePrice: order.queuePrice,
+    },
+  }
+}
+
+export function submitCheckin(
+  personaId: PersonaId,
+  spotId: string,
+):
+  | { ok: true; data: CheckinSubmitResult }
+  | { ok: false; message: string } {
+  const snapshot = getMutableSnapshot(personaId)
+  if (!snapshot.visitorState.inPark) {
+    return { ok: false, message: '入园后才可打卡' }
+  }
+
+  const spot = (checkinSpots as CheckinSpot[]).find((item) => item.spotId === spotId)
+  if (!spot) {
+    return { ok: false, message: '打卡点不存在' }
+  }
+
+  const currentLocation = snapshot.visitorState.currentLocation?.trim() ?? ''
+  if (!isNearCheckinSpot(currentLocation, spot.location)) {
+    return {
+      ok: false,
+      message: `未识别到您在「${spot.name}」附近（当前：${currentLocation || '未知'}），请靠近后再试`,
+    }
+  }
+
+  const today = formatTodayDate()
+  const records = checkinRecordsByPersona[personaId] ?? []
+  if (records.some((item) => item.spotId === spotId && item.date === today)) {
+    return { ok: false, message: '该点位今日已打卡' }
+  }
+
+  const checkedAt = new Date().toISOString()
+  const checkinId = `ck_${Date.now()}`
+  records.push({ spotId, date: today, checkinId, checkedAt })
+  checkinRecordsByPersona[personaId] = records
+
+  const rewardPoints = Math.max(0, spot.rewardPoints || 0)
+  snapshot.visitorState.points += rewardPoints
+  snapshot.memberInfo.points += rewardPoints
+
+  let coupon: Coupon | undefined
+  if (spot.rewardCouponProductId) {
+    const issued = issueCoupon(personaId, spot.rewardCouponProductId, 'purchase')
+    if (issued.ok && issued.reason === 'issued') {
+      coupon = issued.coupon
+    } else if (issued.ok && issued.reason === 'already_claimed') {
+      coupon = undefined
+    }
+  }
+
+  return {
+    ok: true,
+    data: {
+      checkinId,
+      spotId: spot.spotId,
+      spotName: spot.name,
+      rewardPoints,
+      pointsTotal: snapshot.memberInfo.points,
+      coupon,
+      checkedAt,
+    },
+  }
+}
+
 export function createToken(personaId: PersonaId): string {
   return `mock_token_${personaId}_${Date.now()}`
 }
@@ -617,6 +814,8 @@ export function resetAllDemoSnapshots(): void {
   const personas: PersonaId[] = ['demo_new', 'demo_mid', 'demo_vip']
   for (const personaId of personas) {
     snapshots[personaId] = cloneSnapshot(baselineByPersona[personaId])
+    checkinRecordsByPersona[personaId] = []
+    virtualQueueByPersona[personaId] = cloneVirtualQueueSeed()
   }
   refreshDemoNewRegistrationDate(snapshots.demo_new)
   orderDrafts.clear()

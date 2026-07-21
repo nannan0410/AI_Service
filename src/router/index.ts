@@ -65,6 +65,24 @@ const router = createRouter({
       meta: { title: '服务点评' },
     },
     {
+      path: '/checkin',
+      name: 'checkin',
+      component: () => import('@/pages/checkin/CheckinPage.vue'),
+      meta: { title: '园区打卡' },
+    },
+    {
+      path: '/queue/take',
+      name: 'queue-take',
+      component: () => import('@/pages/queue/QueueTakePage.vue'),
+      meta: { title: '免费虚拟排队' },
+    },
+    {
+      path: '/queue/pay',
+      name: 'queue-pay',
+      component: () => import('@/pages/queue/QueuePayPage.vue'),
+      meta: { title: '快速排队' },
+    },
+    {
       path: '/activity',
       name: 'activity',
       component: () => import('@/pages/activity/ActivityPage.vue'),

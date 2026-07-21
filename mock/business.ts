@@ -7,9 +7,13 @@ import {
   getSnapshot,
   issueCoupon,
   applyBatchInvoice,
+  listCheckinSpots,
   parsePersonaFromAuthHeader,
+  submitCheckin,
   submitOrderFromDraft,
   submitReview,
+  getVirtualQueueCatalog,
+  takeVirtualQueue,
   ticketProducts,
   updateOrderDraftVisitors,
 } from './_utils'
@@ -345,6 +349,81 @@ export default [
       code: 200,
       data: { imageId: `img_${Date.now()}_${Math.random().toString(36).slice(2, 8)}` },
     }),
+  },
+  {
+    url: '/api/checkin/spots',
+    method: 'get',
+    response: ({ headers }: { headers: Record<string, unknown> }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      return { code: 200, data: listCheckinSpots(personaId) }
+    },
+  },
+  {
+    url: '/api/checkin',
+    method: 'post',
+    response: ({
+      headers,
+      body,
+    }: {
+      headers: Record<string, unknown>
+      body: { spotId?: string }
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      const spotId = body?.spotId?.trim()
+      if (!spotId) return { code: 400, message: '缺少打卡点', data: null }
+      const result = submitCheckin(personaId, spotId)
+      if (!result.ok) return { code: 400, message: result.message, data: null }
+      return { code: 200, data: result.data }
+    },
+  },
+  {
+    url: '/api/virtual-queue/catalog',
+    method: 'get',
+    response: ({ headers }: { headers: Record<string, unknown> }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      return { code: 200, data: getVirtualQueueCatalog(personaId) }
+    },
+  },
+  {
+    url: '/api/virtual-queue/take',
+    method: 'post',
+    response: ({
+      headers,
+      body,
+    }: {
+      headers: Record<string, unknown>
+      body: { activityId?: string }
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      const activityId = body?.activityId?.trim()
+      if (!activityId) return { code: 400, message: '缺少项目', data: null }
+      const result = takeVirtualQueue(personaId, activityId, 'free')
+      if (!result.ok) return { code: 400, message: result.message, data: null }
+      return { code: 200, data: result.data }
+    },
+  },
+  {
+    url: '/api/virtual-queue/pay',
+    method: 'post',
+    response: ({
+      headers,
+      body,
+    }: {
+      headers: Record<string, unknown>
+      body: { activityId?: string }
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      const activityId = body?.activityId?.trim()
+      if (!activityId) return { code: 400, message: '缺少项目', data: null }
+      const result = takeVirtualQueue(personaId, activityId, 'paid')
+      if (!result.ok) return { code: 400, message: result.message, data: null }
+      return { code: 200, data: result.data }
+    },
   },
   {
     url: '/api/receipt/upload',

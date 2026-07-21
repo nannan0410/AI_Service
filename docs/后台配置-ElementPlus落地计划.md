@@ -271,12 +271,13 @@ src/components/config/         # 可选：可复用 EP 子组件
 子 Tab 或分段：
 
 - 快捷服务（recommend_entries）
-- 游游推荐（welcome_templates）
+- 游游推荐（`welcome_questions`，规则过滤）
+- 欢迎标题文案（`welcome_templates`）
 - 卡片展示配置（只读，来自 card_views）
 - 规则字段目录（只读，来自 field_catalog）
 - 规则预览（三演示账号，`el-row` + 3 × `el-card`）
 
-**复用逻辑**：`previewRecommendEntries`、`buildDemoRuleContext`、`flattenWelcomeQuestions` 等。
+**复用逻辑**：`previewRecommendEntries`、`resolveSuggestedQuestions`、`buildDemoRuleContext` 等。
 
 **底部操作**：
 

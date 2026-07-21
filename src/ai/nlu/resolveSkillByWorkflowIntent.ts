@@ -3,6 +3,8 @@ import { shouldRunNewGuestCouponWorkflow } from '@/ai/workflow/newGuestCoupon'
 import { shouldRunOrderQueryWorkflow } from '@/utils/orderQueryIntent'
 import { shouldRunInvoiceWorkflow } from '@/utils/invoiceIntent'
 import { shouldRunReviewWorkflow } from '@/utils/reviewIntent'
+import { shouldRunCheckinWorkflow } from '@/utils/checkinIntent'
+import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
 import { shouldRunParkingPayWorkflow } from '@/utils/parkingPayIntent'
 import { shouldRunProactiveMarketingWorkflow } from '@/utils/proactiveMarketingIntent'
 import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
@@ -38,6 +40,10 @@ export function resolveSkillByWorkflowIntent(
   if (shouldRunProactiveMarketingWorkflow(message)) {
     return getSkillById(skills, 'proactive_marketing') ?? null
   }
+  // 虚拟排队优先于园内路线攻略
+  if (shouldRunQueueRecommendWorkflow(message)) {
+    return getSkillById(skills, 'queue_recommend') ?? null
+  }
   if (shouldRunTravelGuideWorkflow(message)) {
     return getSkillById(skills, 'travel_guide') ?? null
   }
@@ -49,6 +55,9 @@ export function resolveSkillByWorkflowIntent(
   }
   if (shouldRunInvoiceWorkflow(message)) {
     return getSkillById(skills, 'invoice_service') ?? null
+  }
+  if (shouldRunCheckinWorkflow(message)) {
+    return getSkillById(skills, 'checkin_service') ?? null
   }
   if (shouldRunReviewWorkflow(message)) {
     return getSkillById(skills, 'review_service') ?? null
@@ -67,6 +76,8 @@ export function shouldSkipLlmSkillRouting(message: string): boolean {
   if (shouldRunOrderQueryWorkflow(message)) return true
   if (shouldRunShowScheduleWorkflow(message)) return true
   if (shouldRunInvoiceWorkflow(message)) return true
+  if (shouldRunCheckinWorkflow(message)) return true
+  if (shouldRunQueueRecommendWorkflow(message)) return true
   if (shouldRunReviewWorkflow(message)) return true
   return false
 }

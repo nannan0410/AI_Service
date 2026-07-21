@@ -89,9 +89,8 @@ export function resolveWelcomeTemplate(
     highlights: template.highlights.map((item) =>
       replaceWelcomePlaceholders(item, vars),
     ),
-    suggestedQuestions: template.suggestedQuestions.map((question) => ({
-      ...question,
-      prompt: replaceWelcomePlaceholders(question.prompt, vars),
-    })),
+    suggestedQuestions: [],
   }
 }
+
+export { replaceWelcomePlaceholders }

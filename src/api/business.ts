@@ -110,6 +110,26 @@ export function fetchVirtualQueue() {
   return request.get<ApiResponse<VirtualQueueOrder[]>>('/api/virtual-queue')
 }
 
+export function fetchVirtualQueueCatalog() {
+  return request.get<ApiResponse<import('@/types').VirtualQueueCatalog>>(
+    '/api/virtual-queue/catalog',
+  )
+}
+
+export function takeVirtualQueueNumber(activityId: string) {
+  return request.post<ApiResponse<import('@/types').VirtualQueueTakeResult>>(
+    '/api/virtual-queue/take',
+    { activityId },
+  )
+}
+
+export function payVirtualQueueNumber(activityId: string) {
+  return request.post<ApiResponse<import('@/types').VirtualQueueTakeResult>>(
+    '/api/virtual-queue/pay',
+    { activityId },
+  )
+}
+
 export function applyInvoice(orderId: string) {
   return request.post<ApiResponse<{ redirectUrl: string }>>('/api/invoice/apply', { orderId })
 }
@@ -131,6 +151,16 @@ export function submitReview(payload: {
     '/api/reviews/submit',
     payload,
   )
+}
+
+export function fetchCheckinSpots() {
+  return request.get<ApiResponse<import('@/types').CheckinSpotsResult>>('/api/checkin/spots')
+}
+
+export function submitCheckin(spotId: string) {
+  return request.post<ApiResponse<import('@/types').CheckinSubmitResult>>('/api/checkin', {
+    spotId,
+  })
 }
 
 export function uploadReviewImage() {
@@ -163,6 +193,12 @@ export function fetchRecommendEntriesConfig() {
 
 export function fetchWelcomeTemplatesConfig() {
   return request.get<ApiResponse<WelcomeTemplateConfig[]>>('/api/admin/welcome-templates')
+}
+
+export function fetchWelcomeQuestionsConfig() {
+  return request.get<
+    ApiResponse<import('@/types/businessConfig').WelcomeQuestionConfig[]>
+  >('/api/admin/welcome-questions')
 }
 
 export function fetchTicketProducts(channel?: string) {

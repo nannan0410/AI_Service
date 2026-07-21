@@ -31,6 +31,14 @@ export {
   runReviewServiceWorkflow,
 } from './reviewService'
 export {
+  shouldRunCheckinWorkflow,
+  runCheckinWorkflow,
+} from './checkinService'
+export {
+  shouldRunQueueRecommendWorkflow,
+  runQueueRecommendWorkflow,
+} from './queueRecommend'
+export {
   parseTicketIntent,
   pickTicketProduct,
   recommendTicketByParty,

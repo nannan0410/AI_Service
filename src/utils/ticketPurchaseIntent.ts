@@ -6,6 +6,8 @@ import { shouldRunReviewWorkflow } from '@/utils/reviewIntent'
 import { shouldRunParkingPayWorkflow } from '@/utils/parkingPayIntent'
 import { shouldRunProactiveMarketingWorkflow } from '@/utils/proactiveMarketingIntent'
 import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
+import { shouldRunCheckinWorkflow } from '@/utils/checkinIntent'
+import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
 
 export { isTravelGuidePreferredOverTicket } from '@/utils/travelGuideIntent'
 
@@ -59,6 +61,8 @@ export function shouldInterruptPurchaseSession(message: string): boolean {
     shouldRunShowScheduleWorkflow(text) ||
     shouldRunInvoiceWorkflow(text) ||
     shouldRunReviewWorkflow(text) ||
+    shouldRunCheckinWorkflow(text) ||
+    shouldRunQueueRecommendWorkflow(text) ||
     shouldRunNewGuestCouponWorkflow(text)
   )
 }

@@ -15,11 +15,10 @@ import {
 } from "@/utils/demoRuleContext";
 import { previewRecommendEntries } from "@/utils/recommendEntries";
 import {
+  cloneWelcomeQuestions,
   cloneWelcomeTemplates,
-  findFlatQuestionIndex,
-  flattenWelcomeQuestions,
+  findQuestionIndex,
   resolveSuggestedQuestions,
-  unflattenWelcomeQuestions,
 } from "@/utils/welcomeQuestions";
 import { MAX_QUICK_SERVICES, MAX_WELCOME_RECOMMEND } from "@/utils/welcomeLayout";
 import { resetDemoBusinessData } from "@/api/business";
@@ -30,6 +29,7 @@ import type {
   RecommendEntryConfig,
   RuleExpression,
   SkillSubIntentDef,
+  WelcomeQuestionConfig,
   WelcomeTemplateConfig,
 } from "@/types/businessConfig";
 import { getSkillSubIntents, isLockedKeyword } from "@/utils/skillIntentCatalog";
@@ -50,13 +50,14 @@ const activeTab = ref<"skill" | "entry">("skill");
 const workingSkills = ref<AssistantSkillConfig[]>([]);
 const workingEntries = ref<RecommendEntryConfig[]>([]);
 const workingWelcomeTemplates = ref<WelcomeTemplateConfig[]>([]);
+const workingQuestions = ref<WelcomeQuestionConfig[]>([]);
 
 const skillEditorVisible = ref(false);
 const entryEditorVisible = ref(false);
 const questionEditorVisible = ref(false);
 const editingSkillIndex = ref(-1);
 const editingEntryIndex = ref(-1);
-const editingQuestionFlatIndex = ref(-1);
+const editingQuestionIndex = ref(-1);
 const keywordInput = ref("");
 const iconPickerVisible = ref(false);
 const questionIconPickerVisible = ref(false);
@@ -114,7 +115,6 @@ const editEntryForm = ref({
 
 const editQuestionForm = ref({
   id: "",
-  personaId: "demo_new" as PersonaId,
   text: "",
   desc: "",
   prompt: "",
@@ -122,13 +122,12 @@ const editQuestionForm = ref({
   badgeColor: "#54c783",
   enabled: true,
   priority: 10,
+  ruleField: "personaId",
+  ruleValue: "demo_new" as string | boolean,
+  rulePersonaValues: ["demo_new"] as string[],
 });
 
 const BADGE_COLOR_PRESETS = ["#54c783", "#4aa3ff", "#ffb020", "#ff6b6b"];
-
-const workingQuestions = computed(() =>
-  flattenWelcomeQuestions(workingWelcomeTemplates.value),
-);
 
 /** 配置列表按优先级降序（与预览 / 聊天页一致） */
 const sortedWorkingEntries = computed(() =>
@@ -136,12 +135,9 @@ const sortedWorkingEntries = computed(() =>
 );
 
 const sortedWorkingQuestions = computed(() =>
-  [...workingQuestions.value].sort((a, b) => {
-    if (a.personaId !== b.personaId) {
-      return a.personaId.localeCompare(b.personaId);
-    }
-    return (b.priority ?? 0) - (a.priority ?? 0);
-  }),
+  [...workingQuestions.value].sort(
+    (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
+  ),
 );
 
 const primaryColor = computed(() => assistantStore.primaryColor);
@@ -169,6 +165,10 @@ const ruleEligibleFields = computed(() =>
 
 const selectedRuleFieldMeta = computed((): FieldCatalogItem | undefined =>
   ruleEligibleFields.value.find((f) => f.fieldId === editEntryForm.value.ruleField)
+);
+
+const selectedQuestionRuleFieldMeta = computed((): FieldCatalogItem | undefined =>
+  ruleEligibleFields.value.find((f) => f.fieldId === editQuestionForm.value.ruleField)
 );
 
 const editSkillSubIntents = computed((): SkillSubIntentDef[] =>
@@ -211,7 +211,7 @@ const personaPreviews = computed(() =>
       quickServices: matched.slice(0, MAX_QUICK_SERVICES),
       unmatched,
       welcomeRecommend: resolveSuggestedQuestions(
-        workingWelcomeTemplates.value,
+        workingQuestions.value,
         opt.value,
         buildDemoCouponFilterCtx(opt.value),
       ),
@@ -265,8 +265,10 @@ function skillStatusLabel(skill: AssistantSkillConfig) {
   return "已启用 · 待接入";
 }
 
-function entryRuleSummary(entry: RecommendEntryConfig) {
-  const rule = entry.rules[0];
+function entryRuleSummary(
+  entry: Pick<RecommendEntryConfig | WelcomeQuestionConfig, "rules">,
+) {
+  const rule = entry.rules?.[0];
   if (!rule) return "无规则（始终展示）";
   if (rule.op === "eq") {
     const fieldMeta = ruleEligibleFields.value.find((f) => f.fieldId === rule.field);
@@ -294,6 +296,10 @@ function entryRuleSummary(entry: RecommendEntryConfig) {
   return "复杂规则";
 }
 
+function questionRuleSummary(question: WelcomeQuestionConfig) {
+  return entryRuleSummary(question);
+}
+
 function defaultRuleValueForField(fieldId: string): string | boolean {
   const meta = ruleEligibleFields.value.find((f) => f.fieldId === fieldId);
   if (!meta) return "";
@@ -318,8 +324,25 @@ function onRuleFieldChange(fieldId: string) {
   }
 }
 
-function buildEntryRule(): RuleExpression {
-  const { ruleField, ruleValue, rulePersonaValues } = editEntryForm.value;
+function onQuestionRuleFieldChange(fieldId: string) {
+  editQuestionForm.value.ruleField = fieldId;
+  const next = defaultRuleValueForField(fieldId);
+  editQuestionForm.value.ruleValue = next;
+  if (fieldId === "personaId") {
+    editQuestionForm.value.rulePersonaValues = [
+      typeof next === "string" ? next : "demo_new",
+    ];
+  } else {
+    editQuestionForm.value.rulePersonaValues = [];
+  }
+}
+
+function buildRuleFromForm(form: {
+  ruleField: string;
+  ruleValue: string | boolean;
+  rulePersonaValues: string[];
+}): RuleExpression {
+  const { ruleField, ruleValue, rulePersonaValues } = form;
   if (ruleField === "personaId") {
     const values = rulePersonaValues.length
       ? [...rulePersonaValues]
@@ -332,6 +355,14 @@ function buildEntryRule(): RuleExpression {
   return { op: "eq", field: ruleField, value: ruleValue };
 }
 
+function buildEntryRule(): RuleExpression {
+  return buildRuleFromForm(editEntryForm.value);
+}
+
+function buildQuestionRule(): RuleExpression {
+  return buildRuleFromForm(editQuestionForm.value);
+}
+
 function togglePersonaRuleValue(personaId: string) {
   const current = editEntryForm.value.rulePersonaValues;
   if (current.includes(personaId)) {
@@ -340,6 +371,48 @@ function togglePersonaRuleValue(personaId: string) {
   } else {
     editEntryForm.value.rulePersonaValues = [...current, personaId];
   }
+}
+
+function toggleQuestionPersonaRuleValue(personaId: string) {
+  const current = editQuestionForm.value.rulePersonaValues;
+  if (current.includes(personaId)) {
+    if (current.length <= 1) return;
+    editQuestionForm.value.rulePersonaValues = current.filter(
+      (id) => id !== personaId,
+    );
+  } else {
+    editQuestionForm.value.rulePersonaValues = [...current, personaId];
+  }
+}
+
+function parseRuleIntoForm(rules: RuleExpression[] | undefined): {
+  ruleField: string;
+  ruleValue: string | boolean;
+  rulePersonaValues: string[];
+} {
+  const rule = rules?.[0];
+  let ruleField = "personaId";
+  let ruleValue: string | boolean = "demo_new";
+  let rulePersonaValues = ["demo_new"];
+
+  if (rule?.op === "eq") {
+    ruleField = String(rule.field);
+    ruleValue = rule.value as string | boolean;
+    if (ruleField === "personaId" && typeof ruleValue === "string") {
+      rulePersonaValues = [ruleValue];
+    }
+  } else if (rule?.op === "in") {
+    ruleField = String(rule.field);
+    const values = (rule.values ?? []).map(String);
+    if (ruleField === "personaId" && values.length) {
+      rulePersonaValues = values;
+      ruleValue = values[0];
+    } else if (values.length) {
+      ruleValue = values[0];
+    }
+  }
+
+  return { ruleField, ruleValue, rulePersonaValues };
 }
 
 onMounted(async () => {
@@ -353,6 +426,9 @@ onMounted(async () => {
   workingEntries.value = cloneEntries(businessConfigStore.recommendEntries);
   workingWelcomeTemplates.value = cloneWelcomeTemplates(
     businessConfigStore.welcomeTemplates,
+  );
+  workingQuestions.value = cloneWelcomeQuestions(
+    businessConfigStore.welcomeQuestions,
   );
 });
 
@@ -458,28 +534,7 @@ function openEntryEditor(entryId: string) {
   if (index < 0) return;
   editingEntryIndex.value = index;
   const entry = workingEntries.value[index];
-  const rule = entry.rules[0];
-
-  let ruleField = "personaId";
-  let ruleValue: string | boolean = "demo_new";
-  let rulePersonaValues = ["demo_new"];
-
-  if (rule?.op === "eq") {
-    ruleField = String(rule.field);
-    ruleValue = rule.value as string | boolean;
-    if (ruleField === "personaId" && typeof ruleValue === "string") {
-      rulePersonaValues = [ruleValue];
-    }
-  } else if (rule?.op === "in") {
-    ruleField = String(rule.field);
-    const values = (rule.values ?? []).map(String);
-    if (ruleField === "personaId" && values.length) {
-      rulePersonaValues = values;
-      ruleValue = values[0];
-    } else if (values.length) {
-      ruleValue = values[0];
-    }
-  }
+  const { ruleField, ruleValue, rulePersonaValues } = parseRuleIntoForm(entry.rules);
 
   editEntryForm.value = {
     entryId: entry.entryId,
@@ -545,12 +600,16 @@ function onToggleEntryEnabled(entryId: string, enabled: boolean) {
   void persistEntriesOnly(enabled ? "已启用并保存" : "已关闭并保存");
 }
 
-function openQuestionEditor(flatIndex: number) {
-  editingQuestionFlatIndex.value = flatIndex;
-  const question = workingQuestions.value[flatIndex];
+function openQuestionEditor(questionId: string) {
+  const index = findQuestionIndex(workingQuestions.value, questionId);
+  if (index < 0) return;
+  editingQuestionIndex.value = index;
+  const question = workingQuestions.value[index];
+  const { ruleField, ruleValue, rulePersonaValues } = parseRuleIntoForm(
+    question.rules,
+  );
   editQuestionForm.value = {
     id: question.id,
-    personaId: question.personaId,
     text: question.text,
     desc: question.desc ?? "",
     prompt: question.prompt,
@@ -558,54 +617,58 @@ function openQuestionEditor(flatIndex: number) {
     badgeColor: question.badgeColor ?? "#54c783",
     enabled: question.enabled !== false,
     priority: question.priority ?? 10,
+    ruleField,
+    ruleValue,
+    rulePersonaValues,
   };
   questionEditorVisible.value = true;
 }
 
 function closeQuestionEditor() {
   questionEditorVisible.value = false;
-  editingQuestionFlatIndex.value = -1;
+  editingQuestionIndex.value = -1;
 }
 
-function applyFlatQuestions(nextFlat: ReturnType<typeof flattenWelcomeQuestions>) {
-  workingWelcomeTemplates.value = unflattenWelcomeQuestions(
-    workingWelcomeTemplates.value,
-    nextFlat,
+async function persistQuestionsOnly(successMessage: string) {
+  businessConfigStore.saveWelcomeQuestionsOverride(
+    cloneWelcomeQuestions(workingQuestions.value),
   );
+  appToast(successMessage);
 }
 
 function confirmQuestionEditor() {
-  if (editingQuestionFlatIndex.value < 0) return;
-  const current = workingQuestions.value[editingQuestionFlatIndex.value];
+  if (editingQuestionIndex.value < 0) return;
+  const current = workingQuestions.value[editingQuestionIndex.value];
   const parsedPriority = Number(editQuestionForm.value.priority);
-  const nextFlat = workingQuestions.value.map((item, index) =>
-    index === editingQuestionFlatIndex.value
-      ? {
-          ...current,
-          id: editQuestionForm.value.id.trim() || current.id,
-          personaId: editQuestionForm.value.personaId,
-          text: editQuestionForm.value.text.trim() || current.text,
-          desc: editQuestionForm.value.desc.trim() || undefined,
-          prompt: editQuestionForm.value.prompt.trim() || current.prompt,
-          icon: editQuestionForm.value.icon.trim() || current.icon,
-          badgeColor: editQuestionForm.value.badgeColor.trim() || current.badgeColor,
-          enabled: editQuestionForm.value.enabled,
-          priority: Number.isFinite(parsedPriority)
-            ? parsedPriority
-            : (current.priority ?? 0),
-        }
-      : item,
+  workingQuestions.value[editingQuestionIndex.value] = {
+    ...current,
+    id: editQuestionForm.value.id.trim() || current.id,
+    text: editQuestionForm.value.text.trim() || current.text,
+    desc: editQuestionForm.value.desc.trim() || undefined,
+    prompt: editQuestionForm.value.prompt.trim() || current.prompt,
+    icon: editQuestionForm.value.icon.trim() || current.icon,
+    badgeColor: editQuestionForm.value.badgeColor.trim() || current.badgeColor,
+    enabled: editQuestionForm.value.enabled,
+    priority: Number.isFinite(parsedPriority)
+      ? parsedPriority
+      : (current.priority ?? 0),
+    rules: [buildQuestionRule()],
+  };
+  workingQuestions.value = [...workingQuestions.value].sort(
+    (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
   );
-  applyFlatQuestions(nextFlat);
   closeQuestionEditor();
-  appToast("游游推荐已更新到待保存列表");
+  void persistQuestionsOnly("游游推荐已保存，请用对应演示账号打开聊天欢迎页验证");
 }
 
-function onToggleQuestionEnabled(flatIndex: number, enabled: boolean) {
-  const nextFlat = workingQuestions.value.map((item, index) =>
-    index === flatIndex ? { ...item, enabled } : item,
-  );
-  applyFlatQuestions(nextFlat);
+function onToggleQuestionEnabled(questionId: string, enabled: boolean) {
+  const index = findQuestionIndex(workingQuestions.value, questionId);
+  if (index < 0) return;
+  workingQuestions.value[index] = {
+    ...workingQuestions.value[index],
+    enabled,
+  };
+  void persistQuestionsOnly(enabled ? "已启用并保存" : "已关闭并保存");
 }
 
 function pickQuestionIcon(icon: string) {
@@ -645,6 +708,9 @@ async function persistAll(successMessage = "已保存") {
   businessConfigStore.saveWelcomeTemplatesOverride(
     cloneWelcomeTemplates(workingWelcomeTemplates.value),
   );
+  businessConfigStore.saveWelcomeQuestionsOverride(
+    cloneWelcomeQuestions(workingQuestions.value),
+  );
   await skillStore.loadSkills(true);
   appToast(successMessage);
 }
@@ -662,6 +728,7 @@ async function onReset() {
   await Promise.all([
     skillStore.loadSkills(true),
     businessConfigStore.loadWelcomeTemplates(true),
+    businessConfigStore.loadWelcomeQuestions(true),
   ]);
   workingSkills.value = normalizeSkillsTriggerKeywords(
     cloneSkills(businessConfigStore.skills),
@@ -669,6 +736,9 @@ async function onReset() {
   workingEntries.value = cloneEntries(businessConfigStore.recommendEntries);
   workingWelcomeTemplates.value = cloneWelcomeTemplates(
     businessConfigStore.welcomeTemplates,
+  );
+  workingQuestions.value = cloneWelcomeQuestions(
+    businessConfigStore.welcomeQuestions,
   );
   appToast("已恢复默认");
 }
@@ -779,19 +849,11 @@ function goPreviewChat() {
           <div class="admin-ui__panel admin-ui__panel--card">
             <van-cell
               v-for="question in sortedWorkingQuestions"
-              :key="`${question.personaId}-${question.id}`"
+              :key="question.id"
               :title="question.text"
-              :label="`${personaLabel(question.personaId)} · ${question.id} · 优先级 ${question.priority ?? 0}`"
+              :label="`${question.id} · 优先级 ${question.priority ?? 0} · ${questionRuleSummary(question)}`"
               is-link
-              @click="
-                openQuestionEditor(
-                  findFlatQuestionIndex(
-                    workingQuestions,
-                    question.personaId,
-                    question.id,
-                  ),
-                )
-              "
+              @click="openQuestionEditor(question.id)"
             >
               <template #value>
                 <van-switch
@@ -799,14 +861,7 @@ function goPreviewChat() {
                   size="20px"
                   @click.stop
                   @update:model-value="
-                    onToggleQuestionEnabled(
-                      findFlatQuestionIndex(
-                        workingQuestions,
-                        question.personaId,
-                        question.id,
-                      ),
-                      $event,
-                    )
+                    onToggleQuestionEnabled(question.id, $event)
                   "
                 />
               </template>
@@ -1277,19 +1332,6 @@ function goPreviewChat() {
               <van-switch v-model="editQuestionForm.enabled" size="20px" />
             </template>
           </van-cell>
-          <van-cell title="演示账号">
-            <template #value>
-              <select v-model="editQuestionForm.personaId" class="admin-business__select">
-                <option
-                  v-for="opt in DEMO_PERSONA_OPTIONS"
-                  :key="opt.value"
-                  :value="opt.value"
-                >
-                  {{ opt.label }}
-                </option>
-              </select>
-            </template>
-          </van-cell>
           <van-field v-model="editQuestionForm.id" label="条目 ID" readonly />
           <div class="admin-business__section">
             <p class="admin-business__section-title">图标（emoji）</p>
@@ -1319,6 +1361,92 @@ function goPreviewChat() {
               />
             </div>
             <van-field v-model="editQuestionForm.badgeColor" label="色值" placeholder="#54c783" />
+          </div>
+          <div class="admin-business__section">
+            <p class="admin-business__section-title">触发规则</p>
+            <p class="admin-business__hint admin-business__hint--block">
+              数字越大越靠前；规则字段除「演示账号」外，按各账号当前上下文（在园、待出行订单等）求值。
+            </p>
+            <van-cell title="条件字段">
+              <template #value>
+                <select
+                  class="admin-business__select"
+                  :value="editQuestionForm.ruleField"
+                  @change="
+                    onQuestionRuleFieldChange(
+                      ($event.target as HTMLSelectElement).value,
+                    )
+                  "
+                >
+                  <option
+                    v-for="field in ruleEligibleFields"
+                    :key="field.fieldId"
+                    :value="field.fieldId"
+                  >
+                    {{ field.label }}
+                  </option>
+                </select>
+              </template>
+            </van-cell>
+            <div
+              v-if="editQuestionForm.ruleField === 'personaId'"
+              class="admin-business__persona-rules"
+            >
+              <p class="admin-business__section-title">适用演示账号（可多选）</p>
+              <van-cell
+                v-for="opt in DEMO_PERSONA_OPTIONS"
+                :key="opt.value"
+                :title="opt.label"
+                clickable
+                @click="toggleQuestionPersonaRuleValue(opt.value)"
+              >
+                <template #right-icon>
+                  <van-checkbox
+                    :model-value="
+                      editQuestionForm.rulePersonaValues.includes(opt.value)
+                    "
+                    @click.stop="toggleQuestionPersonaRuleValue(opt.value)"
+                  />
+                </template>
+              </van-cell>
+            </div>
+            <van-cell
+              v-else-if="selectedQuestionRuleFieldMeta?.valueType === 'boolean'"
+              title="条件值"
+            >
+              <template #value>
+                <van-switch
+                  :model-value="editQuestionForm.ruleValue === true"
+                  size="20px"
+                  @update:model-value="editQuestionForm.ruleValue = $event"
+                />
+              </template>
+            </van-cell>
+            <van-cell
+              v-else-if="selectedQuestionRuleFieldMeta?.valueType === 'enum'"
+              title="条件值"
+            >
+              <template #value>
+                <select
+                  v-model="editQuestionForm.ruleValue"
+                  class="admin-business__select"
+                >
+                  <option
+                    v-for="opt in selectedQuestionRuleFieldMeta.enumOptions ?? []"
+                    :key="opt.value"
+                    :value="opt.value"
+                  >
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </template>
+            </van-cell>
+            <van-field
+              v-else
+              :model-value="String(editQuestionForm.ruleValue ?? '')"
+              label="条件值"
+              @update:model-value="editQuestionForm.ruleValue = $event"
+            />
           </div>
         </div>
       </div>

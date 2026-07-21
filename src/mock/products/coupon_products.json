@@ -109,5 +109,16 @@
     "condition": "当日离场可用",
     "couponType": "parking",
     "tags": ["点评奖励"]
+  },
+  {
+    "productId": "cp_prod_checkin",
+    "name": "打卡小礼券",
+    "type": "coupon_product",
+    "channels": ["self"],
+    "status": "on",
+    "value": 5,
+    "condition": "餐饮满 39 可用",
+    "couponType": "dining",
+    "tags": ["打卡奖励"]
   }
 ]

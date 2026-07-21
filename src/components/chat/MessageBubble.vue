@@ -33,7 +33,7 @@ import VisitorPicker from "@/components/chat/cards/VisitorPicker.vue";
 import { isCouponRecommendPayload } from "@/utils/couponRecommend";
 import { ACTIVITY_CATEGORY_LABELS } from "@/utils/activityDisplay";
 
-defineProps<{
+const props = defineProps<{
   message: ChatMessage;
   visitorPickDisabled?: boolean;
   ticketConfirmDisabled?: boolean;
@@ -45,6 +45,7 @@ const emit = defineEmits<{
   visitorConfirm: [payload: VisitorPickPayload, idNumbers: string[]];
   ticketConfirm: [payload: TicketCardPayload];
   reviewSubmit: [draft: ReviewSubmitDraft];
+  checkinConfirm: [payload: PageGuideCardPayload, messageId: string];
 }>();
 
 const router = useRouter();
@@ -116,6 +117,20 @@ function onSceneActivityView() {
   showToast("跳转到店铺购物车或介绍页面");
 }
 
+function queueActionLabel(item: ActivityCardPayload): string | null {
+  if (item.queueAction?.label) return item.queueAction.label;
+  return null;
+}
+
+function onQueueAction(item: ActivityCardPayload) {
+  const path = item.queueAction?.path;
+  if (!path) {
+    showToast("暂无法取号");
+    return;
+  }
+  router.push(path);
+}
+
 function activityTagLabel(item: ActivityCardPayload): string {
   if (item.category && ACTIVITY_CATEGORY_LABELS[item.category]) {
     return ACTIVITY_CATEGORY_LABELS[item.category];
@@ -137,6 +152,10 @@ function asReview(payload: unknown): ReviewCardPayload {
 
 function openPage(path: string) {
   router.push(path);
+}
+
+function onPageGuideCheckin(payload: PageGuideCardPayload) {
+  emit("checkinConfirm", payload, props.message.id);
 }
 
 const cardTypes = new Set([
@@ -230,6 +249,7 @@ const cardTypes = new Set([
         :payload="asPageGuide(message.payload)"
         embedded
         @open="openPage"
+        @checkin="onPageGuideCheckin"
       />
     </div>
 
@@ -329,7 +349,19 @@ const cardTypes = new Set([
       >
         <ActivityCard :payload="item" :tag="activityTagLabel(item)" embedded />
         <van-button
-          v-if="asSceneRecommend(message.payload).scene !== 'show'"
+          v-if="asSceneRecommend(message.payload).scene === 'queue' && queueActionLabel(item)"
+          size="small"
+          type="primary"
+          plain
+          round
+          block
+          class="bubble-card-box__action"
+          @click="onQueueAction(item)"
+        >
+          {{ queueActionLabel(item) }}
+        </van-button>
+        <van-button
+          v-else-if="asSceneRecommend(message.payload).scene !== 'show' && asSceneRecommend(message.payload).scene !== 'queue'"
           size="small"
           type="primary"
           plain

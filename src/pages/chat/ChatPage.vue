@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { showConfirmDialog, showToast } from "vant";
+import { showConfirmDialog, showLoadingToast, showToast, closeToast } from "vant";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
 import { useAssistantStore } from "@/store/assistantStore";
@@ -19,12 +19,16 @@ import {
   runShowScheduleWorkflow,
   runInvoiceServiceWorkflow,
   runReviewServiceWorkflow,
+  runCheckinWorkflow,
+  runQueueRecommendWorkflow,
   runProactiveMarketingWorkflow,
   shouldRunNewGuestCouponWorkflow,
   shouldRunParkingPayWorkflow,
   shouldRunShowScheduleWorkflow,
   shouldRunInvoiceWorkflow,
   shouldRunReviewWorkflow,
+  shouldRunCheckinWorkflow,
+  shouldRunQueueRecommendWorkflow,
   shouldRunProactiveMarketingWorkflow,
   shouldRunOrderQueryWorkflow,
 } from "@/ai/workflow";
@@ -37,10 +41,12 @@ import {
   shouldRunShowScheduleWorkflowFromRoute,
   shouldRunInvoiceWorkflowFromRoute,
   shouldRunReviewWorkflowFromRoute,
+  shouldRunCheckinWorkflowFromRoute,
+  shouldRunQueueRecommendWorkflowFromRoute,
   shouldRunProactiveMarketingWorkflowFromRoute,
 } from "@/ai/nlu/skillWorkflowGate";
 import { shouldInterruptPurchaseSession } from "@/utils/ticketPurchaseIntent";
-import { createOrderDraft, fetchCoupons, fetchMemberInfo, fetchOrders, submitReview } from "@/api/business";
+import { createOrderDraft, fetchCoupons, fetchMemberInfo, fetchOrders, submitCheckin, submitReview } from "@/api/business";
 import { buildMergedCouponMessage } from "@/utils/couponRecommend";
 import { qualifiesReviewReward } from "@/utils/reviewForm";
 import { usePurchaseStore } from "@/store/purchaseStore";
@@ -58,6 +64,7 @@ import type {
   MemberInfo,
   Order,
   OrderCardPayload,
+  PageGuideCardPayload,
   PersonaId,
   RecommendEntry,
   ReviewCardPayload,
@@ -66,7 +73,7 @@ import type {
   VisitorPickPayload,
 } from "@/types";
 
-/** 欢迎态：快捷服务 ← recommend_entries；游游推荐 ← welcome_templates */
+/** 欢迎态：快捷服务 ← recommend_entries；游游推荐 ← welcome_questions（规则过滤） */
 
 const authStore = useAuthStore();
 const chatStore = useChatStore();
@@ -338,6 +345,61 @@ async function onReviewSubmit(draft: ReviewSubmitDraft) {
   }
 }
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function onCheckinConfirm(payload: PageGuideCardPayload, messageId: string) {
+  if (chatStore.sending || payload.actionDone || !payload.spotId) return;
+
+  chatStore.sending = true;
+  assistantStore.setMotion("thinking");
+  showLoadingToast({
+    message: "正在识别您的位置…",
+    forbidClick: true,
+    duration: 0,
+  });
+
+  try {
+    await delay(900);
+    const { data: res } = await submitCheckin(payload.spotId);
+    closeToast();
+    if (res.code !== 200 || !res.data) {
+      throw new Error(res.message || "打卡失败");
+    }
+
+    const msg = chatStore.messages.find((item) => item.id === messageId);
+    if (msg?.type === "page_guide" && msg.payload) {
+      const guide = msg.payload as PageGuideCardPayload;
+      guide.actionDone = true;
+      guide.buttonLabel = "已打卡";
+      chatStore.persist();
+    }
+
+    await loadUserCoupons();
+    const parts = [
+      `已为您完成「${res.data.spotName}」打卡，+${res.data.rewardPoints} 积分（当前 ${res.data.pointsTotal}）。`,
+    ];
+    if (res.data.coupon) {
+      parts.push(`并已发放「${res.data.coupon.title}」。`);
+      chatStore.addAssistantCards([
+        buildMergedCouponMessage(parts.join(""), [res.data.coupon]),
+      ]);
+    } else {
+      chatStore.addAssistantMessage(parts.join(""));
+    }
+    assistantStore.setMotion("nod");
+    showToast("打卡成功");
+    scrollToBottom();
+  } catch (e) {
+    closeToast();
+    assistantStore.setMotion("shake");
+    showToast(e instanceof Error ? e.message : "打卡失败");
+  } finally {
+    chatStore.sending = false;
+  }
+}
+
 async function onTicketConfirm(payload: TicketCardPayload) {
   if (
     chatStore.sending ||
@@ -538,6 +600,12 @@ async function onSend() {
     const useReviewWorkflow =
       shouldRunReviewWorkflow(text) ||
       shouldRunReviewWorkflowFromRoute(skillRoute, text);
+    const useCheckinWorkflow =
+      shouldRunCheckinWorkflow(text) ||
+      shouldRunCheckinWorkflowFromRoute(skillRoute, text);
+    const useQueueRecommendWorkflow =
+      shouldRunQueueRecommendWorkflow(text) ||
+      shouldRunQueueRecommendWorkflowFromRoute(skillRoute, text);
     const useProactiveMarketingWorkflow =
       shouldRunProactiveMarketingWorkflow(text) ||
       shouldRunProactiveMarketingWorkflowFromRoute(skillRoute, text);
@@ -559,11 +627,13 @@ async function onSend() {
       },
     };
 
-    // 明确攻略优先于购票；餐饮营销优先于宽泛攻略
+    // 明确攻略优先于购票；虚拟排队优先于宽泛园内路线；餐饮营销优先于宽泛攻略
     const result = useNewGuestCouponWorkflow
       ? await runNewGuestCouponWorkflow(text, workflowCallbacks)
       : useParkingPayWorkflow
         ? await runParkingPayWorkflow(text, workflowCallbacks)
+      : useQueueRecommendWorkflow
+        ? await runQueueRecommendWorkflow(text, workflowCallbacks)
       : useTravelGuideWorkflow
         ? await runTravelGuideWorkflow(text, personaId, workflowCallbacks)
       : useTicketWorkflow
@@ -589,6 +659,8 @@ async function onSend() {
         ? await runShowScheduleWorkflow(text, workflowCallbacks)
       : useInvoiceWorkflow
         ? await runInvoiceServiceWorkflow(text, workflowCallbacks)
+      : useCheckinWorkflow
+        ? await runCheckinWorkflow(text, workflowCallbacks)
       : useReviewWorkflow
         ? await runReviewServiceWorkflow(text, workflowCallbacks)
         : useOrderQueryWorkflow
@@ -719,6 +791,7 @@ async function onSend() {
           @visitor-confirm="onVisitorConfirm"
           @ticket-confirm="onTicketConfirm"
           @review-submit="onReviewSubmit"
+          @checkin-confirm="onCheckinConfirm"
         />
       </div>
     </template>

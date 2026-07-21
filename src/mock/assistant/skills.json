@@ -103,6 +103,24 @@
     "linkedMotions": { "onStart": "thinking", "onSuccess": "point" }
   },
   {
+    "skillId": "queue_recommend",
+    "name": "虚拟排队推荐",
+    "description": "在园虚拟排队：免费取号包 / 付费快速排队 / 点名项目",
+    "enabled": true,
+    "triggerKeywords": [
+      "虚拟排队",
+      "免费取号",
+      "取号排队",
+      "快速排队",
+      "付费排队",
+      "排队少的项目",
+      "马上玩的项目"
+    ],
+    "tools": ["getScenicActivities"],
+    "promptAddon": "用户在园内询问虚拟排队、免费取号、快速排队或点名支持虚拟排队的项目时，推荐对应项目并引导取号/支付页；非在园不可用。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "point" }
+  },
+  {
     "skillId": "invoice_service",
     "name": "发票服务",
     "description": "查询可开票订单并引导至开票页",
@@ -121,5 +139,15 @@
     "tools": ["getOrders"],
     "promptAddon": "用户要点评、评价游玩体验时，先 getOrders 查可评价订单，在对话内 ReviewCard 完成评价；不要编造订单。无已完成订单时如实告知。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "nod" }
+  },
+  {
+    "skillId": "checkin_service",
+    "name": "园区打卡",
+    "description": "在园打卡点签到并领取积分/小券",
+    "enabled": true,
+    "triggerKeywords": ["打卡", "签到", "景点打卡", "园区打卡", "打卡领券", "我要打卡"],
+    "tools": ["getScenicActivities"],
+    "promptAddon": "用户要打卡、签到时，引导至 /checkin；需在园（inPark）才可打卡；不要编造点位。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "point" }
   }
 ]

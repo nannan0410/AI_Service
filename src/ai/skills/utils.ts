@@ -7,8 +7,10 @@ export const STAGE2_SKILL_IDS = [
   'order_query',
   'parking_pay',
   'scenic_recommend',
+  'queue_recommend',
   'invoice_service',
   'review_service',
+  'checkin_service',
   'proactive_marketing',
 ] as const
 

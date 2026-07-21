@@ -7,7 +7,13 @@
     "skillId": "ticket_purchase",
     "promptHint": "我想买门票，两大一小有优惠吗",
     "enabled": true,
-    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_new" }],
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_new"
+      }
+    ],
     "priority": 10
   },
   {
@@ -22,10 +28,148 @@
       {
         "op": "in",
         "field": "personaId",
-        "values": ["demo_new", "demo_mid"]
+        "values": [
+          "demo_new",
+          "demo_mid"
+        ]
       }
     ],
     "priority": 10
+  },
+  {
+    "entryId": "new_guest_coupon",
+    "title": "领取新客券",
+    "icon": "coupon-o",
+    "target": "chat",
+    "promptHint": "请帮我领取新客专享优惠券",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_new"
+      }
+    ],
+    "priority": 9
+  },
+  {
+    "entryId": "parking_pay",
+    "title": "停车缴费",
+    "icon": "logistics",
+    "target": "chat",
+    "skillId": "parking_pay",
+    "promptHint": "我要交停车费",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_vip"
+      }
+    ],
+    "priority": 9
+  },
+  {
+    "entryId": "today_route",
+    "title": "今日推荐路线",
+    "icon": "location-o",
+    "target": "chat",
+    "skillId": "travel_guide",
+    "promptHint": "我现在在园区内，请根据当前位置和排队情况推荐今日路线。",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_mid"
+      }
+    ],
+    "priority": 9
+  },
+  {
+    "entryId": "checkin_nearby",
+    "title": "园区打卡",
+    "icon": "location-o",
+    "target": "chat",
+    "skillId": "checkin_service",
+    "promptHint": "我要打卡",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_vip"
+      }
+    ],
+    "priority": 9
+  },
+  {
+    "entryId": "batch_invoice",
+    "title": "开发票",
+    "icon": "bill-o",
+    "target": "page",
+    "skillId": "invoice_service",
+    "promptHint": "开发票",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_vip"
+      }
+    ],
+    "priority": 8,
+    "targetPath": "/invoice/batch"
+  },
+  {
+    "entryId": "travel_strategy",
+    "title": "游玩攻略",
+    "icon": "notes-o",
+    "target": "chat",
+    "skillId": "travel_guide",
+    "promptHint": "请推荐适合今天的游玩项目和路线，不需要交通和入园信息",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_mid"
+      }
+    ],
+    "priority": 7
+  },
+  {
+    "entryId": "review_service",
+    "title": "服务点评",
+    "icon": "comment-o",
+    "target": "chat",
+    "skillId": "review_service",
+    "promptHint": "我要点评最近一次游玩体验",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_vip"
+      }
+    ],
+    "priority": 7
+  },
+  {
+    "entryId": "view_orders",
+    "title": "查看订单",
+    "icon": "orders-o",
+    "target": "page",
+    "targetPath": "/orders?tab=1",
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "personaId",
+        "value": "demo_new"
+      }
+    ],
+    "priority": 6
   },
   {
     "entryId": "member_coupon",
@@ -39,102 +183,12 @@
       {
         "op": "in",
         "field": "personaId",
-        "values": ["demo_vip", "demo_mid"]
+        "values": [
+          "demo_vip",
+          "demo_mid"
+        ]
       }
     ],
-    "priority": 10
-  },
-  {
-    "entryId": "new_guest_coupon",
-    "title": "领取新客券",
-    "icon": "coupon-o",
-    "target": "chat",
-    "promptHint": "请帮我领取新客专享优惠券",
-    "enabled": true,
-    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_new" }],
-    "priority": 9
-  },
-  {
-    "entryId": "parking_pay",
-    "title": "停车缴费",
-    "icon": "logistics",
-    "target": "chat",
-    "skillId": "parking_pay",
-    "promptHint": "我要交停车费",
-    "enabled": true,
-    "rules": [
-      {
-        "op": "in",
-        "field": "personaId",
-        "values": ["demo_new", "demo_mid", "demo_vip"]
-      }
-    ],
-    "priority": 9
-  },
-  {
-    "entryId": "today_route",
-    "title": "今日推荐路线",
-    "icon": "location-o",
-    "target": "chat",
-    "skillId": "travel_guide",
-    "promptHint": "我现在在园区内，请根据当前位置和排队情况推荐今日路线。",
-    "enabled": true,
-    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_mid" }],
-    "priority": 9
-  },
-  {
-    "entryId": "view_orders",
-    "title": "查看订单",
-    "icon": "orders-o",
-    "target": "page",
-    "targetPath": "/orders?tab=1",
-    "enabled": true,
-    "rules": [
-      {
-        "op": "in",
-        "field": "personaId",
-        "values": ["demo_mid", "demo_vip"]
-      }
-    ],
-    "priority": 8
-  },
-  {
-    "entryId": "batch_invoice",
-    "title": "开发票",
-    "icon": "bill-o",
-    "target": "chat",
-    "skillId": "invoice_service",
-    "promptHint": "开发票",
-    "enabled": true,
-    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_vip" }],
-    "priority": 8
-  },
-  {
-    "entryId": "travel_strategy",
-    "title": "游玩攻略",
-    "icon": "notes-o",
-    "target": "chat",
-    "skillId": "travel_guide",
-    "promptHint": "请推荐适合今天的游玩项目和路线，不需要交通和入园信息",
-    "enabled": true,
-    "rules": [
-      {
-        "op": "in",
-        "field": "personaId",
-        "values": ["demo_mid", "demo_vip"]
-      }
-    ],
-    "priority": 7
-  },
-  {
-    "entryId": "review_service",
-    "title": "服务点评",
-    "icon": "comment-o",
-    "target": "chat",
-    "skillId": "review_service",
-    "promptHint": "我要点评最近一次游玩体验",
-    "enabled": true,
-    "rules": [{ "op": "eq", "field": "personaId", "value": "demo_vip" }],
-    "priority": 7
+    "priority": 6
   }
 ]

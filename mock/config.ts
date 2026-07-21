@@ -1,13 +1,13 @@
 import type { MockMethod } from 'vite-plugin-mock'
 import uiConfig from '../src/mock/assistant/ui_config.json'
 import welcomeTemplates from '../src/mock/assistant/welcome_templates.json'
+import welcomeQuestions from '../src/mock/assistant/welcome_questions.json'
 import recommendEntries from '../src/mock/assistant/recommend_entries.json'
 import ticketProducts from '../src/mock/products/tickets.json'
 import couponProducts from '../src/mock/products/coupon_products.json'
 import retailProducts from '../src/mock/products/retail.json'
 import contentBlocks from '../src/mock/content/blocks.json'
 import tags from '../src/mock/tags.json'
-import virtualQueue from '../src/mock/virtual_queue.json'
 import quiz from '../src/mock/quiz.json'
 import assistantSkills from '../src/mock/assistant/skills.json'
 import fieldCatalog from '../src/mock/assistant/field_catalog.json'
@@ -18,6 +18,7 @@ import {
   getPersonaFromHeaders,
   type RuleExpression,
 } from './rules'
+import { getVirtualQueueOrders } from './_utils'
 
 interface RecommendEntryRaw {
   entryId: string
@@ -117,6 +118,11 @@ export default [
     response: () => ({ code: 200, data: welcomeTemplates }),
   },
   {
+    url: '/api/admin/welcome-questions',
+    method: 'get',
+    response: () => ({ code: 200, data: welcomeQuestions }),
+  },
+  {
     url: '/api/admin/card-views',
     method: 'get',
     response: () => ({ code: 200, data: cardViews }),
@@ -173,7 +179,11 @@ export default [
   {
     url: '/api/virtual-queue',
     method: 'get',
-    response: () => ({ code: 200, data: virtualQueue }),
+    response: ({ headers }: { headers: Record<string, unknown> }) => {
+      const personaId = getPersonaFromHeaders(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      return { code: 200, data: getVirtualQueueOrders(personaId) }
+    },
   },
   {
     url: '/api/quiz/current',

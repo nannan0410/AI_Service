@@ -36,12 +36,14 @@ ${catalog}
 6. 今日演出、演出推荐、下一场几点、灯光秀、花车巡游 → scenic_recommend
 7. 开发票、开票、报销、发票 → invoice_service
 8. 点评、评价、服务怎么样、写评价、满意度 → review_service
-9. 有什么券、优惠活动、推荐优惠 → proactive_marketing（不含新客领券）
-10. 不确定或仅寒暄 → general
-11. confidence 为 0~1，表示把握程度。
+9. 打卡、签到、景点打卡、园区打卡 → checkin_service
+10. 虚拟排队、免费取号、快速排队、排队少的项目 → queue_recommend
+11. 有什么券、优惠活动、推荐优惠 → proactive_marketing（不含新客领券）
+12. 不确定或仅寒暄 → general
+13. confidence 为 0~1，表示把握程度。
 
 仅输出 JSON：
-{"skillId":"ticket_purchase|travel_guide|order_query|parking_pay|scenic_recommend|invoice_service|review_service|proactive_marketing|general","confidence":number}`
+{"skillId":"ticket_purchase|travel_guide|order_query|parking_pay|scenic_recommend|queue_recommend|invoice_service|review_service|checkin_service|proactive_marketing|general","confidence":number}`
 }
 
 function parseClassification(content: string): SkillClassification | null {

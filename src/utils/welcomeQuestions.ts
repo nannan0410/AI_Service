@@ -1,11 +1,40 @@
 import type { Coupon, PersonaId } from '@/types'
-import type { WelcomeQuestionConfig, WelcomeTemplateConfig } from '@/types/businessConfig'
+import type { RuleExpression, WelcomeQuestionConfig, WelcomeTemplateConfig } from '@/types/businessConfig'
 import { filterNewGuestClaimWelcomeItems } from '@/utils/newGuestCoupon'
+import { buildDemoRuleContext } from '@/utils/demoRuleContext'
+import { evaluateRules } from '@/utils/ruleEngine'
+import {
+  buildWelcomeTemplateVars,
+  replaceWelcomePlaceholders,
+  type WelcomeTemplateVarContext,
+} from '@/utils/welcomeTemplateVars'
 
 export const MAX_SUGGESTED_QUESTIONS = 6
 
-export interface FlatWelcomeQuestion extends WelcomeQuestionConfig {
-  personaId: PersonaId
+function cloneRules(rules: RuleExpression[] | undefined): RuleExpression[] {
+  return (rules ?? []).map((rule) => {
+    if (rule.op === 'in') {
+      return { op: 'in' as const, field: rule.field, values: [...(rule.values ?? [])] }
+    }
+    if (rule.op === 'and' || rule.op === 'or') {
+      return {
+        op: rule.op,
+        rules: rule.rules.map((child) => ({ ...child })),
+      }
+    }
+    return { ...rule }
+  })
+}
+
+export function cloneWelcomeQuestions(
+  questions: WelcomeQuestionConfig[],
+): WelcomeQuestionConfig[] {
+  return questions.map((question) => ({
+    ...question,
+    rules: cloneRules(question.rules),
+    enabled: question.enabled !== false,
+    priority: question.priority ?? 0,
+  }))
 }
 
 export function cloneWelcomeTemplates(
@@ -14,76 +43,97 @@ export function cloneWelcomeTemplates(
   return templates.map((template) => ({
     ...template,
     highlights: [...(template.highlights ?? [])],
-    suggestedQuestions: template.suggestedQuestions.map((question) => ({
-      ...question,
-    })),
+    suggestedQuestions: [],
   }))
 }
 
-export function flattenWelcomeQuestions(
+/** 旧版：问题挂在 persona 模板下 → 抽出并补 personaId 规则 */
+export function extractWelcomeQuestionsFromTemplates(
   templates: WelcomeTemplateConfig[],
-): FlatWelcomeQuestion[] {
-  return templates.flatMap((template) =>
-    template.suggestedQuestions.map((question, index) => ({
-      ...question,
-      personaId: template.personaId,
-      enabled: question.enabled !== false,
-      priority: question.priority ?? 10 - index,
-    })),
-  )
-}
-
-export function unflattenWelcomeQuestions(
-  templates: WelcomeTemplateConfig[],
-  flatQuestions: FlatWelcomeQuestion[],
-): WelcomeTemplateConfig[] {
-  const byPersona = new Map<PersonaId, FlatWelcomeQuestion[]>()
-  for (const question of flatQuestions) {
-    const list = byPersona.get(question.personaId) ?? []
-    list.push(question)
-    byPersona.set(question.personaId, list)
-  }
-
-  return templates.map((template) => {
-    const questions = (byPersona.get(template.personaId) ?? [])
-      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
-      .map(({ personaId: _personaId, ...question }) => ({
+): WelcomeQuestionConfig[] {
+  const list: WelcomeQuestionConfig[] = []
+  for (const template of templates) {
+    for (const question of template.suggestedQuestions ?? []) {
+      const hasRules = Array.isArray(question.rules) && question.rules.length > 0
+      list.push({
         ...question,
         enabled: question.enabled !== false,
-      }))
-    return {
-      ...template,
-      suggestedQuestions: questions,
+        priority: question.priority ?? 0,
+        rules: hasRules
+          ? cloneRules(question.rules)
+          : [{ op: 'eq', field: 'personaId', value: template.personaId }],
+      })
     }
-  })
+  }
+  return list
 }
 
+export function resolveWelcomeQuestionPlaceholders(
+  question: WelcomeQuestionConfig,
+  ctx: WelcomeTemplateVarContext,
+): WelcomeQuestionConfig {
+  const vars = buildWelcomeTemplateVars(ctx)
+  return {
+    ...question,
+    text: replacePlaceholders(question.text, vars),
+    desc: question.desc ? replacePlaceholders(question.desc, vars) : question.desc,
+    prompt: replacePlaceholders(question.prompt, vars),
+  }
+}
+
+function replacePlaceholders(
+  text: string,
+  vars: ReturnType<typeof buildWelcomeTemplateVars>,
+): string {
+  return replaceWelcomePlaceholders(text, vars)
+}
+
+/** 按规则过滤游游推荐（与快捷服务同一套 evaluateRules） */
 export function resolveSuggestedQuestions(
-  templates: WelcomeTemplateConfig[],
+  questions: WelcomeQuestionConfig[],
   personaId: PersonaId,
   couponCtx: {
     personaId: PersonaId | string | null
     coupons: Coupon[]
     registeredAt?: string
   },
+  welcomeCtx?: WelcomeTemplateVarContext,
 ): WelcomeQuestionConfig[] {
-  const template = templates.find((item) => item.personaId === personaId)
-  const enabled = (template?.suggestedQuestions ?? [])
+  const ctx = buildDemoRuleContext(personaId)
+  const matched = questions
     .filter((question) => question.enabled !== false)
+    .filter((question) => evaluateRules(question.rules ?? [], ctx))
     .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
 
-  return filterNewGuestClaimWelcomeItems(enabled, couponCtx).slice(
+  const filtered = filterNewGuestClaimWelcomeItems(matched, couponCtx).slice(
     0,
     MAX_SUGGESTED_QUESTIONS,
   )
+
+  if (!welcomeCtx) return filtered
+  return filtered.map((question) =>
+    resolveWelcomeQuestionPlaceholders(question, welcomeCtx),
+  )
 }
 
-export function findFlatQuestionIndex(
-  flatQuestions: FlatWelcomeQuestion[],
+/** 预览：命中 / 未命中 */
+export function previewWelcomeQuestions(
+  questions: WelcomeQuestionConfig[],
   personaId: PersonaId,
+): { matched: WelcomeQuestionConfig[]; unmatched: WelcomeQuestionConfig[] } {
+  const ctx = buildDemoRuleContext(personaId)
+  const enabled = questions.filter((question) => question.enabled !== false)
+  const matched = enabled
+    .filter((question) => evaluateRules(question.rules ?? [], ctx))
+    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+  const matchedIds = new Set(matched.map((item) => item.id))
+  const unmatched = enabled.filter((item) => !matchedIds.has(item.id))
+  return { matched, unmatched }
+}
+
+export function findQuestionIndex(
+  questions: WelcomeQuestionConfig[],
   questionId: string,
 ): number {
-  return flatQuestions.findIndex(
-    (item) => item.personaId === personaId && item.id === questionId,
-  )
+  return questions.findIndex((item) => item.id === questionId)
 }

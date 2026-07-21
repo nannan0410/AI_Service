@@ -20,6 +20,7 @@ const shortcuts = [
   { title: "停车缴费", icon: "logistics", path: "/parking", color: "#ff976a" },
   { title: "优惠券", icon: "coupon-o", path: "/coupon", color: "#ee0a24" },
   { title: "发票申请", icon: "bill-o", path: "/invoice", color: "#7232dd" },
+  { title: "园区打卡", icon: "location-o", path: "/checkin", color: "#07c160" },
   { title: "小票上传", icon: "photograph", path: "/receipt", color: "var(--chat-primary)" },
 ];
 

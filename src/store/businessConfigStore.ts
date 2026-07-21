@@ -5,11 +5,13 @@ import {
   fetchCardViews,
   fetchFieldCatalog,
   fetchRecommendEntriesConfig,
+  fetchWelcomeQuestionsConfig,
   fetchWelcomeTemplatesConfig,
 } from '@/api/business'
 import {
   applyBusinessPatchToRecommendEntries,
   applyBusinessPatchToSkills,
+  applyBusinessPatchToWelcomeQuestions,
   applyBusinessPatchToWelcomeTemplates,
   coalesceDynamicWelcomeTemplate,
   getAdminBusinessOverride,
@@ -23,8 +25,15 @@ import defaultFieldCatalog from '@/mock/assistant/field_catalog.json'
 import defaultCardViews from '@/mock/assistant/card_views.json'
 import defaultRecommendEntries from '@/mock/assistant/recommend_entries.json'
 import defaultWelcomeTemplates from '@/mock/assistant/welcome_templates.json'
-import type { AssistantSkillConfig, Coupon, Order, PersonaId, RecommendEntry } from '@/types'
-import type { CardViewConfig, FieldCatalog, RecommendEntryConfig, WelcomeTemplateConfig } from '@/types/businessConfig'
+import defaultWelcomeQuestions from '@/mock/assistant/welcome_questions.json'
+import type { AssistantSkillConfig, PersonaId, RecommendEntry } from '@/types'
+import type {
+  CardViewConfig,
+  FieldCatalog,
+  RecommendEntryConfig,
+  WelcomeQuestionConfig,
+  WelcomeTemplateConfig,
+} from '@/types/businessConfig'
 import { resolveSuggestedQuestions } from '@/utils/welcomeQuestions'
 import {
   resolveWelcomeTemplate,
@@ -39,6 +48,8 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
   const recommendEntries = ref<RecommendEntryConfig[]>([])
   const baseWelcomeTemplates = ref<WelcomeTemplateConfig[]>([])
   const welcomeTemplates = ref<WelcomeTemplateConfig[]>([])
+  const baseWelcomeQuestions = ref<WelcomeQuestionConfig[]>([])
+  const welcomeQuestions = ref<WelcomeQuestionConfig[]>([])
   const fieldCatalog = ref<FieldCatalog>(defaultFieldCatalog as FieldCatalog)
   const cardViews = ref<CardViewConfig[]>(defaultCardViews as CardViewConfig[])
   const loaded = ref(false)
@@ -58,6 +69,12 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
   function syncWelcomeTemplates(base = baseWelcomeTemplates.value) {
     const merged = applyBusinessPatchToWelcomeTemplates(base, getAdminBusinessOverride())
     welcomeTemplates.value = merged
+    return merged
+  }
+
+  function syncWelcomeQuestions(base = baseWelcomeQuestions.value) {
+    const merged = applyBusinessPatchToWelcomeQuestions(base, getAdminBusinessOverride())
+    welcomeQuestions.value = merged
     return merged
   }
 
@@ -138,6 +155,23 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     return syncWelcomeTemplates()
   }
 
+  async function loadWelcomeQuestions(force = false) {
+    if (!force && baseWelcomeQuestions.value.length) {
+      return syncWelcomeQuestions()
+    }
+    try {
+      const { data: res } = await fetchWelcomeQuestionsConfig()
+      if (res.code === 200 && Array.isArray(res.data)) {
+        baseWelcomeQuestions.value = res.data as WelcomeQuestionConfig[]
+      } else {
+        baseWelcomeQuestions.value = defaultWelcomeQuestions as WelcomeQuestionConfig[]
+      }
+    } catch {
+      baseWelcomeQuestions.value = defaultWelcomeQuestions as WelcomeQuestionConfig[]
+    }
+    return syncWelcomeQuestions()
+  }
+
   async function loadAll(force = false) {
     await Promise.all([
       loadCatalog(force),
@@ -145,12 +179,14 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
       loadSkills(force),
       loadRecommendEntries(force),
       loadWelcomeTemplates(force),
+      loadWelcomeQuestions(force),
     ])
     loaded.value = true
     return {
       skills: skills.value,
       recommendEntries: recommendEntries.value,
       welcomeTemplates: welcomeTemplates.value,
+      welcomeQuestions: welcomeQuestions.value,
       fieldCatalog: fieldCatalog.value,
       cardViews: cardViews.value,
     }
@@ -184,30 +220,22 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     personaId: PersonaId,
     couponCtx: {
       personaId: PersonaId | string | null
-      coupons: Coupon[]
+      coupons: import('@/types').Coupon[]
       registeredAt?: string
     },
     welcomeCtx?: WelcomeTemplateVarContext,
   ) {
-    const merged = syncWelcomeTemplates()
+    const questions = syncWelcomeQuestions()
     const orders =
       welcomeCtx?.orders?.length
         ? welcomeCtx.orders
         : getDemoSnapshotOrders(personaId)
-    const resolvedCtx = welcomeCtx ? { ...welcomeCtx, orders } : undefined
-    const templates = resolvedCtx
-      ? merged.map((template) => {
-          if (template.personaId !== personaId) return template
-          const base = baseWelcomeTemplates.value.find(
-            (item) => item.personaId === personaId,
-          )
-          return resolveWelcomeTemplate(
-            coalesceDynamicWelcomeTemplate(base, template),
-            resolvedCtx,
-          )
-        })
-      : merged
-    return resolveSuggestedQuestions(templates, personaId, couponCtx)
+    const resolvedCtx: WelcomeTemplateVarContext = {
+      nickname: welcomeCtx?.nickname,
+      orders,
+      ref: welcomeCtx?.ref,
+    }
+    return resolveSuggestedQuestions(questions, personaId, couponCtx, resolvedCtx)
   }
 
   function applyAdminPatch(patch: AdminBusinessPatch) {
@@ -216,6 +244,7 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     syncSkills()
     syncRecommendEntries()
     syncWelcomeTemplates()
+    syncWelcomeQuestions()
   }
 
   function saveSkillsOverride(nextSkills: AssistantSkillConfig[]) {
@@ -230,11 +259,16 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     applyAdminPatch({ welcomeTemplates: nextTemplates })
   }
 
+  function saveWelcomeQuestionsOverride(nextQuestions: WelcomeQuestionConfig[]) {
+    applyAdminPatch({ welcomeQuestions: nextQuestions })
+  }
+
   function clearAdminPatch() {
     setAdminBusinessOverride(null)
     syncSkills()
     syncRecommendEntries()
     syncWelcomeTemplates()
+    syncWelcomeQuestions()
   }
 
   return {
@@ -244,6 +278,8 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     recommendEntries,
     baseWelcomeTemplates,
     welcomeTemplates,
+    baseWelcomeQuestions,
+    welcomeQuestions,
     fieldCatalog,
     cardViews,
     loaded,
@@ -251,11 +287,13 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     loadSkills,
     loadRecommendEntries,
     loadWelcomeTemplates,
+    loadWelcomeQuestions,
     loadCatalog,
     loadCardViews,
     syncSkills,
     syncRecommendEntries,
     syncWelcomeTemplates,
+    syncWelcomeQuestions,
     getActiveRecommendEntries,
     getWelcomeTemplate,
     getResolvedWelcomeTemplate,
@@ -264,6 +302,7 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     saveSkillsOverride,
     saveRecommendEntriesOverride,
     saveWelcomeTemplatesOverride,
+    saveWelcomeQuestionsOverride,
     clearAdminPatch,
   }
 })

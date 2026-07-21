@@ -118,7 +118,18 @@
 | 行为 | `getOrders` → 可开票：文案「您当前有X笔订单可以申请开票」+「立即开票」→ `/invoice/batch`；0 笔：「当前没有可申请开票的订单。」 |
 | 文件 | `src/utils/invoiceIntent.ts`、`src/ai/workflow/invoiceService.ts` |
 
-### 3.6 停车缴费
+### 3.6 虚拟排队推荐
+
+| 项 | 说明 |
+|----|------|
+| 入口 | Skill=`queue_recommend` + `shouldRunQueueRecommendWorkflow`；**优先于**园内路线攻略 |
+| 条件 | **仅在园**（`visitorState.inPark`）；非在园提示入园后可用 |
+| 免费包 | 「虚拟排队」「排队少的项目」等 → 2 免费项目，每卡「立即取号排队」→ `/queue/take` |
+| 付费单 | 「快速排队」等 → 极限过山车 +「¥10元快速排队」→ `/queue/pay` |
+| 点名 | 消息含支持虚拟排队的项目名 → 单卡 + 对应 CTA |
+| 实现 | `queueRecommendIntent.ts` + `queueRecommend.ts`；`scene_recommend(scene=queue)` |
+
+### 3.7 停车缴费
 
 | 项 | 说明 |
 |----|------|
@@ -126,7 +137,7 @@
 | 行为 | 查绑定车牌 → `PageGuideCard` → `/parking` |
 | 文件 | `src/ai/workflow/parkingPay.ts`（及 `parkingIntent` 等） |
 
-### 3.7 演出项目推荐
+### 3.8 演出项目推荐
 
 | 项 | 说明 |
 |----|------|
@@ -154,7 +165,7 @@
 作用：为 **LLM 路径** 注入 `promptAddon` 与 Tool 白名单。Workflow 命中时，Skill 主要参与 **入口判断**，不参与槽位填充。
 
 未启用 Skill（`enabled: false`）：部分扩展场景 — 只能靠 LLM 通用模式或离线正则。  
-**已启用 Workflow**：购票、攻略、订单、**发票**、停车、**演出场次**、点评、主动营销等见 `skills.json` + `src/ai/workflow/*`。
+**已启用 Workflow**：购票、攻略、订单、**发票**、停车、**演出场次**、点评、主动营销、**虚拟排队**、打卡等见 `skills.json` + `src/ai/workflow/*`。
 
 ---
 
@@ -429,6 +440,7 @@ npx vite-node scripts/test-travel-guide-intent-route.mts
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-22 | 虚拟排队 `queue_recommend` Workflow；欢迎 Hero 当日天气本地 Mock |
 | 2026-07-21 | 服务点评「帮我写评价」：LLM / 离线模板草稿（非 Workflow；不自动提交） |
 | 2026-07-21 | 发票对话：X笔+立即开票→批量页；0笔固定文案；演出 `scene_recommend` / general；快捷开发票走 chat |
 | 2026-06-19 | 园内路线子场景：`in_park` 意图，猜你想问「现在先玩哪里」不含交通/入园 |

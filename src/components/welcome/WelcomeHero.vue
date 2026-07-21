@@ -1,17 +1,25 @@
 <script setup lang="ts">
 import { DEFAULT_ABILITY_ROWS } from '@/utils/welcomeLayout'
+import { formatScenicWeatherLine } from '@/utils/scenicWeather'
 
 defineProps<{
   nickname: string
   characterUrl: string
   abilityRows?: readonly (readonly [string, string])[]
+  /** 覆盖默认 Mock 天气文案；不传则用本地常量 */
+  weatherLine?: string
 }>()
+
+const defaultWeatherLine = formatScenicWeatherLine()
 </script>
 
 <template>
   <section class="welcome-hero" aria-label="欢迎介绍">
     <div class="welcome-hero__main">
       <div class="welcome-hero__bubble">
+        <p class="welcome-hero__weather">
+          <span aria-hidden="true">🌤 </span>{{ weatherLine ?? defaultWeatherLine }}
+        </p>
         <p class="welcome-hero__greeting">
           我是{{ nickname }} <span aria-hidden="true">✨</span>
         </p>
@@ -124,6 +132,14 @@ defineProps<{
   border-bottom: 8px solid transparent;
   border-left: 10px solid rgba(255, 255, 255, 0.92);
   filter: drop-shadow(2px 3px 4px rgba(95, 112, 132, 0.07));
+}
+
+.welcome-hero__weather {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5b7c99;
+  line-height: 1.45;
 }
 
 .welcome-hero__greeting {

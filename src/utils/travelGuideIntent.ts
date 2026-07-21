@@ -1,4 +1,5 @@
 import { isParkingLocationIntent, isParkingPayIntent } from '@/utils/parkingPayIntent'
+import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
 
 /** 完整出行攻略（交通 + 入园 + 推荐项目）— 需明确出行/订单语境 */
 export function isFullTravelGuideIntent(message: string): boolean {
@@ -52,11 +53,18 @@ export function isInParkRouteIntent(message: string): boolean {
   if (isFullTravelGuideIntent(message)) return false
   if (isTrafficGuideIntent(message)) return false
   if (isEntryNoticeIntent(message)) return false
+  // 虚拟排队推荐（免费包 / 付费单 / 点名）优先，不抢今日路线
+  if (
+    shouldRunQueueRecommendWorkflow(message) &&
+    !/今日路线|根据当前位置和排队情况推荐今日路线|现在先玩哪里/.test(message)
+  ) {
+    return false
+  }
 
   const inParkCue =
     /在园区内|在园里|在景区里|在园内|园内游玩|在园状态|我现在在园/.test(message)
   const routeCue =
-    /今日路线|今日游玩路线|现在先玩|根据当前位置|排队情况|安排今日游玩|游玩路线|先玩哪里|马上玩的项目|排队时间较短/.test(
+    /今日路线|今日游玩路线|现在先玩|根据当前位置|排队情况|安排今日游玩|游玩路线|先玩哪里/.test(
       message,
     )
 
@@ -106,6 +114,7 @@ export function resolveTravelGuideIntent(message: string): TravelGuideIntentKind
 
 export function shouldRunTravelGuideWorkflow(message: string): boolean {
   if (isParkingPayIntent(message)) return false
+  if (shouldRunQueueRecommendWorkflow(message)) return false
   return (
     isFullTravelGuideIntent(message) ||
     isTrafficGuideIntent(message) ||
@@ -122,6 +131,7 @@ export function shouldRunTravelGuideWorkflow(message: string): boolean {
  *（不含 shouldRunTravelGuideWorkflow 的宽泛兜底，避免「出行」误抢购票）
  */
 export function isTravelGuidePreferredOverTicket(message: string): boolean {
+  if (shouldRunQueueRecommendWorkflow(message)) return false
   return (
     isEntryNoticeIntent(message) ||
     isRecommendTravelGuideIntent(message) ||

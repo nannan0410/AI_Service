@@ -87,6 +87,37 @@ H5 演示版与微信小程序的路径对照，供产品化对接参考。
 
 **行为**：展示 90 天内已完成且 `reviewStatus=none` 的订单；1～5 星 + 可选标签 + 文案（≤200 字）；支持 **「帮我写评价」**（LLM 或离线模板生成约 50 字草稿，填入后可改再提交）；`POST /api/reviews/submit`（body: `{ orderId?, rating, tags?, content? }`），Mock 将订单标为 `reviewStatus=submitted`，成功后跳转 `/orders?tab=1`。
 
+**入口**：对话「我要点评」→ ReviewCard；快捷推荐 `review_service`。
+
+## 园区打卡 ✅
+
+| H5 | 小程序（示例） |
+|----|----------------|
+| `/checkin` | `/pages/checkin/index` |
+
+**行为**：展示打卡点列表；同点位当日仅一次；`POST /api/checkin` `{ spotId }` → 加积分、可选发 `cp_prod_checkin`；非在园不可打卡。
+
+**入口**：
+
+1. 对话「我要打卡」→「立即打卡」→ 本页  
+2. 快捷推荐 `checkin_nearby`（`inPark=true`）→ chat 发「我要打卡」  
+3. 首页快捷入口 `/checkin`
+
+## 虚拟排队 ✅
+
+| H5 | 小程序（示例） |
+|----|----------------|
+| `/queue/take?activityId=` | `/pages/queue/take` |
+| `/queue/pay?activityId=` | `/pages/queue/pay` |
+
+**行为**：仅在园可用。免费项目取号 `POST /api/virtual-queue/take`；付费快速排队 Mock 支付 `POST /api/virtual-queue/pay`。底栏与 H5 内容同宽（sticky，非视口通栏）。成功后展示「返回个人中心」→ `/`（登录成功落地页）。
+
+**对话入口**（`queue_recommend`）：
+
+1. 免费包：「虚拟排队」「排队少的项目」→ 2 卡，每卡「立即取号排队」  
+2. 付费单：「快速排队」→ 极限过山车 +「¥10元快速排队」  
+3. 点名项目名 → 单卡 + 对应 CTA  
+
 **入口**：RecommendEntry `review_service`（规则 `hasReviewableOrders=true`，demo_vip）；对话「我要点评」→ `review_service` Workflow → 对话内 `ReviewCard`（主路径）；`/review` 为兜底假页（同样支持 AI 草稿）。
 
 **实现**：`src/utils/generateReviewDraft.ts`（输入：星级、标签、票种、景区名 + 关键词）。

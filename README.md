@@ -64,7 +64,7 @@ npm run dev
 - NLU 增强说明见 [对话意图识别与LLM分工](./docs/对话意图识别与LLM分工.md)
 - 意图与 LLM 分工说明：[`docs/对话意图识别与LLM分工.md`](./docs/对话意图识别与LLM分工.md)
 - **业务卡片**：TicketCard、CouponCard、OrderCard、ContentCard、ActivityCard、GuideCard、VisitorPicker
-- **欢迎页**：底部**快捷服务**（原 RecommendEntry，最多 4）+ **游游推荐**卡片（原 welcome_templates，最多 6）；均来自 `businessConfigStore`（JSON + `/config/business` LocalStorage）
+- **欢迎页**：Hero 介绍气泡含 **当日景区天气**（本地 Mock）；底部**快捷服务**（`recommend_entries`，最多 4）+ **游游推荐**（`welcome_questions` + rules，最多 6）；均来自 `businessConfigStore`（JSON + `/config/business` LocalStorage）
 
 ### 购票闭环（多轮对话）
 
@@ -104,6 +104,9 @@ npm run dev
 | 7 | 批量开发票 | demo_vip | 快捷「开发票」→ 对话「立即开票」→ `/invoice/batch` 勾选提交 |
 | 7b | 对话开票 | demo_vip | 「开发票」→「您当前有X笔…」+「立即开票」；0 笔固定文案 |
 | 7c | 演出推荐 | 任意 | 「演出推荐」/「今天有演出吗」→ 单条 scene_recommend |
+| 8 | 虚拟排队 | demo_vip | 「虚拟排队」→ 免费取号；「快速排队」→ ¥10 支付取号 |
+| 9 | 园区打卡 | demo_vip | 「我要打卡」→ `/checkin` |
+| 10 | 欢迎天气 | 任意 | 打开 /chat 欢迎页 →「我是游游」上方天气 Mock |
 
 ## 助手 UI 配置（简易后台）
 
@@ -115,8 +118,10 @@ npm run dev
 
 当用户当天还没有真实对话记录时，展示欢迎界面：
 
-- **welcome_templates.json**：**游游推荐**卡片（标题/副标题/prompt，每 persona 最多 6 条）；可在 `/config/business` 覆盖
-- **RecommendEntry API**：**快捷服务**规则入口（交通指南、查看订单、**开发票**（进对话发「开发票」）等，最多 4 个）
+- **Hero 天气**：介绍气泡「我是游游」上方一行（`scenicWeather.ts` 本地 Mock，如「今天景区天气 26°C，多云，适合出游」）
+- **welcome_templates.json**：欢迎标题区 title / subtitle / body（按 persona）
+- **welcome_questions.json**：**游游推荐**卡片（规则过滤，最多 6 条）；可在 `/config/business` 覆盖
+- **RecommendEntry API**：**快捷服务**规则入口（交通指南、开发票、园区打卡等，最多 4 个）
 
 ## 技术栈
 

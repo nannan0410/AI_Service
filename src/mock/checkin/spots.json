@@ -1,0 +1,32 @@
+[
+  {
+    "spotId": "spot_coaster",
+    "name": "极限过山车",
+    "activityId": "act_002",
+    "location": "极限区",
+    "rewardPoints": 20,
+    "rewardCouponProductId": "cp_prod_checkin"
+  },
+  {
+    "spotId": "spot_drift",
+    "name": "亲子漂流",
+    "activityId": "act_001",
+    "location": "漂流入口",
+    "rewardPoints": 15
+  },
+  {
+    "spotId": "spot_lightshow",
+    "name": "水上灯光秀",
+    "activityId": "act_003",
+    "location": "中心湖",
+    "rewardPoints": 15
+  },
+  {
+    "spotId": "spot_pet",
+    "name": "萌宠乐园",
+    "activityId": "act_004",
+    "location": "东区",
+    "rewardPoints": 10,
+    "rewardCouponProductId": "cp_prod_checkin"
+  }
+]

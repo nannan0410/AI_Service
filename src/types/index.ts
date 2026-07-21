@@ -146,6 +146,38 @@ export interface MemberInfo {
   registeredAt?: string
 }
 
+/** 园区打卡点位（Mock 配置） */
+export interface CheckinSpot {
+  spotId: string
+  name: string
+  activityId?: string
+  location: string
+  rewardPoints: number
+  rewardCouponProductId?: string
+}
+
+export interface CheckinSpotView extends CheckinSpot {
+  checkedInToday: boolean
+}
+
+export interface CheckinSpotsResult {
+  inPark: boolean
+  /** 演示版 Mock 当前位置（与点位 location 匹配才可打卡） */
+  currentLocation?: string
+  spots: CheckinSpotView[]
+  checkedCountToday: number
+}
+
+export interface CheckinSubmitResult {
+  checkinId: string
+  spotId: string
+  spotName: string
+  rewardPoints: number
+  pointsTotal: number
+  coupon?: Coupon
+  checkedAt: string
+}
+
 export interface TicketCatalogItem {
   id: TicketTypeId
   name: string
@@ -324,17 +356,38 @@ export interface ActivityCardPayload {
   /** 攻略卡片上下文：在园展示实时排队，前期攻略隐藏排队时长 */
   guideContext?: ActivityGuideContext
   reason?: string
+  /** 虚拟排队推荐：每卡下方取号 / 付费 CTA */
+  queueAction?: {
+    label: string
+    path: string
+  }
 }
 
-/** 餐饮/零售/演出场景推荐：合并为一条消息 */
+/** 餐饮/零售/演出/虚拟排队场景推荐：合并为一条消息 */
 export interface SceneRecommendPayload {
-  scene: 'dining' | 'retail' | 'show'
+  scene: 'dining' | 'retail' | 'show' | 'queue'
   /** 演出查询日（仅 scene=show） */
   dayKind?: 'today' | 'tomorrow' | 'day_after' | 'general'
   /** 当日是否仍有未开演场次（仅 scene=show 且 dayKind=today） */
   hasRemainingSlots?: boolean
   coupon?: CouponCardPayload
   activities: ActivityCardPayload[]
+}
+
+/** 虚拟排队目录（含在园状态） */
+export interface VirtualQueueCatalog {
+  inPark: boolean
+  activities: Activity[]
+}
+
+export interface VirtualQueueTakeResult {
+  queueId: string
+  activityId: string
+  activityName: string
+  isFree: boolean
+  waitMinutes: number
+  position: number
+  queuePrice?: number
 }
 
 export interface OrderCardPayload {
@@ -365,6 +418,13 @@ export interface PageGuideCardPayload {
   path: string
   buttonLabel: string
   tag?: string
+  /** 对话内即时动作（如打卡），有值时优先于 path 跳转 */
+  inlineAction?: 'checkin'
+  /** inlineAction=checkin 时的点位 */
+  spotId?: string
+  spotName?: string
+  /** 已完成动作后禁用按钮 */
+  actionDone?: boolean
 }
 
 export interface ReviewOrderOption {

@@ -70,7 +70,7 @@ export interface RecommendEntryConfig {
   rules: RuleExpression[]
 }
 
-/** 欢迎页「猜你想问」单条配置 */
+/** 欢迎页「游游推荐」单条配置（与快捷服务同一套规则模型） */
 export interface WelcomeQuestionConfig {
   id: string
   icon: string
@@ -82,16 +82,19 @@ export interface WelcomeQuestionConfig {
   /** 默认 true */
   enabled?: boolean
   priority?: number
+  /** 触发规则（与 RecommendEntry.rules 相同） */
+  rules: RuleExpression[]
 }
 
-/** 按 persona 的欢迎页模板（含猜你想问） */
+/** 按 persona 的欢迎页模板文案（游游推荐已独立为 welcomeQuestions） */
 export interface WelcomeTemplateConfig {
   personaId: PersonaId
   title: string
   subtitle: string
   body: string
   highlights: string[]
-  suggestedQuestions: WelcomeQuestionConfig[]
+  /** @deprecated 已迁移至全局 welcomeQuestions；保留兼容旧 LocalStorage */
+  suggestedQuestions?: WelcomeQuestionConfig[]
 }
 
 /** LocalStorage 业务配置覆盖 */
@@ -99,6 +102,8 @@ export interface AdminBusinessPatch {
   skills?: AssistantSkillConfig[]
   recommendEntries?: RecommendEntryConfig[]
   welcomeTemplates?: WelcomeTemplateConfig[]
+  /** 游游推荐全局列表（规则过滤） */
+  welcomeQuestions?: WelcomeQuestionConfig[]
 }
 
 /** Skill Workflow 子意图目录（演示版只读，供后台展示与触发词校验） */

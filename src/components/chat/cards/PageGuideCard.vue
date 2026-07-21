@@ -2,14 +2,24 @@
 import ChatCardShell from "./ChatCardShell.vue";
 import type { PageGuideCardPayload } from "@/types";
 
-defineProps<{
+const props = defineProps<{
   payload: PageGuideCardPayload;
   embedded?: boolean;
 }>();
 
 const emit = defineEmits<{
   open: [path: string];
+  checkin: [payload: PageGuideCardPayload];
 }>();
+
+function onClick() {
+  if (props.payload.actionDone) return;
+  if (props.payload.inlineAction === "checkin" && props.payload.spotId) {
+    emit("checkin", props.payload);
+    return;
+  }
+  emit("open", props.payload.path);
+}
 </script>
 
 <template>
@@ -30,9 +40,10 @@ const emit = defineEmits<{
         round
         block
         class="page-guide-card__btn"
-        @click="emit('open', payload.path)"
+        :disabled="payload.actionDone === true"
+        @click="onClick"
       >
-        {{ payload.buttonLabel }}
+        {{ payload.actionDone ? "已打卡" : payload.buttonLabel }}
       </van-button>
     </ChatCardShell>
   </div>

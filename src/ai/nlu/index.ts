@@ -48,5 +48,7 @@ export {
   shouldRunShowScheduleWorkflowFromRoute,
   shouldRunInvoiceWorkflowFromRoute,
   shouldRunReviewWorkflowFromRoute,
+  shouldRunCheckinWorkflowFromRoute,
+  shouldRunQueueRecommendWorkflowFromRoute,
   shouldRunProactiveMarketingWorkflowFromRoute,
 } from './skillWorkflowGate'

@@ -10,6 +10,8 @@ import { shouldRunReviewWorkflow } from '@/utils/reviewIntent'
 import { shouldRunParkingPayWorkflow } from '@/utils/parkingPayIntent'
 import { shouldRunProactiveMarketingWorkflow } from '@/utils/proactiveMarketingIntent'
 import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
+import { shouldRunCheckinWorkflow } from '@/utils/checkinIntent'
+import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
 import {
   isTravelGuidePreferredOverTicket,
   shouldRunTravelGuideWorkflow,
@@ -98,6 +100,25 @@ export function shouldRunReviewWorkflowFromRoute(
 ): boolean {
   if (route.skill?.skillId !== 'review_service') return false
   return shouldRunReviewWorkflow(message) || isLlmWorkflowEntry(route, 'review_service')
+}
+
+export function shouldRunCheckinWorkflowFromRoute(
+  route: SkillRouteResult,
+  message: string,
+): boolean {
+  if (route.skill?.skillId !== 'checkin_service') return false
+  return shouldRunCheckinWorkflow(message) || isLlmWorkflowEntry(route, 'checkin_service')
+}
+
+export function shouldRunQueueRecommendWorkflowFromRoute(
+  route: SkillRouteResult,
+  message: string,
+): boolean {
+  if (route.skill?.skillId !== 'queue_recommend') return false
+  return (
+    shouldRunQueueRecommendWorkflow(message) ||
+    isLlmWorkflowEntry(route, 'queue_recommend')
+  )
 }
 
 export function shouldRunProactiveMarketingWorkflowFromRoute(
