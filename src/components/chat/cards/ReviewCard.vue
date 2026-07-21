@@ -10,6 +10,7 @@ import {
   REVIEW_TAG_OPTIONS,
   qualifiesReviewReward,
 } from "@/utils/reviewForm";
+import { generateReviewDraft } from "@/utils/generateReviewDraft";
 import { uploadReviewImage } from "@/api/business";
 
 const props = defineProps<{
@@ -29,6 +30,7 @@ const content = ref("");
 const imageIds = ref<string[]>([]);
 const uploading = ref(false);
 const submitting = ref(false);
+const generating = ref(false);
 
 const fileList = ref<{ url: string; imageId?: string }[]>([]);
 
@@ -130,6 +132,32 @@ function onDelete(_file: unknown, detail: { index: number }) {
   }
 }
 
+async function onGenerateDraft() {
+  if (props.disabled || submitting.value || generating.value) return;
+  if (!selectedOrder.value) {
+    showToast("请先选择订单");
+    return;
+  }
+
+  generating.value = true;
+  try {
+    const { text, source } = await generateReviewDraft({
+      rating: rating.value || undefined,
+      tags: [...selectedTags.value],
+      ticketName: selectedOrder.value.ticketName,
+      visitDate: selectedOrder.value.visitDate || selectedOrder.value.completedAt?.slice(0, 10),
+    });
+    content.value = text;
+    showToast(
+      source === "llm"
+        ? "已生成评价草稿，请按真实体验修改后提交"
+        : "已生成评价草稿（离线模板），请按真实体验修改后提交",
+    );
+  } finally {
+    generating.value = false;
+  }
+}
+
 function onSubmit() {
   if (!canSubmit.value || !selectedOrderId.value) return;
   if (content.value.length > REVIEW_CONTENT_MAX) {
@@ -211,6 +239,21 @@ defineExpose({ resetSubmitting });
       </van-tag>
     </div>
 
+    <div class="review-card__content-head">
+      <p class="review-card__label review-card__label--inline">评价内容</p>
+      <van-button
+        size="mini"
+        type="primary"
+        plain
+        round
+        class="review-card__ai-btn"
+        :disabled="disabled || submitting"
+        :loading="generating"
+        @click="onGenerateDraft"
+      >
+        帮我写评价
+      </van-button>
+    </div>
     <van-field
       v-model="content"
       class="review-card__field"
@@ -219,9 +262,10 @@ defineExpose({ resetSubmitting });
       type="textarea"
       :maxlength="REVIEW_CONTENT_MAX"
       show-word-limit
-      placeholder="分享游玩体验（选填）"
-      :readonly="disabled || submitting"
+      placeholder="分享游玩体验（选填），可点「帮我写评价」生成约 50 字草稿"
+      :readonly="disabled || submitting || generating"
     />
+    <p class="review-card__ai-hint">AI 草稿仅供参考，请按真实体验修改后再提交</p>
 
     <p class="review-card__label">上传图片（选填，优质评价需 ≥2 张）</p>
     <van-uploader
@@ -261,6 +305,29 @@ defineExpose({ resetSubmitting });
 
 .review-card__label:first-child {
   margin-top: 0;
+}
+
+.review-card__label--inline {
+  margin: 0;
+}
+
+.review-card__content-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px 0 8px;
+}
+
+.review-card__ai-btn {
+  flex-shrink: 0;
+}
+
+.review-card__ai-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #969799;
+  line-height: 1.4;
 }
 
 .review-card__order {

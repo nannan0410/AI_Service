@@ -1,8 +1,8 @@
 # AI 景区智能聊天助手（演示版）落地计划
 
 > **文档状态**：**实施中**（代码与文档同步维护）  
-> **版本**：v0.7  
-> **更新日期**：2026-06-30  
+> **版本**：v0.7.4  
+> **更新日期**：2026-07-21  
 > **依据**：[AI景区智能聊天助手PRD & Cursor开发文档](./AI景区智能聊天助手PRD%20&%20Cursor开发文档.docx)
 
 ### 实施进度图例
@@ -738,25 +738,24 @@ type MessageType =
 
 **目标**：游后（`visitorPhase: post_later` 或已完成订单用户）对本次游玩做 **星级 + 短评**，演示「离园后触达 → 假页提交 → Mock 成功」。
 
-**实现摘要**（2026-07-07）：`review_service` Skill、对话内 `ReviewCard`（多订单选择 + 单笔限评）、优质评价赠券（>20 字 + ≥2 图 → 餐饮 3 个月 + 当日停车）、`POST /api/reviews/submit`、RecommendEntry；`/review` 保留作兜底假页。
+**实现摘要**（2026-07-07；**2026-07-21 增补 AI 草稿**）：`review_service` Skill、对话内 `ReviewCard`（多订单选择 + 单笔限评）、优质评价赠券（>20 字 + ≥2 图 → 餐饮 3 个月 + 当日停车）、`POST /api/reviews/submit`、RecommendEntry；`/review` 保留作兜底假页。点评卡与假页均支持 **「帮我写评价」**：调用 LLM（无 Key 时离线模板）结合景区关键字、已选标签、订单票种与星级，生成约 50 字草稿填入文案框，**不自动提交**。
 
 | 维度 | 计划 |
 |------|------|
 | **Skill** | `review_service`（`skills.json` 新增，`enabled: true`，`phase: post_later`） |
 | **触发词** | 点评、评价、服务怎么样、写评价、满意度 |
-| **Workflow** | `runReviewServiceWorkflow`：可选 `getOrders` 取最近一笔 `completed` → 文案 + `PageGuideCard` → `/review` |
+| **Workflow** | `runReviewServiceWorkflow`：`getOrders` 取可评价订单 → 文案 + 对话内 `ReviewCard` |
 | **意图** | `shouldRunReviewWorkflow`（正则）；P0-2 映射 `review_service` |
-| **假页** | `/review`：1–5 星、可选标签（环境/服务/项目）、文本框（≤200 字）、提交 Mock |
+| **假页** | `/review`：1–5 星、可选标签、文本框（≤200 字）、**帮我写评价**、提交 Mock |
+| **AI 草稿** | `src/utils/generateReviewDraft.ts`；输入星级/标签/`ticketName`/`scenic.json` 名 + 关键词 |
 | **API** | `POST /api/reviews/submit` `{ orderId?, rating, tags?, content }` → 写入 persona Mock / LocalStorage |
 | **RecommendEntry** | 可选 `review_entry`：`visitorPhase=post_later` 或规则「近 30 天有 completed 订单」；demo_vip 欢迎快捷服务 |
-| **卡片** | 复用 `page_guide`；或新增 `review_prompt` 轻量卡（仅入口） |
+| **卡片** | 对话内 `ReviewCard`（主路径）；`/review` 兜底 |
 | **推送（可选）** | 离园当日气泡：「游玩愉快吗？欢迎为本次行程点评」→ 同上 Workflow（阶段五后期） |
 
-**演示脚本**：demo_vip 登录 → `/chat` 说「我要点评」→ 引导卡 → `/review` 提交 → Toast 成功。
+**演示脚本**：demo_vip 登录 → `/chat` 说「我要点评」→ ReviewCard →（可选）选星级/标签 →「帮我写评价」→ 修改草稿 → 提交 → Toast 成功。
 
-**验收**：不编造订单；无已完成订单时提示「暂无可点评行程」。
-
-**预估**：2–3 人日（Skill + Workflow + 假页 + Mock + 文档 + 1 条 RecommendEntry）。
+**验收**：不编造订单；无已完成订单时提示「暂无可点评行程」；AI 草稿需用户确认后提交。
 
 ---
 
@@ -825,6 +824,7 @@ type MessageType =
 | v0.7.1 | 2026-06-30 | demo_mid 三笔待出行订单；待出行按真实日期；欢迎「今日出行」；快捷服务停车缴费；项目池 15 项 + 攻略场景区分 |
 | v0.7.2 | 2026-07-07 | 发票全链路 ✅（对话 Workflow + 单笔/批量假页）；§十九 阶段五计划（服务点评 + 园区打卡） |
 | v0.7.3 | 2026-07-21 | 发票引导文案统一；快捷开发票走对话；演出/餐饮零售 `scene_recommend` 单条合并；demo_vip 可开票 Mock |
+| v0.7.4 | 2026-07-21 | §19.2 服务点评增补「帮我写评价」（LLM / 离线模板草稿） |
 
 ---
 

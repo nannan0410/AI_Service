@@ -10,6 +10,7 @@ import {
   REVIEW_TAG_OPTIONS,
   qualifiesReviewReward,
 } from "@/utils/reviewForm";
+import { generateReviewDraft } from "@/utils/generateReviewDraft";
 
 const route = useRoute();
 const router = useRouter();
@@ -22,6 +23,7 @@ const imageIds = ref<string[]>([]);
 const fileList = ref<{ url: string }[]>([]);
 const submitting = ref(false);
 const uploading = ref(false);
+const generating = ref(false);
 
 const queryOrderId = computed(() => (route.query.orderId as string) || "");
 
@@ -79,6 +81,29 @@ async function afterRead() {
 
 function onDelete(_file: unknown, detail: { index: number }) {
   imageIds.value.splice(detail.index, 1);
+}
+
+async function onGenerateDraft() {
+  if (!targetOrder.value || submitting.value || generating.value) return;
+  generating.value = true;
+  try {
+    const { text, source } = await generateReviewDraft({
+      rating: rating.value || undefined,
+      tags: [...selectedTags.value],
+      ticketName: targetOrder.value.ticketName,
+      visitDate:
+        targetOrder.value.visitDate ||
+        targetOrder.value.completedAt?.slice(0, 10),
+    });
+    content.value = text;
+    showToast(
+      source === "llm"
+        ? "已生成评价草稿，请按真实体验修改后提交"
+        : "已生成评价草稿（离线模板），请按真实体验修改后提交",
+    );
+  } finally {
+    generating.value = false;
+  }
 }
 
 async function onSubmit() {
@@ -159,17 +184,35 @@ async function onSubmit() {
         </div>
       </div>
 
-      <van-cell-group inset class="form">
-        <van-field
-          v-model="content"
-          rows="4"
-          autosize
-          type="textarea"
-          :maxlength="REVIEW_CONTENT_MAX"
-          show-word-limit
-          placeholder="分享您的游玩体验（选填）"
-        />
-      </van-cell-group>
+      <div class="section section--content">
+        <div class="section__head">
+          <div class="section__title section__title--inline">评价内容</div>
+          <van-button
+            size="mini"
+            type="primary"
+            plain
+            round
+            :loading="generating"
+            :disabled="submitting"
+            @click="onGenerateDraft"
+          >
+            帮我写评价
+          </van-button>
+        </div>
+        <van-cell-group inset class="form">
+          <van-field
+            v-model="content"
+            rows="4"
+            autosize
+            type="textarea"
+            :maxlength="REVIEW_CONTENT_MAX"
+            show-word-limit
+            placeholder="分享游玩体验（选填），可点「帮我写评价」生成约 50 字草稿"
+            :readonly="generating"
+          />
+        </van-cell-group>
+        <p class="ai-hint">AI 草稿仅供参考，请按真实体验修改后再提交</p>
+      </div>
 
       <div class="section">
         <div class="section__title">上传图片（选填）</div>
@@ -221,8 +264,24 @@ async function onSubmit() {
 .tag {
   cursor: pointer;
 }
+.section__title--inline {
+  margin-bottom: 0;
+}
+.section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
 .form {
-  margin-top: 16px;
+  margin-top: 0;
+}
+.ai-hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: #969799;
+  line-height: 1.4;
 }
 .reward-hint {
   margin: 10px 0 0;

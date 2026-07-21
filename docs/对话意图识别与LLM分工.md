@@ -1,7 +1,7 @@
 # 对话意图识别与 LLM 分工
 
 > **文档用途**：梳理演示版聊天中「哪些场景用 LLM、哪些用代码/后端规则」，并说明购票流程为何不走 LLM。  
-> **更新日期**：2026-06-24  
+> **更新日期**：2026-07-21  
 > **相关代码**：`ChatPage.vue` → `onSend`；`src/ai/workflow/*`；`src/ai/llm.ts`；`src/ai/skills/router.ts`
 
 **相关文档：**
@@ -55,6 +55,8 @@
 | **订单查询** | Skill + 订单正则 | `orderQuery.ts` | ❌ | **可保持规则** |
 | **发票服务** | Skill + 发票正则 | `invoiceService.ts` | ❌ | **保持规则**；引导假页 |
 | **停车缴费** | Skill + 停车正则 | `parkingPay.ts` | ❌ | **保持规则**；引导假页 |
+| **服务点评（入口）** | Skill + 点评正则 | `reviewService.ts` → ReviewCard | ❌ | **保持规则** |
+| **服务点评·帮我写评价** | 卡片/假页按钮 | `generateReviewDraft.ts` | ⚡ 混合 | LLM≈50 字；无 Key 离线模板；**不自动提交** |
 | **Skill 路由** | 关键词 + **LLM 语义补全** + **高置信进 Workflow** | `nlu/classifySkill.ts` + `skillWorkflowGate.ts` | ⚡ 混合 | P0-2 MVP + 增强 |
 | **通用对话 + Tool** | 未命中 Workflow | `llm.ts` → `sendChatMessage` | ✅（有 Key） | **保持 LLM** |
 | **离线兜底** | 无 API Key | `runOfflineToolFallback` | ❌ | **仅演示**；正式版用 LLM 或后端意图服务 |
@@ -427,6 +429,7 @@ npx vite-node scripts/test-travel-guide-intent-route.mts
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-21 | 服务点评「帮我写评价」：LLM / 离线模板草稿（非 Workflow；不自动提交） |
 | 2026-07-21 | 发票对话：X笔+立即开票→批量页；0笔固定文案；演出 `scene_recommend` / general；快捷开发票走 chat |
 | 2026-06-19 | 园内路线子场景：`in_park` 意图，猜你想问「现在先玩哪里」不含交通/入园 |
 | 2026-06-24 | P0-2 增强：高置信度 LLM Skill 进入 Workflow |

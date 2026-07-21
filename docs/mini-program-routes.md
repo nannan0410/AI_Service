@@ -85,6 +85,8 @@ H5 演示版与微信小程序的路径对照，供产品化对接参考。
 |----|------|
 | `orderId` | 待评价订单号（对话引导卡跳转使用） |
 
-**行为**：展示 90 天内已完成且 `reviewStatus=none` 的订单；1～5 星 + 可选标签 + 文案（≤200 字）；`POST /api/reviews/submit`（body: `{ orderId?, rating, tags?, content? }`），Mock 将订单标为 `reviewStatus=submitted`，成功后跳转 `/orders?tab=1`。
+**行为**：展示 90 天内已完成且 `reviewStatus=none` 的订单；1～5 星 + 可选标签 + 文案（≤200 字）；支持 **「帮我写评价」**（LLM 或离线模板生成约 50 字草稿，填入后可改再提交）；`POST /api/reviews/submit`（body: `{ orderId?, rating, tags?, content? }`），Mock 将订单标为 `reviewStatus=submitted`，成功后跳转 `/orders?tab=1`。
 
-**入口**：RecommendEntry `review_service`（规则 `hasReviewableOrders=true`，demo_vip）；对话「我要点评」→ `review_service` Workflow → 对话内 `ReviewCard`（主路径）；`/review` 为兜底假页。
+**入口**：RecommendEntry `review_service`（规则 `hasReviewableOrders=true`，demo_vip）；对话「我要点评」→ `review_service` Workflow → 对话内 `ReviewCard`（主路径）；`/review` 为兜底假页（同样支持 AI 草稿）。
+
+**实现**：`src/utils/generateReviewDraft.ts`（输入：星级、标签、票种、景区名 + 关键词）。
