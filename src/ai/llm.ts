@@ -223,6 +223,20 @@ async function runOfflineToolFallback(
     }
   }
 
+  if (toolName === 'generateTravelGuide') {
+    const guide = result.data as Parameters<typeof buildGuideReplyByScope>[0]
+    const cards = buildCardsFromToolResults([{ name: toolName, result }]).map((card) => ({
+      ...card,
+      content: buildGuideReplyByScope(guide),
+    }))
+    return {
+      content: '',
+      toolCallsUsed: [toolName],
+      skillId: routedSkill?.skillId ?? null,
+      cards,
+    }
+  }
+
   const cards = buildCardsFromToolResults([{ name: toolName, result }])
   if (toolName === 'getContentBlocks') {
     const blocks = result.data as Array<{ title: string }>

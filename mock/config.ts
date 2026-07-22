@@ -12,13 +12,19 @@ import quiz from '../src/mock/quiz.json'
 import assistantSkills from '../src/mock/assistant/skills.json'
 import fieldCatalog from '../src/mock/assistant/field_catalog.json'
 import cardViews from '../src/mock/assistant/card_views.json'
+import scenicList from '../src/mock/scenic/list.json'
 import {
   buildRuleContext,
   evaluateRules,
   getPersonaFromHeaders,
+  getScenicIdFromHeaders,
   type RuleExpression,
 } from './rules'
 import { getVirtualQueueOrders } from './_utils'
+import {
+  filterByBusinessScenicId,
+  filterCouponsByScenic,
+} from '../src/utils/scenicScope'
 
 interface RecommendEntryRaw {
   entryId: string
@@ -31,6 +37,26 @@ interface RecommendEntryRaw {
   rules: RuleExpression[]
   priority: number
   enabled?: boolean
+  scenicId?: string
+  scenicIds?: string[]
+}
+
+function matchesScenicScope(
+  item: { scenicId?: string; scenicIds?: string[] },
+  scenicId: string | null,
+): boolean {
+  if (!scenicId) return true
+  if (item.scenicId && item.scenicId !== scenicId) return false
+  if (item.scenicIds?.length && !item.scenicIds.includes(scenicId)) return false
+  return true
+}
+
+function resolveScenicName(scenicId: string | null): string {
+  if (!scenicId) return '景区'
+  const hit = (scenicList as Array<{ scenicId: string; name: string }>).find(
+    (item) => item.scenicId === scenicId,
+  )
+  return hit?.name ?? '景区'
 }
 
 export default [
@@ -50,9 +76,14 @@ export default [
     response: ({ headers }: { headers: Record<string, unknown> }) => {
       const personaId = getPersonaFromHeaders(headers)
       if (!personaId) return { code: 401, message: '未登录', data: null }
+      const scenicId = getScenicIdFromHeaders(headers)
       const template = welcomeTemplates.find((t) => t.personaId === personaId)
-      const ctx = buildRuleContext(personaId)
-      const body = template?.body.replace(/\{\{nickname\}\}/g, ctx.nickname) ?? ''
+      const ctx = buildRuleContext(personaId, { scenicId })
+      const scenicName = resolveScenicName(scenicId)
+      const body =
+        template?.body
+          .replace(/\{\{nickname\}\}/g, ctx.nickname)
+          .replace(/\{\{scenicName\}\}/g, scenicName) ?? ''
       return {
         code: 200,
         data: {
@@ -79,9 +110,11 @@ export default [
     response: ({ headers }: { headers: Record<string, unknown> }) => {
       const personaId = getPersonaFromHeaders(headers)
       if (!personaId) return { code: 401, message: '未登录', data: null }
-      const ctx = buildRuleContext(personaId)
+      const scenicId = getScenicIdFromHeaders(headers)
+      const ctx = buildRuleContext(personaId, { scenicId })
       const list = (recommendEntries as RecommendEntryRaw[])
         .filter((e) => e.enabled !== false)
+        .filter((e) => matchesScenicScope(e, scenicId))
         .filter((e) => evaluateRules(e.rules, ctx))
         .sort((a, b) => b.priority - a.priority)
         .map(({ entryId, title, icon, target, targetPath, skillId, promptHint, priority }) => ({
@@ -130,8 +163,15 @@ export default [
   {
     url: '/api/products/tickets',
     method: 'get',
-    response: ({ query }: { query: Record<string, string> }) => {
-      let list = [...ticketProducts]
+    response: ({
+      headers,
+      query,
+    }: {
+      headers: Record<string, unknown>
+      query: Record<string, string>
+    }) => {
+      const scenicId = getScenicIdFromHeaders(headers)
+      let list = filterByBusinessScenicId([...ticketProducts], scenicId)
       const channel = query.channel
       if (channel) {
         list = list.filter((p) => p.channels.includes(channel as 'self' | 'ota' | 'ta'))
@@ -142,7 +182,10 @@ export default [
   {
     url: '/api/products/coupons',
     method: 'get',
-    response: () => ({ code: 200, data: couponProducts }),
+    response: ({ headers }: { headers: Record<string, unknown> }) => ({
+      code: 200,
+      data: filterCouponsByScenic([...couponProducts], getScenicIdFromHeaders(headers)),
+    }),
   },
   {
     url: '/api/products/retail',
@@ -152,8 +195,15 @@ export default [
   {
     url: '/api/content/blocks',
     method: 'get',
-    response: ({ query }: { query: Record<string, string> }) => {
-      let list = [...contentBlocks]
+    response: ({
+      headers,
+      query,
+    }: {
+      headers: Record<string, unknown>
+      query: Record<string, string>
+    }) => {
+      const scenicId = getScenicIdFromHeaders(headers)
+      let list = filterByBusinessScenicId([...contentBlocks], scenicId)
       if (query.type) {
         list = list.filter((b) => b.type === query.type)
       }
@@ -171,7 +221,9 @@ export default [
     response: ({ headers }: { headers: Record<string, unknown> }) => {
       const personaId = getPersonaFromHeaders(headers)
       if (!personaId) return { code: 401, message: '未登录', data: null }
-      const ctx = buildRuleContext(personaId)
+      const ctx = buildRuleContext(personaId, {
+        scenicId: getScenicIdFromHeaders(headers),
+      })
       const userTags = tags.filter((t) => ctx.tags.includes(t.tagId))
       return { code: 200, data: userTags }
     },
@@ -188,6 +240,9 @@ export default [
   {
     url: '/api/quiz/current',
     method: 'get',
-    response: () => ({ code: 200, data: quiz }),
+    response: () => {
+      const list = Array.isArray(quiz) ? quiz : [quiz]
+      return { code: 200, data: list[0] ?? null }
+    },
   },
 ] as MockMethod[]

@@ -1,18 +1,33 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { fetchMemberInfo, fetchActivities } from "@/api/business";
 import { useAuthStore } from "@/store/authStore";
 import { useAssistantStore } from "@/store/assistantStore";
+import { useScenicStore } from "@/store/scenicStore";
+import { useConversationStore } from "@/store/conversationStore";
+import ScenicPickerSheet from "@/components/scenic/ScenicPickerSheet.vue";
 import MemberAvatar from "@/components/member/MemberAvatar.vue";
+import { DEFAULT_SCENIC_ID } from "@/utils/scenicScope";
 import type { Activity, MemberInfo } from "@/types";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const assistantStore = useAssistantStore();
+const scenicStore = useScenicStore();
+const conversationStore = useConversationStore();
 
 const member = ref<MemberInfo | null>(null);
 const activities = ref<Activity[]>([]);
+const scenicPickerVisible = ref(false);
+
+const currentScenicName = computed(
+  () => scenicStore.currentScenicName || "选择服务景区",
+);
+
+const pickerInitialCityId = computed(() =>
+  scenicStore.resolvePickerCityId(scenicStore.currentScenicId),
+);
 
 const shortcuts = [
   { title: "AI 聊天", icon: "chat-o", path: "/chat", color: "var(--chat-primary)" },
@@ -24,25 +39,117 @@ const shortcuts = [
   { title: "小票上传", icon: "photograph", path: "/receipt", color: "var(--chat-primary)" },
 ];
 
+function ensureHomeScenic() {
+  if (authStore.memberId) {
+    scenicStore.bindMember(authStore.memberId);
+    conversationStore.bindMember(authStore.memberId);
+  }
+  scenicStore.loadCatalog();
+  conversationStore.loadPersisted();
+
+  const resolved = scenicStore.resolveScenicId(
+    null,
+    conversationStore.scenicId,
+  );
+  const scenicId =
+    resolved.scenicId ||
+    (scenicStore.isValidScenicId(DEFAULT_SCENIC_ID)
+      ? DEFAULT_SCENIC_ID
+      : scenicStore.enabledScenics[0]?.scenicId);
+
+  if (scenicId) {
+    scenicStore.selectScenic(scenicId);
+  }
+}
+
+async function loadActivities() {
+  try {
+    const { data: actRes } = await fetchActivities();
+    if (actRes.code === 200) {
+      activities.value = actRes.data.slice(0, 3);
+    }
+  } catch {
+    activities.value = [];
+  }
+}
+
+function openScenicPicker() {
+  scenicPickerVisible.value = true;
+}
+
+function onPickerCityChange(cityId: string) {
+  try {
+    scenicStore.selectCity(cityId, { persist: true });
+  } catch {
+    /* ignore */
+  }
+}
+
+async function onScenicPicked(scenicId: string) {
+  scenicPickerVisible.value = false;
+  if (scenicStore.currentScenicId === scenicId) return;
+  scenicStore.selectScenic(scenicId);
+  // 与助手对齐：首页切园同步会话景区，避免进 /chat 仍被旧 conversation 覆盖
+  if (authStore.memberId) {
+    try {
+      conversationStore.bindMember(authStore.memberId);
+      conversationStore.ensureConversation(scenicId, {
+        personaId: authStore.personaId,
+        forceNew: true,
+      });
+    } catch {
+      /* 未登录等场景忽略 */
+    }
+  }
+  await loadActivities();
+}
+
 onMounted(async () => {
+  ensureHomeScenic();
+  void scenicStore.refreshLocatedCity();
   await assistantStore.loadConfig();
   assistantStore.setMotion("wave");
-  const [memberRes, actRes] = await Promise.all([
-    fetchMemberInfo(),
-    fetchActivities(),
-  ]);
+  const [memberRes] = await Promise.all([fetchMemberInfo(), loadActivities()]);
   if (memberRes.data.code === 200) member.value = memberRes.data.data;
-  if (actRes.data.code === 200) activities.value = actRes.data.data.slice(0, 3);
 });
+
+watch(
+  () => scenicStore.currentScenicId,
+  (id, prev) => {
+    if (id && id !== prev) void loadActivities();
+  },
+);
 </script>
 
 <template>
   <div class="home-page">
-    <van-nav-bar title="欢乐景区" fixed placeholder class="home-page__nav">
+    <van-nav-bar fixed placeholder class="home-page__nav">
+      <template #title>
+        <button
+          type="button"
+          class="home-page__scenic-btn"
+          :aria-label="`当前景区 ${currentScenicName}`"
+          @click="openScenicPicker"
+        >
+          <span class="home-page__scenic-name">{{ currentScenicName }}</span>
+          <van-icon name="arrow-down" size="14" />
+        </button>
+      </template>
       <template #right>
         <van-icon name="user-o" size="20" @click="router.push('/profile')" />
       </template>
     </van-nav-bar>
+
+    <ScenicPickerSheet
+      v-model:show="scenicPickerVisible"
+      :cities="scenicStore.enabledCities"
+      :scenics="scenicStore.enabledScenics"
+      :current-scenic-id="scenicStore.currentScenicId"
+      :initial-city-id="pickerInitialCityId"
+      title="选择服务景区"
+      @select="onScenicPicked"
+      @update:city-id="onPickerCityChange"
+    />
 
     <div class="home-page__body">
       <div class="home-page__welcome">
@@ -79,6 +186,11 @@ onMounted(async () => {
             is-link
             @click="router.push('/activity')"
           />
+          <van-empty
+            v-if="!activities.length"
+            description="暂无推荐项目"
+            image-size="64"
+          />
         </van-cell-group>
       </div>
 
@@ -110,6 +222,33 @@ onMounted(async () => {
 .home-page__nav:deep(.van-nav-bar) {
   width: 100%;
   max-width: 430px;
+}
+
+.home-page__scenic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: 220px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #323233;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.home-page__scenic-btn:active {
+  opacity: 0.75;
+}
+
+.home-page__scenic-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .home-page__body {

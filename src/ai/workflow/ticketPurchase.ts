@@ -28,6 +28,7 @@ import type { ToolCallRecord } from '@/ai/tools/formatters'
 import { pickBestCoupon } from '@/utils/couponDiscount'
 import {
   PURCHASE_MARKETING_COUPON_PRODUCT_ID,
+  hasPurchaseMarketingSlot,
   shouldPushPurchaseMarketingCoupon,
 } from '@/utils/purchaseMarketing'
 import { matchPartyToProducts } from '@/utils/partyProductMatch'
@@ -161,13 +162,22 @@ async function maybeIssueMarketingCoupon(
   }
 }
 
-/** 明确购票意图时，在追问人数/日期阶段就提前推券，不必等到推荐票种 */
+/** 已拿到人数或日期后再推营销券；仅询问买票、尚未填槽时不发 */
 async function replyWithEarlyMarketingCoupon(
   session: PurchaseSession,
   content: string,
   callbacks?: ToolExecutionCallbacks,
 ): Promise<LlmChatResult> {
   if (session.marketingIssued) {
+    return { content, skillId: 'ticket_purchase', toolCallsUsed: [] }
+  }
+
+  if (
+    !hasPurchaseMarketingSlot({
+      party: session.party,
+      visitDate: session.visitDate,
+    })
+  ) {
     return { content, skillId: 'ticket_purchase', toolCallsUsed: [] }
   }
 

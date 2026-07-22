@@ -12,6 +12,7 @@ export const STAGE2_SKILL_IDS = [
   'review_service',
   'checkin_service',
   'proactive_marketing',
+  'member_offer',
 ] as const
 
 export type Stage2SkillId = (typeof STAGE2_SKILL_IDS)[number]

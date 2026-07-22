@@ -22,14 +22,18 @@ import {
   runCheckinWorkflow,
   runQueueRecommendWorkflow,
   runProactiveMarketingWorkflow,
+  runMemberOfferWorkflow,
+  runStarIntroWorkflow,
   shouldRunNewGuestCouponWorkflow,
   shouldRunParkingPayWorkflow,
   shouldRunShowScheduleWorkflow,
+  shouldRunStarIntroWorkflow,
   shouldRunInvoiceWorkflow,
   shouldRunReviewWorkflow,
   shouldRunCheckinWorkflow,
   shouldRunQueueRecommendWorkflow,
   shouldRunProactiveMarketingWorkflow,
+  shouldRunMemberOfferWorkflow,
   shouldRunOrderQueryWorkflow,
 } from "@/ai/workflow";
 import { isLikelyGeneralMessage } from "@/ai/nlu/isLikelyGeneralMessage";
@@ -39,15 +43,18 @@ import {
   shouldRunOrderQueryWorkflowFromRoute,
   shouldRunParkingPayWorkflowFromRoute,
   shouldRunShowScheduleWorkflowFromRoute,
+  shouldRunStarIntroWorkflowFromRoute,
   shouldRunInvoiceWorkflowFromRoute,
   shouldRunReviewWorkflowFromRoute,
   shouldRunCheckinWorkflowFromRoute,
   shouldRunQueueRecommendWorkflowFromRoute,
   shouldRunProactiveMarketingWorkflowFromRoute,
+  shouldRunMemberOfferWorkflowFromRoute,
 } from "@/ai/nlu/skillWorkflowGate";
 import { shouldInterruptPurchaseSession } from "@/utils/ticketPurchaseIntent";
 import { createOrderDraft, fetchCoupons, fetchMemberInfo, fetchOrders, submitCheckin, submitReview } from "@/api/business";
-import { buildMergedCouponMessage } from "@/utils/couponRecommend";
+import { startQuiz, submitQuizAnswer } from "@/api/quiz";
+import { buildCouponCardPayload, buildMergedCouponMessage } from "@/utils/couponRecommend";
 import { qualifiesReviewReward } from "@/utils/reviewForm";
 import { usePurchaseStore } from "@/store/purchaseStore";
 import MessageBubble from "@/components/chat/MessageBubble.vue";
@@ -56,7 +63,19 @@ import WelcomeHero from "@/components/welcome/WelcomeHero.vue";
 import WelcomeRecommendList from "@/components/welcome/WelcomeRecommendList.vue";
 import WelcomeQuickServices from "@/components/welcome/WelcomeQuickServices.vue";
 import WelcomeAiStatus from "@/components/welcome/WelcomeAiStatus.vue";
+import ScenicPickerSheet from "@/components/scenic/ScenicPickerSheet.vue";
 import { MAX_QUICK_SERVICES } from "@/utils/welcomeLayout";
+import { useScenicStore } from "@/store/scenicStore";
+import { useConversationStore } from "@/store/conversationStore";
+import {
+  formatScenicWeatherLine,
+  getScenicWeather,
+} from "@/utils/scenicWeather";
+import {
+  formatScenicCrowdLine,
+  pickRandomCrowdLevel,
+  type CrowdLevel,
+} from "@/utils/scenicCrowd";
 import type {
   ChatMessageDraft,
   Coupon,
@@ -66,12 +85,14 @@ import type {
   OrderCardPayload,
   PageGuideCardPayload,
   PersonaId,
+  QuizCardPayload,
   RecommendEntry,
   ReviewCardPayload,
   ReviewSubmitDraft,
   TicketCardPayload,
   VisitorPickPayload,
 } from "@/types";
+import type { WelcomeQuestionConfig } from "@/types/businessConfig";
 
 /** 欢迎态：快捷服务 ← recommend_entries；游游推荐 ← welcome_questions（规则过滤） */
 
@@ -81,6 +102,8 @@ const assistantStore = useAssistantStore();
 const aiStore = useAiExecutionStore();
 const skillStore = useSkillStore();
 const businessConfigStore = useBusinessConfigStore();
+const scenicStore = useScenicStore();
+const conversationStore = useConversationStore();
 const route = useRoute();
 const router = useRouter();
 const purchaseStore = usePurchaseStore();
@@ -90,11 +113,14 @@ const listRef = ref<HTMLElement | null>(null);
 const pendingPrompt = ref<string | null>(null);
 const confirmedVisitorSessions = ref(new Set<string>());
 const submittedReviewOrders = ref(new Set<string>());
+const answeredQuizMessageIds = ref(new Set<string>());
 const userCoupons = ref<Coupon[]>([]);
 const userOrders = ref<Order[]>([]);
 const memberInfo = ref<MemberInfo | null>(null);
 /** 欢迎页 / 聊天窗口视图（与本地聊天记录独立，进入 /chat 默认欢迎页） */
 const showWelcomePanel = ref(true);
+const scenicPickerVisible = ref(false);
+const scenicPickerRequired = ref(false);
 
 const pageStyle = computed(() => {
   const bg = assistantStore.uiConfig?.chatBackgroundUrl;
@@ -109,13 +135,173 @@ const assistantNickname = computed(() => assistantStore.assistantNickname);
 const assistantTitle = computed(() => assistantStore.dialogTitle);
 const avatarUrl = computed(() => assistantStore.assistantAvatarUrl);
 const characterUrl = computed(() => assistantStore.defaultImageUrl);
-const inputPlaceholder = computed(
-  () => `有问题，问${assistantNickname.value}吧~`
+const currentScenicName = computed(() => scenicStore.currentScenicName);
+const weatherLine = computed(() =>
+  formatScenicWeatherLine(
+    getScenicWeather(scenicStore.currentScenicId),
+    scenicStore.currentScenicName || undefined,
+  ),
 );
+/** 欢迎页客流：每次进入欢迎态随机一档 */
+const crowdLevel = ref<CrowdLevel>(pickRandomCrowdLevel());
+const crowdLine = computed(() => formatScenicCrowdLine(crowdLevel.value));
+
+function refreshCrowdStatus() {
+  crowdLevel.value = pickRandomCrowdLevel();
+}
+
+const inputPlaceholder = computed(() => {
+  if (!scenicStore.hasScenicSelected) return "请先选择服务景区";
+  return `有问题，问${assistantNickname.value}吧~`;
+});
+
+function urlScenicId(): string | null {
+  const raw = route.query.scenicId;
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  if (Array.isArray(raw) && typeof raw[0] === "string" && raw[0].trim()) {
+    return raw[0].trim();
+  }
+  return null;
+}
+
+/** 解析并应用当前景区 + 会话；返回是否已选中景区 */
+function applyScenicFromEntry(options?: { forceNewConversation?: boolean }): boolean {
+  if (authStore.memberId) {
+    scenicStore.bindMember(authStore.memberId);
+    conversationStore.bindMember(authStore.memberId);
+  }
+  scenicStore.loadCatalog();
+  conversationStore.loadPersisted();
+
+  const resolved = scenicStore.resolveScenicId(
+    urlScenicId(),
+    conversationStore.scenicId,
+  );
+
+  if (!resolved.scenicId) {
+    scenicStore.clearCurrentScenic();
+    conversationStore.clear();
+    scenicPickerRequired.value = true;
+    scenicPickerVisible.value = true;
+    return false;
+  }
+
+  scenicStore.selectScenic(resolved.scenicId);
+
+  const scenicChanged =
+    conversationStore.scenicId != null &&
+    conversationStore.scenicId !== resolved.scenicId;
+  /** URL 换景区，或记忆景区与旧会话不一致 → 新会话 */
+  const forceNew =
+    options?.forceNewConversation === true ||
+    (resolved.source === "url" && scenicChanged) ||
+    (resolved.source === "memory" && scenicChanged);
+
+  conversationStore.ensureConversation(resolved.scenicId, {
+    personaId: authStore.personaId,
+    forceNew,
+  });
+
+  if (authStore.memberId) {
+    chatStore.loadForUser(
+      authStore.memberId,
+      assistantNickname.value,
+      resolved.scenicId,
+    );
+  }
+
+  scenicPickerRequired.value = false;
+  scenicPickerVisible.value = false;
+  return true;
+}
+
+function openScenicPicker() {
+  scenicPickerRequired.value = !scenicStore.hasScenicSelected;
+  scenicPickerVisible.value = true;
+}
+
+const pickerInitialCityId = computed(() =>
+  scenicStore.resolvePickerCityId(scenicStore.currentScenicId),
+);
+
+function onPickerCityChange(cityId: string) {
+  try {
+    scenicStore.selectCity(cityId, { persist: true });
+  } catch {
+    /* ignore invalid */
+  }
+}
+
+async function onScenicPicked(scenicId: string) {
+  const prevId = scenicStore.currentScenicId;
+  if (prevId === scenicId) {
+    scenicPickerVisible.value = false;
+    scenicPickerRequired.value = false;
+    if (!conversationStore.hasConversation || conversationStore.scenicId !== scenicId) {
+      conversationStore.ensureConversation(scenicId, {
+        personaId: authStore.personaId,
+      });
+    }
+    return;
+  }
+
+  if (!showWelcomePanel.value && prevId) {
+    try {
+      await showConfirmDialog({
+        title: "切换服务景区？",
+        message: "切换后将开启新对话，当前聊天记录不会带入新会话。",
+        confirmButtonText: "确认切换",
+        cancelButtonText: "取消",
+      });
+    } catch {
+      return;
+    }
+  }
+
+  scenicStore.selectScenic(scenicId);
+  conversationStore.startNew(scenicId, authStore.personaId);
+  scenicPickerVisible.value = false;
+  scenicPickerRequired.value = false;
+
+  if (urlScenicId() && urlScenicId() !== scenicId) {
+    const nextQuery = { ...route.query, scenicId };
+    router.replace({ path: "/chat", query: nextQuery });
+  }
+
+  if (authStore.memberId) {
+    chatStore.loadForUser(
+      authStore.memberId,
+      assistantNickname.value,
+      scenicId,
+    );
+  }
+  clearChatAndReturnWelcome();
+  await loadUserCoupons();
+}
+
+function ensureScenicSelected(): boolean {
+  if (scenicStore.hasScenicSelected) {
+    if (
+      !conversationStore.hasConversation ||
+      conversationStore.scenicId !== scenicStore.currentScenicId
+    ) {
+      conversationStore.ensureConversation(scenicStore.currentScenicId!, {
+        personaId: authStore.personaId,
+      });
+    }
+    return true;
+  }
+  scenicPickerRequired.value = true;
+  scenicPickerVisible.value = true;
+  showToast("请先选择服务景区");
+  return false;
+}
 const welcomeTemplateContext = computed(() => ({
   nickname:
     memberInfo.value?.nickname ?? authStore.userInfo?.nickname ?? "",
   orders: userOrders.value.length > 0 ? userOrders.value : undefined,
+  scenicId: scenicStore.currentScenicId,
+  scenicName: scenicStore.currentScenicName || undefined,
 }));
 const resolvedWelcomeTemplate = computed(() => {
   const personaId = (authStore.personaId || "demo_new") as PersonaId;
@@ -149,11 +335,13 @@ const recommendEntries = computed(() => {
       registeredAt: memberInfo.value?.registeredAt,
       nickname: memberInfo.value?.nickname,
       memberLevel: memberInfo.value?.level,
+      scenicId: scenicStore.currentScenicId,
     })
     .slice(0, MAX_QUICK_SERVICES);
 });
 
 function onRecommendEntryClick(entry: RecommendEntry) {
+  if (!ensureScenicSelected()) return;
   if (entry.target === "page" && entry.targetPath) {
     router.push(entry.targetPath);
     return;
@@ -163,6 +351,32 @@ function onRecommendEntryClick(entry: RecommendEntry) {
     return;
   }
   showToast("暂不支持该入口");
+}
+
+function onWelcomeRecommendSelect(question: WelcomeQuestionConfig) {
+  if (!ensureScenicSelected()) return;
+  const target = question.target || "chat";
+  const path = question.targetPath?.trim();
+
+  if ((target === "page" || target === "mini_program") && path) {
+    router.push(path);
+    return;
+  }
+  if (target === "h5" && path) {
+    if (/^https?:\/\//i.test(path)) {
+      window.open(path, "_blank", "noopener,noreferrer");
+    } else {
+      router.push(path);
+    }
+    return;
+  }
+
+  const prompt = question.prompt?.trim();
+  if (prompt) {
+    onStartChat(prompt);
+    return;
+  }
+  showToast("暂不支持该推荐");
 }
 
 async function loadUserCoupons() {
@@ -186,16 +400,23 @@ async function loadUserCoupons() {
 }
 
 onMounted(async () => {
+  applyScenicFromEntry();
+  void scenicStore.refreshLocatedCity();
   await Promise.all([
     assistantStore.loadConfig(true),
     skillStore.loadSkills(),
     businessConfigStore.loadAll(true),
     loadUserCoupons(),
   ]);
-  if (authStore.memberId) {
-    chatStore.loadForUser(authStore.memberId, assistantNickname.value);
+  if (authStore.memberId && scenicStore.currentScenicId) {
+    chatStore.loadForUser(
+      authStore.memberId,
+      assistantNickname.value,
+      scenicStore.currentScenicId,
+    );
   }
   showWelcomePanel.value = true;
+  refreshCrowdStatus();
   assistantStore.setMotion("wave", 2200);
 });
 
@@ -203,19 +424,33 @@ watch(
   () => authStore.personaId,
   async (personaId) => {
     if (!personaId) return;
+    applyScenicFromEntry();
     await businessConfigStore.loadRecommendEntries(true);
     await loadUserCoupons();
   },
 );
 
 watch(showWelcomePanel, (visible) => {
-  if (visible) loadUserCoupons();
+  if (visible) {
+    refreshCrowdStatus();
+    loadUserCoupons();
+  }
 });
 
 watch(
-  () => route.path,
-  (path) => {
-    if (path === "/chat") loadUserCoupons();
+  () => scenicStore.currentScenicId,
+  () => {
+    if (showWelcomePanel.value) refreshCrowdStatus();
+    void loadUserCoupons();
+  },
+);
+
+watch(
+  () => [route.path, route.query.scenicId] as const,
+  ([path]) => {
+    if (path !== "/chat") return;
+    applyScenicFromEntry();
+    loadUserCoupons();
   },
 );
 
@@ -297,6 +532,151 @@ function isReviewDisabled(message: { type: string; payload?: unknown }) {
   const payload = message.payload as ReviewCardPayload | undefined;
   if (!payload?.orders.length) return true;
   return payload.orders.every((order) => submittedReviewOrders.value.has(order.orderId));
+}
+
+function isQuizDisabled(message: { type: string; id?: string; payload?: unknown }) {
+  if (message.type !== "quiz") return false;
+  if (message.id && answeredQuizMessageIds.value.has(message.id)) return true;
+  const payload = message.payload as QuizCardPayload | undefined;
+  return payload?.status !== "active";
+}
+
+async function onQuizStart(quizId: string) {
+  if (chatStore.sending || !quizId) return;
+  chatStore.sending = true;
+  assistantStore.setMotion("thinking");
+  try {
+    const { data: res } = await startQuiz(quizId);
+    if (res.code !== 200 || !res.data) {
+      throw new Error(res.message || "无法开始答题");
+    }
+    const payload: QuizCardPayload = {
+      ...res.data,
+      status: "active",
+    };
+    chatStore.addAssistantCards([
+      {
+        type: "quiz",
+        role: "assistant",
+        content: "开始答题啦！请直接点选选项作答，答错将结束本轮挑战。",
+        payload,
+      },
+    ]);
+    assistantStore.setMotion("point");
+  } catch (e) {
+    assistantStore.setMotion("shake");
+    showToast(e instanceof Error ? e.message : "开始答题失败");
+  } finally {
+    chatStore.sending = false;
+    scrollToBottom();
+  }
+}
+
+async function onQuizAnswer(
+  payload: QuizCardPayload,
+  optionKey: string,
+  messageId: string,
+) {
+  if (
+    chatStore.sending ||
+    payload.status !== "active" ||
+    answeredQuizMessageIds.value.has(messageId)
+  ) {
+    return;
+  }
+
+  chatStore.sending = true;
+  answeredQuizMessageIds.value.add(messageId);
+  assistantStore.setMotion("thinking");
+
+  try {
+    const { data: res } = await submitQuizAnswer({
+      quizId: payload.quizId,
+      questionIndex: payload.questionIndex,
+      optionKey,
+    });
+    if (res.code !== 200 || !res.data) {
+      throw new Error(res.message || "提交答案失败");
+    }
+
+    const result = res.data;
+    chatStore.patchMessage(messageId, {
+      payload: {
+        ...payload,
+        selectedKey: optionKey,
+        status: result.correct
+          ? result.finished
+            ? "finished"
+            : "finished"
+          : "wrong",
+      } satisfies QuizCardPayload,
+    });
+
+    if (!result.correct) {
+      chatStore.addAssistantCards([
+        {
+          type: "text",
+          role: "assistant",
+          content: result.message,
+        },
+      ]);
+      assistantStore.setMotion("shake");
+      return;
+    }
+
+    if (result.finished) {
+      if (result.coupon) {
+        chatStore.addAssistantCards([
+          {
+            type: "coupon",
+            role: "assistant",
+            content: result.message,
+            payload: buildCouponCardPayload(result.coupon, "view", false),
+          },
+        ]);
+      } else {
+        chatStore.addAssistantCards([
+          {
+            type: "text",
+            role: "assistant",
+            content: result.message,
+          },
+        ]);
+      }
+      await loadUserCoupons();
+      assistantStore.setMotion("nod");
+      return;
+    }
+
+    if (result.nextQuestion) {
+      const nextPayload: QuizCardPayload = {
+        quizId: payload.quizId,
+        title: payload.title,
+        questionIndex: result.nextQuestion.questionIndex,
+        totalQuestions: payload.totalQuestions,
+        questionId: result.nextQuestion.questionId,
+        question: result.nextQuestion.question,
+        options: result.nextQuestion.options,
+        status: "active",
+      };
+      chatStore.addAssistantCards([
+        {
+          type: "quiz",
+          role: "assistant",
+          content: result.message,
+          payload: nextPayload,
+        },
+      ]);
+      assistantStore.setMotion("point");
+    }
+  } catch (e) {
+    answeredQuizMessageIds.value.delete(messageId);
+    assistantStore.setMotion("shake");
+    showToast(e instanceof Error ? e.message : "提交失败");
+  } finally {
+    chatStore.sending = false;
+    scrollToBottom();
+  }
 }
 
 async function onReviewSubmit(draft: ReviewSubmitDraft) {
@@ -525,6 +905,7 @@ function buildHistory(): LlmMessage[] {
 }
 
 async function onStartChat(prompt?: string) {
+  if (!ensureScenicSelected()) return;
   enterChatView();
   if (prompt) {
     pendingPrompt.value = prompt;
@@ -535,10 +916,12 @@ async function onStartChat(prompt?: string) {
 }
 
 async function onSend() {
+  if (!ensureScenicSelected()) return;
   const text = (pendingPrompt.value || input.value).trim();
   pendingPrompt.value = null;
   if (!text || chatStore.sending) return;
 
+  conversationStore.touch();
   enterChatView();
   chatStore.addUserMessage(text);
   input.value = "";
@@ -598,8 +981,12 @@ async function onSend() {
       shouldRunParkingPayWorkflow(text) ||
       shouldRunParkingPayWorkflowFromRoute(skillRoute, text);
     const useShowScheduleWorkflow =
-      shouldRunShowScheduleWorkflow(text) ||
-      shouldRunShowScheduleWorkflowFromRoute(skillRoute, text);
+      !shouldRunStarIntroWorkflow(text) &&
+      (shouldRunShowScheduleWorkflow(text) ||
+        shouldRunShowScheduleWorkflowFromRoute(skillRoute, text));
+    const useStarIntroWorkflow =
+      shouldRunStarIntroWorkflow(text) ||
+      shouldRunStarIntroWorkflowFromRoute(skillRoute, text);
     const useInvoiceWorkflow =
       shouldRunInvoiceWorkflow(text) ||
       shouldRunInvoiceWorkflowFromRoute(skillRoute, text);
@@ -615,6 +1002,9 @@ async function onSend() {
     const useProactiveMarketingWorkflow =
       shouldRunProactiveMarketingWorkflow(text) ||
       shouldRunProactiveMarketingWorkflowFromRoute(skillRoute, text);
+    const useMemberOfferWorkflow =
+      shouldRunMemberOfferWorkflow(text) ||
+      shouldRunMemberOfferWorkflowFromRoute(skillRoute, text);
 
     // 明确其它业务意图时结束购票会话，避免续跑劫持
     if (
@@ -633,13 +1023,17 @@ async function onSend() {
       },
     };
 
-    // 明确攻略优先于购票；虚拟排队优先于宽泛园内路线；餐饮营销优先于宽泛攻略
+    // 明确攻略优先于购票；虚拟排队优先于宽泛园内路线；演出场次优先于游玩攻略；会员选品优先于泛查券
     const result = useNewGuestCouponWorkflow
       ? await runNewGuestCouponWorkflow(text, workflowCallbacks)
       : useParkingPayWorkflow
         ? await runParkingPayWorkflow(text, workflowCallbacks)
       : useQueueRecommendWorkflow
         ? await runQueueRecommendWorkflow(text, workflowCallbacks)
+      : useStarIntroWorkflow
+        ? await runStarIntroWorkflow(text, workflowCallbacks)
+      : useShowScheduleWorkflow
+        ? await runShowScheduleWorkflow(text, workflowCallbacks)
       : useTravelGuideWorkflow
         ? await runTravelGuideWorkflow(text, personaId, workflowCallbacks)
       : useTicketWorkflow
@@ -659,10 +1053,17 @@ async function onSend() {
               purchaseStore.session,
             );
           })()
+      : useMemberOfferWorkflow
+        ? await (() => {
+            if (!purchaseStore.session) purchaseStore.startSession();
+            return runMemberOfferWorkflow(
+              text,
+              purchaseStore.session!,
+              workflowCallbacks,
+            );
+          })()
       : useProactiveMarketingWorkflow
         ? await runProactiveMarketingWorkflow(text, workflowCallbacks)
-      : useShowScheduleWorkflow
-        ? await runShowScheduleWorkflow(text, workflowCallbacks)
       : useInvoiceWorkflow
         ? await runInvoiceServiceWorkflow(text, workflowCallbacks)
       : useCheckinWorkflow
@@ -761,24 +1162,48 @@ async function onSend() {
             <strong>{{ assistantNickname }}</strong>
             <span>✨</span>
           </div>
-          <p class="chat-page__subtitle">{{ assistantTitle }}</p>
-          <p class="chat-page__online">
+          <button
+            type="button"
+            class="chat-page__scenic-btn"
+            :aria-label="currentScenicName ? `当前景区 ${currentScenicName}` : '选择服务景区'"
+            @click="openScenicPicker"
+          >
+            <span class="chat-page__scenic-name">
+              {{ currentScenicName || "选择服务景区" }}
+            </span>
+            <van-icon name="arrow-down" size="12" />
+          </button>
+          <p class="chat-page__meta">
             <span class="chat-page__online-dot" aria-hidden="true" />
-            实时在线
+            <span>{{ assistantTitle }} 实时在线</span>
           </p>
         </div>
       </div>
     </header>
 
+    <ScenicPickerSheet
+      v-model:show="scenicPickerVisible"
+      :cities="scenicStore.enabledCities"
+      :scenics="scenicStore.enabledScenics"
+      :current-scenic-id="scenicStore.currentScenicId"
+      :initial-city-id="pickerInitialCityId"
+      :required="scenicPickerRequired"
+      @select="onScenicPicked"
+      @update:city-id="onPickerCityChange"
+    />
+
     <main v-if="showWelcomePanel" class="chat-page__welcome">
       <WelcomeHero
         :nickname="assistantNickname"
         :character-url="characterUrl"
+        :weather-line="weatherLine"
+        :crowd-line="crowdLine"
+        :crowd-level="crowdLevel"
       />
       <WelcomeRecommendList
         :questions="suggestedQuestions"
         :subtitle="welcomeRecommendSubtitle"
-        @select="onStartChat"
+        @select="onWelcomeRecommendSelect"
       />
     </main>
 
@@ -793,11 +1218,14 @@ async function onSend() {
           :visitor-pick-disabled="isVisitorPickDisabled(msg)"
           :ticket-confirm-disabled="isTicketConfirmDisabled(msg)"
           :review-disabled="isReviewDisabled(msg)"
+          :quiz-disabled="isQuizDisabled(msg)"
           :submitted-review-order-ids="Array.from(submittedReviewOrders)"
           @visitor-confirm="onVisitorConfirm"
           @ticket-confirm="onTicketConfirm"
           @review-submit="onReviewSubmit"
           @checkin-confirm="onCheckinConfirm"
+          @quiz-start="onQuizStart"
+          @quiz-answer="onQuizAnswer"
         />
       </div>
     </template>
@@ -985,6 +1413,32 @@ async function onSend() {
   color: #111;
 }
 
+.chat-page__scenic-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  margin: 3px 0 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #5c6670;
+  font-size: 12px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.chat-page__scenic-btn:active {
+  opacity: 0.75;
+}
+
+.chat-page__scenic-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
 .chat-page__brand-text p {
   margin: 2px 0 0;
   font-size: 12px;
@@ -992,11 +1446,11 @@ async function onSend() {
   color: #414a53;
 }
 
-.chat-page__online {
+.chat-page__meta {
   display: flex;
   align-items: center;
   gap: 5px;
-  margin: 4px 0 0;
+  margin: 3px 0 0;
   font-size: 11px;
   color: #2d8f57;
   line-height: 1.2;

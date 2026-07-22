@@ -245,8 +245,9 @@ export type DemoOpsAction =
   | 'ensure_today_paid_order'
   | 'ensure_today_completed_order'
   | 'reset_invoice_status'
+  | 'reset_quiz_progress'
 
-/** 演示版：当前登录账号快捷运维（清空新人券 / upsert 当日订单 / 重置开票状态） */
+/** 演示版：当前登录账号快捷运维（清空新人券 / upsert 当日订单 / 重置开票 / 重置答题） */
 export function postDemoOps(action: DemoOpsAction) {
   return request.post<
     ApiResponse<{
@@ -256,6 +257,7 @@ export function postDemoOps(action: DemoOpsAction) {
       message: string
       removedCouponCount?: number
       resetInvoiceCount?: number
+      resetQuizCount?: number
     }>
   >('/api/demo/ops', { action })
 }

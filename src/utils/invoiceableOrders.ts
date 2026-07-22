@@ -1,8 +1,8 @@
 import type { Order } from '@/types'
 
-const INVOICE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
+const INVOICE_WINDOW_MS = 90 * 24 * 60 * 60 * 1000
 
-/** 30 天内已完成且未开票的自营等可开票订单（不含 OTA/TA 只读渠道的改签逻辑） */
+/** 90 天内已完成且未开票的自营等可开票订单（不含 OTA/TA 只读渠道的改签逻辑） */
 export function filterInvoiceableOrders(orders: Order[], now = Date.now()): Order[] {
   return orders.filter((order) => {
     if (order.status !== 'completed' || order.invoiceStatus !== 'none') return false

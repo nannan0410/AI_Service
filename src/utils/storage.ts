@@ -1,4 +1,4 @@
-import { storageKey, STORAGE_SUFFIX } from './storageKeys'
+import { storageKey, STORAGE_SUFFIX, chatStorageSuffix } from './storageKeys'
 
 export function getItem<T>(key: string, fallback: T): T {
   const raw = localStorage.getItem(key)
@@ -30,4 +30,4 @@ export function removeUserStorage(userId: string, suffix: string): void {
   removeItem(storageKey(userId, suffix))
 }
 
-export { storageKey, STORAGE_SUFFIX }
+export { storageKey, STORAGE_SUFFIX, chatStorageSuffix }

@@ -18,11 +18,14 @@
     "coupons": [
       {
         "couponId": "cpn_vip_001",
+        "couponProductId": "cp_prod_vip",
         "title": "黄金会员专属 50 元券",
         "type": "cash",
         "value": 50,
+        "condition": "会员专享",
         "expireAt": "2026-12-31",
-        "status": "available"
+        "status": "available",
+        "scenicId": "scenic_hlg"
       },
       {
         "couponId": "cpn_vip_002",
@@ -30,7 +33,8 @@
         "type": "parking",
         "value": 15,
         "expireAt": "2026-10-31",
-        "status": "available"
+        "status": "available",
+        "scenicId": "scenic_hlg"
       },
       {
         "couponId": "cpn_vip_003",
@@ -39,7 +43,19 @@
         "value": 0,
         "condition": "指定餐厅",
         "expireAt": "2026-11-30",
-        "status": "available"
+        "status": "available",
+        "scenicId": "scenic_hlg"
+      },
+      {
+        "couponId": "cpn_vip_hy_dining",
+        "couponProductId": "cp_prod_hy_dining",
+        "title": "海洋餐厅 20 元券餐厅 20 元券",
+        "type": "dining",
+        "value": 20,
+        "condition": "满 88 可用",
+        "expireAt": "2026-12-31",
+        "status": "available",
+        "scenicId": "scenic_hy"
       }
     ],
     "commonVisitors": [
@@ -68,14 +84,38 @@
         "mobile": "13800001004"
       }
     ],
-    "preferences": { "hasChildren": true, "avoidThrilling": false }
+    "preferences": {
+      "hasChildren": true,
+      "avoidThrilling": false
+    }
   },
   "orders": [
+    {
+      "orderId": "ORD_HY_20260720001",
+      "ticketType": "family_bundle",
+      "ticketName": "上海海洋公园家庭套票（2大1小）",
+      "quantity": {
+        "adult": 2,
+        "child": 1
+      },
+      "totalAmount": 599,
+      "status": "completed",
+      "source": "self",
+      "visitDate": "2026-07-20",
+      "completedAt": "2026-07-20T16:00:00.000Z",
+      "invoiceStatus": "none",
+      "reviewStatus": "none",
+      "createdAt": "2026-07-18T10:00:00.000Z",
+      "scenicId": "scenic_hy"
+    },
     {
       "orderId": "ORD20260715001",
       "ticketType": "family_bundle",
       "ticketName": "家庭套票（2大1小）",
-      "quantity": { "adult": 2, "child": 1 },
+      "quantity": {
+        "adult": 2,
+        "child": 1
+      },
       "totalAmount": 669,
       "status": "completed",
       "source": "self",
@@ -83,13 +123,17 @@
       "completedAt": "2026-07-15T18:30:00.000Z",
       "invoiceStatus": "none",
       "reviewStatus": "none",
-      "createdAt": "2026-07-12T09:00:00.000Z"
+      "createdAt": "2026-07-12T09:00:00.000Z",
+      "scenicId": "scenic_hlg"
     },
     {
       "orderId": "ORD20260710001",
       "ticketType": "adult",
       "ticketName": "成人票（2张）",
-      "quantity": { "adult": 2, "child": 0 },
+      "quantity": {
+        "adult": 2,
+        "child": 0
+      },
       "totalAmount": 598,
       "status": "completed",
       "source": "self",
@@ -97,13 +141,17 @@
       "completedAt": "2026-07-10T17:20:00.000Z",
       "invoiceStatus": "none",
       "reviewStatus": "none",
-      "createdAt": "2026-07-08T10:00:00.000Z"
+      "createdAt": "2026-07-08T10:00:00.000Z",
+      "scenicId": "scenic_hlg"
     },
     {
       "orderId": "ORD20260618001",
       "ticketType": "family_bundle",
       "ticketName": "家庭套票（2大1小）",
-      "quantity": { "adult": 2, "child": 1 },
+      "quantity": {
+        "adult": 2,
+        "child": 1
+      },
       "totalAmount": 669,
       "status": "completed",
       "source": "self",
@@ -111,13 +159,17 @@
       "completedAt": "2026-06-18T18:30:00.000Z",
       "invoiceStatus": "none",
       "reviewStatus": "none",
-      "createdAt": "2026-06-15T09:00:00.000Z"
+      "createdAt": "2026-06-15T09:00:00.000Z",
+      "scenicId": "scenic_hlg"
     },
     {
       "orderId": "ORD20260612001",
       "ticketType": "adult",
       "ticketName": "成人票（2张）",
-      "quantity": { "adult": 2, "child": 0 },
+      "quantity": {
+        "adult": 2,
+        "child": 0
+      },
       "totalAmount": 598,
       "status": "completed",
       "source": "self",
@@ -125,13 +177,17 @@
       "completedAt": "2026-06-12T17:00:00.000Z",
       "invoiceStatus": "none",
       "reviewStatus": "none",
-      "createdAt": "2026-06-10T09:00:00.000Z"
+      "createdAt": "2026-06-10T09:00:00.000Z",
+      "scenicId": "scenic_hlg"
     },
     {
       "orderId": "ORD20260520001",
       "ticketType": "family_bundle",
       "ticketName": "家庭套票（2大1小）",
-      "quantity": { "adult": 2, "child": 1 },
+      "quantity": {
+        "adult": 2,
+        "child": 1
+      },
       "totalAmount": 669,
       "status": "completed",
       "source": "self",
@@ -139,13 +195,17 @@
       "completedAt": "2026-06-10T18:00:00.000Z",
       "invoiceStatus": "none",
       "reviewStatus": "none",
-      "createdAt": "2026-05-18T09:00:00.000Z"
+      "createdAt": "2026-05-18T09:00:00.000Z",
+      "scenicId": "scenic_hlg"
     },
     {
       "orderId": "ORD20260501001",
       "ticketType": "holiday_special",
       "ticketName": "假日特惠票",
-      "quantity": { "adult": 1, "child": 0 },
+      "quantity": {
+        "adult": 1,
+        "child": 0
+      },
       "totalAmount": 399,
       "status": "completed",
       "source": "self",
@@ -153,31 +213,40 @@
       "completedAt": "2026-05-01T17:30:00.000Z",
       "invoiceStatus": "applied",
       "reviewStatus": "submitted",
-      "createdAt": "2026-04-28T14:00:00.000Z"
+      "createdAt": "2026-04-28T14:00:00.000Z",
+      "scenicId": "scenic_hlg"
     },
     {
       "orderId": "OTA20260610001",
       "ticketType": "adult",
       "ticketName": "OTA 渠道双人票",
-      "quantity": { "adult": 2, "child": 0 },
+      "quantity": {
+        "adult": 2,
+        "child": 0
+      },
       "totalAmount": 558,
       "status": "paid",
       "source": "ota",
       "visitDate": "2026-06-10",
       "invoiceStatus": "none",
-      "createdAt": "2026-06-08T11:00:00.000Z"
+      "createdAt": "2026-06-08T11:00:00.000Z",
+      "scenicId": "scenic_hlg"
     },
     {
       "orderId": "TA20260701001",
       "ticketType": "family_bundle",
       "ticketName": "TA 旅行社家庭票",
-      "quantity": { "adult": 2, "child": 1 },
+      "quantity": {
+        "adult": 2,
+        "child": 1
+      },
       "totalAmount": 620,
       "status": "paid",
       "source": "ta",
       "visitDate": "2026-07-01",
       "invoiceStatus": "none",
-      "createdAt": "2026-06-28T09:00:00.000Z"
+      "createdAt": "2026-06-28T09:00:00.000Z",
+      "scenicId": "scenic_hlg"
     }
   ]
 }

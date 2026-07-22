@@ -20,6 +20,7 @@ import {
   hasVisitToday,
   pickNearestUpcomingVisitOrder,
 } from '@/utils/upcomingVisitOrder'
+import { filterByBusinessScenicId, filterCouponsByScenic } from '@/utils/scenicScope'
 
 const snapshots: Record<PersonaId, UserSnapshot> = {
   demo_new: demoNew as UserSnapshot,
@@ -36,7 +37,7 @@ function ensureDemoNewRegistrationFresh(snapshot: UserSnapshot): void {
 
 ensureDemoNewRegistrationFresh(snapshots.demo_new)
 
-function resolveTagsForPersona(personaId: PersonaId): string[] {
+export function resolveTagsForPersona(personaId: PersonaId): string[] {
   const catalog = defaultFieldCatalog as FieldCatalog
   return catalog.tags
     .filter((tag: TagCatalogItem) => tag.demoPersonas?.includes(personaId))
@@ -51,6 +52,7 @@ export type DemoRuleLiveOverrides = {
   inPark?: boolean
   nickname?: string
   memberLevel?: string
+  scenicId?: string | null
 }
 
 /** Demo 版：基于 mock 用户快照构建规则上下文（客户端预览与 Chat 过滤共用） */
@@ -59,8 +61,12 @@ export function buildDemoRuleContext(
   live?: DemoRuleLiveOverrides,
 ): RuleContext {
   const snapshot = snapshots[personaId]
-  const orders = live?.orders ?? snapshot.orders
-  const coupons = live?.coupons ?? snapshot.visitorState.coupons
+  const scenicId = live?.scenicId ?? null
+  const orders = filterByBusinessScenicId(live?.orders ?? snapshot.orders, scenicId)
+  const coupons = filterCouponsByScenic(
+    live?.coupons ?? snapshot.visitorState.coupons,
+    scenicId,
+  )
   const registeredAt = live?.registeredAt ?? snapshot.memberInfo.registeredAt
   const inPark = live?.inPark ?? snapshot.visitorState.inPark
   const now = Date.now()
@@ -83,6 +89,7 @@ export function buildDemoRuleContext(
 
   return {
     personaId,
+    scenicId,
     memberId: snapshot.memberInfo.memberId,
     nickname: live?.nickname ?? snapshot.memberInfo.nickname,
     memberLevel: live?.memberLevel ?? snapshot.memberInfo.level,

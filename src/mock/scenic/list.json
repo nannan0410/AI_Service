@@ -1,0 +1,42 @@
+[
+  {
+    "scenicId": "scenic_hlg",
+    "cityId": "city_sh",
+    "name": "上海奇趣乐园",
+    "coverUrl": "/scenic/cover-hlg.svg",
+    "description": "亲子与刺激项目齐全的主题乐园",
+    "openTime": "09:00-21:00",
+    "address": "上海市浦东新区示例大道 1 号",
+    "enabled": true
+  },
+  {
+    "scenicId": "scenic_hy",
+    "cityId": "city_sh",
+    "name": "上海海洋公园",
+    "coverUrl": "/scenic/cover-hy.svg",
+    "description": "海洋主题观赏与互动体验",
+    "openTime": "09:30-20:30",
+    "address": "上海市浦东新区滨海路 88 号",
+    "enabled": true
+  },
+  {
+    "scenicId": "scenic_sz_wt",
+    "cityId": "city_sz",
+    "name": "深圳湾主题乐园",
+    "coverUrl": "/scenic/cover-sz-wt.svg",
+    "description": "滨海主题乐园，适合一日游",
+    "openTime": "10:00-21:00",
+    "address": "深圳市南山区深圳湾大道 66 号",
+    "enabled": false
+  },
+  {
+    "scenicId": "scenic_sz_eco",
+    "cityId": "city_sz",
+    "name": "深圳绿野公园",
+    "coverUrl": "/scenic/cover-sz-eco.svg",
+    "description": "自然观光与轻松游玩",
+    "openTime": "09:00-18:30",
+    "address": "深圳市南山区绿野路 8 号",
+    "enabled": true
+  }
+]

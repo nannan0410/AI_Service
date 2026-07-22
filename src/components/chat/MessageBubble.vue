@@ -8,7 +8,9 @@ import type {
   CouponCardPayload,
   CouponRecommendPayload,
   OrderCardPayload,
+  QuizCardPayload,
   SceneRecommendPayload,
+  StarIntroPayload,
   TicketCardPayload,
   TicketFallbackPayload,
   PageGuideCardPayload,
@@ -30,6 +32,8 @@ import ContentCard from "@/components/chat/cards/ContentCard.vue";
 import ActivityCard from "@/components/chat/cards/ActivityCard.vue";
 import GuideCard from "@/components/chat/cards/GuideCard.vue";
 import VisitorPicker from "@/components/chat/cards/VisitorPicker.vue";
+import QuizCard from "@/components/chat/cards/QuizCard.vue";
+import StarIntroCard from "@/components/chat/cards/StarIntroCard.vue";
 import { isCouponRecommendPayload } from "@/utils/couponRecommend";
 import { ACTIVITY_CATEGORY_LABELS } from "@/utils/activityDisplay";
 
@@ -38,6 +42,7 @@ const props = defineProps<{
   visitorPickDisabled?: boolean;
   ticketConfirmDisabled?: boolean;
   reviewDisabled?: boolean;
+  quizDisabled?: boolean;
   submittedReviewOrderIds?: string[];
 }>();
 
@@ -46,6 +51,8 @@ const emit = defineEmits<{
   ticketConfirm: [payload: TicketCardPayload];
   reviewSubmit: [draft: ReviewSubmitDraft];
   checkinConfirm: [payload: PageGuideCardPayload, messageId: string];
+  quizStart: [quizId: string];
+  quizAnswer: [payload: QuizCardPayload, optionKey: string, messageId: string];
 }>();
 
 const router = useRouter();
@@ -150,12 +157,28 @@ function asReview(payload: unknown): ReviewCardPayload {
   return payload as ReviewCardPayload;
 }
 
+function asStarIntro(payload: unknown): StarIntroPayload {
+  return payload as StarIntroPayload;
+}
+
+function asQuiz(payload: unknown): QuizCardPayload {
+  return payload as QuizCardPayload;
+}
+
 function openPage(path: string) {
   router.push(path);
 }
 
 function onPageGuideCheckin(payload: PageGuideCardPayload) {
   emit("checkinConfirm", payload, props.message.id);
+}
+
+function onQuizInvite(quizId: string) {
+  emit("quizStart", quizId);
+}
+
+function onQuizOption(optionKey: string) {
+  emit("quizAnswer", asQuiz(props.message.payload), optionKey, props.message.id);
 }
 
 const cardTypes = new Set([
@@ -171,6 +194,8 @@ const cardTypes = new Set([
   "scene_recommend",
   "visitor_pick",
   "guide",
+  "star_intro",
+  "quiz",
 ]);
 </script>
 
@@ -373,6 +398,53 @@ const cardTypes = new Set([
           查看
         </van-button>
       </div>
+      <template v-if="asSceneRecommend(message.payload).quizInvite">
+        <p class="bubble-card-box__quiz-hint">
+          {{ asSceneRecommend(message.payload).quizInvite!.hint }}
+        </p>
+        <van-button
+          size="small"
+          type="primary"
+          round
+          block
+          class="bubble-card-box__action"
+          @click="onQuizInvite(asSceneRecommend(message.payload).quizInvite!.quizId)"
+        >
+          {{ asSceneRecommend(message.payload).quizInvite!.buttonLabel }}
+        </van-button>
+      </template>
+    </div>
+
+    <div
+      v-else-if="message.type === 'star_intro'"
+      class="bubble bubble--assistant bubble-card-box"
+    >
+      <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
+      <StarIntroCard :payload="asStarIntro(message.payload)" />
+      <template v-if="asStarIntro(message.payload).quizInvite">
+        <p class="bubble-card-box__quiz-hint">
+          {{ asStarIntro(message.payload).quizInvite!.hint }}
+        </p>
+        <van-button
+          size="small"
+          type="primary"
+          round
+          block
+          class="bubble-card-box__action"
+          @click="onQuizInvite(asStarIntro(message.payload).quizInvite!.quizId)"
+        >
+          {{ asStarIntro(message.payload).quizInvite!.buttonLabel }}
+        </van-button>
+      </template>
+    </div>
+
+    <div v-else-if="message.type === 'quiz'" class="bubble bubble--assistant bubble-card-box">
+      <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
+      <QuizCard
+        :payload="asQuiz(message.payload)"
+        :disabled="quizDisabled"
+        @answer="onQuizOption"
+      />
     </div>
 
     <div v-else-if="message.type === 'guide'" class="bubble bubble--assistant bubble-card-box">
@@ -557,6 +629,13 @@ const cardTypes = new Set([
 
 .bubble-card-box__action {
   margin-top: 2px;
+}
+
+.bubble-card-box__quiz-hint {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #646566;
 }
 
 .bubble-card-box__action--ticket {

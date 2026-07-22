@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180" fill="none">
+  <defs>
+    <linearGradient id="cover-sz-eco" x1="0" y1="0" x2="320" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A3E635"/>
+      <stop offset="1" stop-color="#65A30D"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="180" rx="16" fill="url(#cover-sz-eco)"/>
+  <circle cx="70" cy="44" r="18" fill="#ffffff" fill-opacity="0.35"/>
+  <circle cx="250" cy="70" r="36" fill="#ffffff" fill-opacity="0.2"/>
+  <path d="M0 128c48-24 96-24 144 0s96 24 144 0v52H0v-52z" fill="#ffffff" fill-opacity="0.28"/>
+  <text x="24" y="52" fill="#ffffff" font-size="20" font-family="system-ui,sans-serif" font-weight="700">绿野公园</text>
+</svg>

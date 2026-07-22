@@ -43,7 +43,9 @@
         "mobile": "13800001001"
       }
     ],
-    "preferences": { "hasChildren": true }
+    "preferences": {
+      "hasChildren": true
+    }
   },
   "orders": []
 }

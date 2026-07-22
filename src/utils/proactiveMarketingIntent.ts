@@ -61,6 +61,14 @@ export function resolveProactiveMarketingScene(
   if (dining && retail) return 'dining'
 
   if (/买票|购票|门票|套票|两大一小|2大1小/.test(text)) return null
+  // 会员权益选品交给 member_offer
+  if (
+    /会员专属|适合我的套餐|按会员等级|会员怎么买最划算|黄金会员推荐|专属门票推荐|会员权益推荐|推荐适合我的门票组合/.test(
+      text,
+    )
+  ) {
+    return null
+  }
 
   if (
     /有什么券|有哪些券|可用券|优惠券|会员券|专属券|查券|我的券/.test(text) ||

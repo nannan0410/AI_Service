@@ -2,7 +2,7 @@
 export const MAX_QUICK_SERVICES = 4
 
 /** 游游推荐（原「猜你想问」）展示上限 */
-export const MAX_WELCOME_RECOMMEND = 6
+export const MAX_WELCOME_RECOMMEND = 8
 
 /** 游游推荐默认展示条数，其余「查看更多」展开 */
 export const WELCOME_RECOMMEND_VISIBLE = 3

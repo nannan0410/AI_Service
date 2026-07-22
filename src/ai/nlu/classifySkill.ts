@@ -34,16 +34,18 @@ ${catalog}
 4. 交通、怎么去、攻略、入园准备、游玩路线、停车位置 → travel_guide
 5. 停车费、交车费、停车缴费、绑定车牌 → parking_pay（不是问停车场在哪）
 6. 今日演出、演出推荐、下一场几点、灯光秀、花车巡游 → scenic_recommend
-7. 开发票、开票、报销、发票 → invoice_service
-8. 点评、评价、服务怎么样、写评价、满意度 → review_service
-9. 打卡、签到、景点打卡、园区打卡 → checkin_service
-10. 虚拟排队、免费取号、快速排队、排队少的项目 → queue_recommend
-11. 有什么券、优惠活动、推荐优惠 → proactive_marketing（不含新客领券）
-12. 不确定或仅寒暄 → general
-13. confidence 为 0~1，表示把握程度。
+7. 点名游乐项目（过山车、漂流、取号、快速排队）→ queue_recommend
+8. 开发票、开票、报销、发票 → invoice_service
+9. 点评、评价、服务怎么样、写评价、满意度 → review_service
+10. 打卡、签到、景点打卡、园区打卡 → checkin_service
+11. 虚拟排队、免费取号、快速排队、排队少的项目 → queue_recommend
+12. 有什么券、优惠活动、推荐优惠 → proactive_marketing（不含新客领券；不含会员等级选品）
+13. 会员专属套餐、按会员等级推荐、适合我的门票组合、会员怎么买最划算 → member_offer
+14. 不确定或仅寒暄 → general
+15. confidence 为 0~1，表示把握程度。
 
 仅输出 JSON：
-{"skillId":"ticket_purchase|travel_guide|order_query|parking_pay|scenic_recommend|queue_recommend|invoice_service|review_service|checkin_service|proactive_marketing|general","confidence":number}`
+{"skillId":"ticket_purchase|travel_guide|order_query|parking_pay|scenic_recommend|queue_recommend|invoice_service|review_service|checkin_service|proactive_marketing|member_offer|general","confidence":number}`
 }
 
 function parseClassification(content: string): SkillClassification | null {

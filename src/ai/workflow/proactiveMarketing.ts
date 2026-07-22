@@ -1,4 +1,4 @@
-import { fetchActivities, fetchCoupons, fetchMemberInfo, issueCoupon } from '@/api/business'
+import { fetchActivities, fetchCheckinSpots, fetchCoupons, fetchMemberInfo, issueCoupon } from '@/api/business'
 import {
   isNonTicketOrderIntent,
   resolveProactiveMarketingScene,
@@ -53,6 +53,16 @@ async function loadMemberCtx() {
   }
 }
 
+/** 是否在园（餐饮/零售推券门槛） */
+async function resolveInPark(): Promise<boolean> {
+  try {
+    const { data: res } = await fetchCheckinSpots()
+    return res.code === 200 && res.data.inPark === true
+  } catch {
+    return false
+  }
+}
+
 async function ensureSceneCoupon(
   productId: string,
   coupons: Coupon[],
@@ -86,6 +96,7 @@ function buildSceneRecommendCard(
   coupon: Coupon | undefined,
   activities: Activity[],
   reason: string,
+  inPark: boolean,
 ): ChatMessageDraft {
   const payload: SceneRecommendPayload = {
     scene,
@@ -95,7 +106,7 @@ function buildSceneRecommendCard(
     activities: activities.slice(0, 3).map((activity) =>
       activityToCardPayload(activity, {
         reason,
-        guideContext: 'in_park',
+        guideContext: inPark ? 'in_park' : 'pre_visit',
       }),
     ),
   }
@@ -120,6 +131,7 @@ async function runDiningOrRetailScene(
   const productId = isDining ? DINING_COUPON_PRODUCT_ID : RETAIL_COUPON_PRODUCT_ID
   const label = isDining ? '餐饮' : '零售'
   const isOrder = scene.startsWith('order_intent')
+  const inPark = await resolveInPark()
 
   callbacks?.onToolStart?.('getScenicActivities', `查询${label}推荐`)
   let activities: Activity[] = []
@@ -131,45 +143,58 @@ async function runDiningOrRetailScene(
     callbacks?.onToolDone?.('getScenicActivities', false)
   }
 
-  callbacks?.onToolStart?.('getCoupons', '查询可用优惠券')
-  let coupons: Coupon[] = []
-  try {
-    const { data: res } = await fetchCoupons('available')
-    callbacks?.onToolDone?.('getCoupons', res.code === 200)
-    if (res.code === 200) coupons = res.data
-  } catch {
-    callbacks?.onToolDone?.('getCoupons', false)
+  /** 仅在园才推送/展示餐饮·零售场景券；园外只做项目推荐 */
+  let coupon: Coupon | undefined
+  const toolCallsUsed = ['getScenicActivities']
+  if (inPark) {
+    callbacks?.onToolStart?.('getCoupons', '查询可用优惠券')
+    let coupons: Coupon[] = []
+    try {
+      const { data: res } = await fetchCoupons('available')
+      callbacks?.onToolDone?.('getCoupons', res.code === 200)
+      if (res.code === 200) coupons = res.data
+    } catch {
+      callbacks?.onToolDone?.('getCoupons', false)
+    }
+    toolCallsUsed.push('getCoupons', 'issueCoupon')
+    const issued = await ensureSceneCoupon(productId, coupons, callbacks)
+    coupon = issued.coupon
   }
 
-  const issued = await ensureSceneCoupon(productId, coupons, callbacks)
-
-  const intro = isOrder
+  const intro = !inPark
     ? activities.length
-      ? `看您有购买意向，已推荐${activities.length}处${label}，并送上优惠券：`
-      : `看您有购买意向，先送上${label}优惠券方便下单：`
-    : activities.length
-      ? `为您推荐以下${label}，并附上可用优惠：`
-      : `暂时没有更多${label}推荐，先送上优惠券供您使用：`
+      ? `为您推荐以下${label}（入园后可领取专属优惠券）：`
+      : `暂时没有更多${label}推荐，入园后可为您推送专属优惠。`
+    : isOrder
+      ? activities.length
+        ? `看您有购买意向，已推荐${activities.length}处${label}，并送上优惠券：`
+        : `看您有购买意向，先送上${label}优惠券方便下单：`
+      : activities.length
+        ? `为您推荐以下${label}，并附上可用优惠：`
+        : `暂时没有更多${label}推荐，先送上优惠券供您使用：`
 
-  if (!issued.coupon && !activities.length) {
+  if (!coupon && !activities.length) {
     return {
-      content: `暂时无法获取${label}推荐与优惠，请稍后在「优惠券」页查看。`,
+      content: inPark
+        ? `暂时无法获取${label}推荐与优惠，请稍后在「优惠券」页查看。`
+        : `暂时无法获取${label}推荐，请稍后再试。`,
       skillId: 'proactive_marketing',
-      toolCallsUsed: ['getScenicActivities', 'getCoupons'],
+      toolCallsUsed,
     }
   }
 
   return {
     content: '',
     skillId: 'proactive_marketing',
-    toolCallsUsed: ['getScenicActivities', 'getCoupons', 'issueCoupon'],
+    toolCallsUsed,
     cards: [
       buildSceneRecommendCard(
         isDining ? 'dining' : 'retail',
         intro,
-        issued.coupon,
+        coupon,
         activities,
         isDining ? '园内热门餐饮' : '园内热门零售',
+        inPark,
       ),
     ],
   }

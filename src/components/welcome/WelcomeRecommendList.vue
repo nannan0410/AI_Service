@@ -9,7 +9,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  select: [prompt: string]
+  select: [question: WelcomeQuestionConfig]
 }>()
 
 const expanded = ref(false)
@@ -24,12 +24,23 @@ const moreQuestions = computed(() =>
 
 const showMoreButton = computed(() => moreQuestions.value.length > 0)
 
-function onSelect(prompt: string) {
-  emit('select', prompt)
+function onSelect(question: WelcomeQuestionConfig) {
+  emit('select', question)
 }
 
 function toggleMore() {
   expanded.value = !expanded.value
+}
+
+function actionHint(item: WelcomeQuestionConfig): string {
+  if (item.pinTop) {
+    const target = item.target || 'chat'
+    if (target === 'page' || target === 'h5' || target === 'mini_program') {
+      return '置顶推荐 · 点击前往'
+    }
+    return '置顶推荐 · 点击开聊'
+  }
+  return ''
 }
 </script>
 
@@ -50,16 +61,20 @@ function toggleMore() {
         :key="item.id"
         type="button"
         class="welcome-recommend-card"
+        :class="{ 'welcome-recommend-card--pin': item.pinTop }"
         :style="{ animationDelay: `${index * 80}ms` }"
-        @click="onSelect(item.prompt)"
+        @click="onSelect(item)"
       >
         <span class="welcome-recommend-card__icon" aria-hidden="true">{{
           item.icon
         }}</span>
         <span class="welcome-recommend-card__body">
-          <span class="welcome-recommend-card__title">{{ item.text }}</span>
-          <span v-if="item.desc" class="welcome-recommend-card__desc">{{
-            item.desc
+          <span class="welcome-recommend-card__title">
+            <span v-if="item.pinTop" class="welcome-recommend-card__badge">置顶</span>
+            {{ item.text }}
+          </span>
+          <span v-if="item.desc || actionHint(item)" class="welcome-recommend-card__desc">{{
+            item.desc || actionHint(item)
           }}</span>
         </span>
         <span class="welcome-recommend-card__arrow" aria-hidden="true">›</span>
@@ -74,16 +89,20 @@ function toggleMore() {
           :key="item.id"
           type="button"
           class="welcome-recommend-card"
+          :class="{ 'welcome-recommend-card--pin': item.pinTop }"
           :style="{ animationDelay: `${index * 100}ms` }"
-          @click="onSelect(item.prompt)"
+          @click="onSelect(item)"
         >
           <span class="welcome-recommend-card__icon" aria-hidden="true">{{
             item.icon
           }}</span>
           <span class="welcome-recommend-card__body">
-            <span class="welcome-recommend-card__title">{{ item.text }}</span>
-            <span v-if="item.desc" class="welcome-recommend-card__desc">{{
-              item.desc
+            <span class="welcome-recommend-card__title">
+              <span v-if="item.pinTop" class="welcome-recommend-card__badge">置顶</span>
+              {{ item.text }}
+            </span>
+            <span v-if="item.desc || actionHint(item)" class="welcome-recommend-card__desc">{{
+              item.desc || actionHint(item)
             }}</span>
           </span>
           <span class="welcome-recommend-card__arrow" aria-hidden="true">›</span>
@@ -105,159 +124,142 @@ function toggleMore() {
 
 <style scoped>
 .welcome-recommend {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  margin-top: -26px;
+  margin-top: 8px;
+  padding: 0 4px;
 }
 
 .welcome-recommend__head {
-  margin-bottom: 6px;
-  padding: 0 2px;
+  margin-bottom: 10px;
 }
 
 .welcome-recommend__title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 2px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1f2a37;
   line-height: 1.3;
 }
 
 .welcome-recommend__subtitle {
-  margin: 0;
+  margin: 4px 0 0;
   font-size: 12px;
-  color: #999;
+  color: #8a94a0;
   line-height: 1.4;
 }
 
 .welcome-recommend__feed {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  padding-bottom: 4px;
+  gap: 8px;
 }
 
 .welcome-recommend-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 72px;
-  max-height: 88px;
-  padding: 14px 16px;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 12px 12px 10px;
   border: none;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(77, 95, 117, 0.07);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 16px rgba(95, 112, 132, 0.08);
   text-align: left;
   cursor: pointer;
-  animation: welcome-recommend-fade-in 400ms ease both;
-  transition:
-    transform 220ms ease,
-    box-shadow 220ms ease,
-    background 220ms ease;
+  animation: welcome-rec-in 420ms ease both;
+}
+
+.welcome-recommend-card--pin {
+  box-shadow:
+    0 0 0 1.5px rgba(7, 193, 96, 0.35),
+    0 6px 16px rgba(95, 112, 132, 0.08);
 }
 
 .welcome-recommend-card:active {
-  transform: scale(0.985);
-  background: rgba(255, 255, 255, 0.96);
+  opacity: 0.9;
 }
 
 .welcome-recommend-card__icon {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  display: flex;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  line-height: 1;
-  border-radius: 14px;
-  background: rgba(247, 248, 250, 0.95);
+  border-radius: 10px;
+  background: #f3f6f8;
+  font-size: 18px;
 }
 
 .welcome-recommend-card__body {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .welcome-recommend-card__title {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: #1f1f1f;
+  color: #1f2a37;
   line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.welcome-recommend-card__badge {
+  flex-shrink: 0;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(7, 193, 96, 0.12);
+  color: #07c160;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .welcome-recommend-card__desc {
-  margin-top: 3px;
   font-size: 12px;
-  color: #999;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  color: #8a94a0;
+  line-height: 1.35;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .welcome-recommend-card__arrow {
   flex-shrink: 0;
-  font-size: 16px;
-  font-weight: 300;
-  color: #c8ced4;
+  color: #c0c5cc;
+  font-size: 18px;
   line-height: 1;
-}
-
-.welcome-recommend__more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: 100%;
-  margin-top: 2px;
-  padding: 8px 0 4px;
-  border: none;
-  background: none;
-  font-size: 13px;
-  color: #999;
-  cursor: pointer;
 }
 
 .welcome-recommend__more-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
-@keyframes welcome-recommend-fade-in {
+.welcome-recommend__more {
+  margin-top: 2px;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #646566;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+@keyframes welcome-rec-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@media (max-width: 390px) {
-  .welcome-recommend-card {
-    padding: 12px 14px;
-    min-height: 68px;
-  }
-
-  .welcome-recommend-card__icon {
-    width: 36px;
-    height: 36px;
-    font-size: 20px;
   }
 }
 </style>

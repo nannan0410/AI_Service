@@ -8,6 +8,9 @@ import type {
   Order,
   OrderDraft,
   PersonaId,
+  QuizAnswerResult,
+  QuizSet,
+  ScenicStar,
   TicketProduct,
   TicketTypeId,
   TravelGuideResult,
@@ -25,6 +28,8 @@ import contentBlocks from '../src/mock/content/blocks.json'
 import activities from '../src/mock/activities.json'
 import checkinSpots from '../src/mock/checkin/spots.json'
 import virtualQueueSeed from '../src/mock/virtual_queue.json'
+import quizSets from '../src/mock/quiz.json'
+import scenicStars from '../src/mock/stars.json'
 import {
   activityToCardPayload,
   buildActivityRecommendReason,
@@ -39,17 +44,16 @@ import {
   isWithinNewGuestClaimWindow,
 } from '../src/utils/newGuestCoupon'
 import { qualifiesReviewReward } from '../src/utils/reviewForm'
+import {
+  filterByBusinessScenicId,
+  matchesBusinessScenicId,
+  resolveBusinessScenicId,
+} from '../src/utils/scenicScope'
 
 const REVIEW_DINING_PRODUCT_ID = 'cp_prod_review_dining'
 const REVIEW_PARKING_PRODUCT_ID = 'cp_prod_review_parking'
 
 type CheckinRecord = { spotId: string; date: string; checkinId: string; checkedAt: string }
-
-const checkinRecordsByPersona: Record<PersonaId, CheckinRecord[]> = {
-  demo_new: [],
-  demo_mid: [],
-  demo_vip: [],
-}
 
 function formatDateOffset(days: number): string {
   const d = new Date()
@@ -121,16 +125,14 @@ function cloneSnapshot<T>(data: T): T {
   return JSON.parse(JSON.stringify(data)) as T
 }
 
+function cloneVirtualQueueSeed(): VirtualQueueOrder[] {
+  return JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[]
+}
+
 const baselineByPersona: Record<PersonaId, UserSnapshot> = {
   demo_new: demoNew as UserSnapshot,
   demo_mid: demoMid as UserSnapshot,
   demo_vip: demoVip as UserSnapshot,
-}
-
-const snapshots: Record<PersonaId, UserSnapshot> = {
-  demo_new: cloneSnapshot(baselineByPersona.demo_new),
-  demo_mid: cloneSnapshot(baselineByPersona.demo_mid),
-  demo_vip: cloneSnapshot(baselineByPersona.demo_vip),
 }
 
 function refreshDemoNewRegistrationDate(snapshot: UserSnapshot): void {
@@ -144,16 +146,66 @@ function ensureDemoNewRegistrationFresh(snapshot: UserSnapshot): void {
   refreshDemoNewRegistrationDate(snapshot)
 }
 
-ensureDemoNewRegistrationFresh(snapshots.demo_new)
+/**
+ * vite-plugin-mock 会按文件分别打包，直接 module-level 变量无法跨 mock 文件共享。
+ * 挂到 globalThis，保证领券（business）与清空（demo）改的是同一份快照。
+ */
+const MOCK_RUNTIME_KEY = '__scenic_ai_custom_mock_runtime_v1__'
+
+type MockRuntime = {
+  snapshots: Record<PersonaId, UserSnapshot>
+  checkinRecordsByPersona: Record<PersonaId, CheckinRecord[]>
+  virtualQueueByPersona: Record<PersonaId, VirtualQueueOrder[]>
+  plateOverrides: Partial<Record<PersonaId, string>>
+  orderDrafts: Map<string, OrderDraft>
+  /** `${personaId}:${quizId}` → 下一题下标 */
+  quizSessions: Map<string, number>
+}
+
+function createMockRuntime(): MockRuntime {
+  const snapshots: Record<PersonaId, UserSnapshot> = {
+    demo_new: cloneSnapshot(baselineByPersona.demo_new),
+    demo_mid: cloneSnapshot(baselineByPersona.demo_mid),
+    demo_vip: cloneSnapshot(baselineByPersona.demo_vip),
+  }
+  ensureDemoNewRegistrationFresh(snapshots.demo_new)
+  return {
+    snapshots,
+    checkinRecordsByPersona: {
+      demo_new: [],
+      demo_mid: [],
+      demo_vip: [],
+    },
+    virtualQueueByPersona: {
+      demo_new: cloneVirtualQueueSeed(),
+      demo_mid: cloneVirtualQueueSeed(),
+      demo_vip: cloneVirtualQueueSeed(),
+    },
+    plateOverrides: {},
+    orderDrafts: new Map(),
+    quizSessions: new Map(),
+  }
+}
+
+function getMockRuntime(): MockRuntime {
+  const g = globalThis as typeof globalThis & {
+    [MOCK_RUNTIME_KEY]?: MockRuntime
+  }
+  if (!g[MOCK_RUNTIME_KEY]) {
+    g[MOCK_RUNTIME_KEY] = createMockRuntime()
+  }
+  const runtime = g[MOCK_RUNTIME_KEY]!
+  if (!runtime.quizSessions) {
+    runtime.quizSessions = new Map()
+  }
+  return runtime
+}
 
 const personaLabels: Record<PersonaId, { nickname: string; memberId: string }> = {
   demo_new: { nickname: '新用户小明', memberId: '10001' },
   demo_mid: { nickname: '中级会员小红', memberId: '10002' },
   demo_vip: { nickname: '高级会员老王', memberId: '10003' },
 }
-
-const plateOverrides: Partial<Record<PersonaId, string>> = {}
-const orderDrafts = new Map<string, OrderDraft>()
 
 export function parsePersonaFromAuthHeader(auth?: string): PersonaId | null {
   if (!auth?.startsWith('Bearer ')) return null
@@ -163,24 +215,26 @@ export function parsePersonaFromAuthHeader(auth?: string): PersonaId | null {
 }
 
 function getMutableSnapshot(personaId: PersonaId): UserSnapshot {
-  return snapshots[personaId]
+  return getMockRuntime().snapshots[personaId]
 }
 
 export function getSnapshot(personaId: PersonaId): UserSnapshot {
-  const base = cloneSnapshot(snapshots[personaId])
-  if (plateOverrides[personaId] !== undefined) {
-    base.visitorState.boundPlateNo = plateOverrides[personaId]
+  const runtime = getMockRuntime()
+  const base = cloneSnapshot(runtime.snapshots[personaId])
+  if (runtime.plateOverrides[personaId] !== undefined) {
+    base.visitorState.boundPlateNo = runtime.plateOverrides[personaId]
   }
   base.visitorState.recentOrders = base.orders
   return base
 }
 
 export function bindPlate(personaId: PersonaId, plateNo: string): { ok: boolean; message?: string } {
-  const snapshot = snapshots[personaId]
-  if (snapshot.visitorState.boundPlateNo || plateOverrides[personaId]) {
+  const runtime = getMockRuntime()
+  const snapshot = runtime.snapshots[personaId]
+  if (snapshot.visitorState.boundPlateNo || runtime.plateOverrides[personaId]) {
     return { ok: false, message: '已绑定车牌，演示版不可变更' }
   }
-  plateOverrides[personaId] = plateNo
+  runtime.plateOverrides[personaId] = plateNo
   return { ok: true }
 }
 
@@ -244,6 +298,7 @@ export function issueCoupon(
       condition: product.condition,
       expireAt: '2026-12-31',
       status: 'available',
+      scenicId: (product as { scenicId?: string }).scenicId,
     }
     snapshot.visitorState.coupons.unshift(coupon)
     return { ok: true, coupon, reason: 'issued' }
@@ -263,15 +318,28 @@ export function issueCoupon(
     condition: product.condition,
     expireAt: '2026-12-31',
     status: 'available',
+    scenicId: (product as { scenicId?: string }).scenicId,
   }
   snapshot.visitorState.coupons.unshift(coupon)
   return { ok: true, coupon, reason: 'issued' }
 }
 
-function findTicketProduct(productId?: string, ticketType?: TicketTypeId): TicketProduct | undefined {
+function findTicketProduct(
+  productId?: string,
+  ticketType?: TicketTypeId,
+  scenicId?: string | null,
+): TicketProduct | undefined {
   const list = ticketProducts as TicketProduct[]
   if (productId) return list.find((item) => item.productId === productId)
-  if (ticketType) return list.find((item) => item.ticketTypeId === ticketType)
+  if (ticketType) {
+    const scoped = scenicId
+      ? list.filter((item) => matchesBusinessScenicId(item.scenicId, scenicId))
+      : list
+    return (
+      scoped.find((item) => item.ticketTypeId === ticketType) ||
+      list.find((item) => item.ticketTypeId === ticketType)
+    )
+  }
   return undefined
 }
 
@@ -308,9 +376,15 @@ export function createOrderDraft(
     visitDate?: string
     quantity?: { adult: number; child: number }
     originalAmount?: number
+    scenicId?: string | null
   },
 ): { ok: boolean; message?: string; draft?: OrderDraft } {
-  const product = findTicketProduct(payload.productId, payload.ticketType)
+  const scenicId = resolveBusinessScenicId(
+    payload.scenicId || (payload.productId
+      ? (ticketProducts as TicketProduct[]).find((p) => p.productId === payload.productId)?.scenicId
+      : undefined),
+  )
+  const product = findTicketProduct(payload.productId, payload.ticketType, scenicId)
   if (!product) {
     return { ok: false, message: '票产品不存在' }
   }
@@ -357,9 +431,10 @@ export function createOrderDraft(
     visitors: cloneSnapshot(visitors),
     status: 'draft',
     createdAt: new Date().toISOString(),
+    scenicId: resolveBusinessScenicId(product.scenicId || scenicId),
   }
 
-  orderDrafts.set(`${personaId}:${draftId}`, draft)
+  getMockRuntime().orderDrafts.set(`${personaId}:${draftId}`, draft)
   return { ok: true, draft }
 }
 
@@ -369,7 +444,7 @@ export function updateOrderDraftVisitors(
   visitorIdNumbers: string[],
 ): { ok: boolean; message?: string; draft?: OrderDraft } {
   const key = `${personaId}:${draftId}`
-  const draft = orderDrafts.get(key)
+  const draft = getMockRuntime().orderDrafts.get(key)
   if (!draft) {
     return { ok: false, message: '草稿不存在' }
   }
@@ -386,26 +461,32 @@ export function updateOrderDraftVisitors(
   }
 
   draft.visitors = cloneSnapshot(visitors)
-  orderDrafts.set(key, draft)
+  getMockRuntime().orderDrafts.set(key, draft)
   return { ok: true, draft: cloneSnapshot(draft) }
 }
 
 export function getOrderDraft(personaId: PersonaId, draftId: string): OrderDraft | null {
-  const draft = orderDrafts.get(`${personaId}:${draftId}`)
+  const draft = getMockRuntime().orderDrafts.get(`${personaId}:${draftId}`)
   return draft ? cloneSnapshot(draft) : null
 }
 
 export function generateTravelGuide(
   personaId: PersonaId,
-  options?: { scope?: 'full' | 'in_park' | 'recommend' },
+  options?: { scope?: 'full' | 'in_park' | 'recommend'; scenicId?: string | null },
 ): TravelGuideResult {
   const scope = options?.scope ?? 'recommend'
+  const scenicId = options?.scenicId ?? null
   const snapshot = getSnapshot(personaId)
-  const trafficBlock = contentBlocks.find((item) => item.type === 'traffic')
-  const entryBlock = contentBlocks.find((item) => item.type === 'entry_notice')
-  const guideBlock = contentBlocks.find((item) => item.type === 'guide')
+  const scopedBlocks = filterByBusinessScenicId(
+    contentBlocks as Array<{ type: string; title: string; body: string; scenicId?: string }>,
+    scenicId,
+  )
+  const trafficBlock = scopedBlocks.find((item) => item.type === 'traffic')
+  const entryBlock = scopedBlocks.find((item) => item.type === 'entry_notice')
+  const guideBlock = scopedBlocks.find((item) => item.type === 'guide')
 
-  const order = pickNearestUpcomingVisitOrder(snapshot.orders)
+  const scopedOrders = filterByBusinessScenicId(snapshot.orders, scenicId)
+  const order = pickNearestUpcomingVisitOrder(scopedOrders)
 
   const hasChildren =
     snapshot.visitorState.preferences?.hasChildren === true ||
@@ -413,7 +494,8 @@ export function generateTravelGuide(
   const activityTag = hasChildren ? '亲子' : undefined
   const guideContext = scope === 'in_park' ? 'in_park' : 'pre_visit'
 
-  const picked = pickRecommendActivities(activities as Activity[], {
+  const scopedActivities = filterByBusinessScenicId(activities as Activity[], scenicId)
+  const picked = pickRecommendActivities(scopedActivities, {
     limit: 4,
     tag: activityTag,
     guideContext,
@@ -475,7 +557,7 @@ export function submitOrderFromDraft(
   draftId: string,
 ): { ok: boolean; message?: string; order?: Order } {
   const key = `${personaId}:${draftId}`
-  const draft = orderDrafts.get(key)
+  const draft = getMockRuntime().orderDrafts.get(key)
   if (!draft) {
     return { ok: false, message: '草稿不存在或已提交' }
   }
@@ -505,17 +587,19 @@ export function submitOrderFromDraft(
     invoiceStatus: 'none',
     visitors: cloneSnapshot(draft.visitors),
     createdAt: new Date().toISOString(),
+    scenicId: resolveBusinessScenicId(draft.scenicId),
   }
 
   snapshot.orders.unshift(order)
   snapshot.visitorState.recentOrders = snapshot.orders
-  orderDrafts.delete(key)
+  getMockRuntime().orderDrafts.delete(key)
   return { ok: true, order: cloneSnapshot(order) }
 }
 
 export function applyBatchInvoice(
   personaId: PersonaId,
   orderIds: string[],
+  scenicId?: string | null,
 ):
   | { ok: true; appliedCount: number; appliedOrderIds: string[]; batchId: string }
   | { ok: false; message: string } {
@@ -529,6 +613,7 @@ export function applyBatchInvoice(
   for (const orderId of uniqueIds) {
     const order = snapshot.orders.find((item) => item.orderId === orderId)
     if (!order || order.status !== 'completed' || order.invoiceStatus !== 'none') continue
+    if (scenicId && !matchesBusinessScenicId(order.scenicId, scenicId)) continue
     order.invoiceStatus = 'applied'
     appliedOrderIds.push(orderId)
   }
@@ -553,6 +638,7 @@ export function submitReview(
     tags?: string[]
     content?: string
     imageIds?: string[]
+    scenicId?: string | null
   },
 ):
   | { ok: true; reviewId: string; orderId: string; rewardIssued: boolean; rewardCoupons: Coupon[] }
@@ -568,12 +654,14 @@ export function submitReview(
   }
 
   const snapshot = getMutableSnapshot(personaId)
+  const scenicId = body.scenicId ?? null
   const now = Date.now()
   const ninetyDays = 90 * 24 * 60 * 60 * 1000
+  const scopedOrders = filterByBusinessScenicId(snapshot.orders, scenicId)
 
   let orderId = body.orderId?.trim()
   if (orderId) {
-    const order = snapshot.orders.find((item) => item.orderId === orderId)
+    const order = scopedOrders.find((item) => item.orderId === orderId)
     if (!order || order.status !== 'completed' || (order.reviewStatus ?? 'none') !== 'none') {
       return { ok: false, message: '该订单不可评价' }
     }
@@ -582,7 +670,7 @@ export function submitReview(
       return { ok: false, message: '该订单已超过评价期限' }
     }
   } else {
-    const candidates = snapshot.orders
+    const candidates = scopedOrders
       .filter((order) => {
         if (order.status !== 'completed' || (order.reviewStatus ?? 'none') !== 'none') return false
         const completed = order.completedAt ? new Date(order.completedAt).getTime() : 0
@@ -618,14 +706,18 @@ export function submitReview(
   }
 }
 
-export function listCheckinSpots(personaId: PersonaId): CheckinSpotsResult {
+export function listCheckinSpots(
+  personaId: PersonaId,
+  scenicId?: string | null,
+): CheckinSpotsResult {
   const snapshot = getSnapshot(personaId)
   const today = formatTodayDate()
-  const records = checkinRecordsByPersona[personaId] ?? []
+  const records = getMockRuntime().checkinRecordsByPersona[personaId] ?? []
   const checkedToday = new Set(
     records.filter((item) => item.date === today).map((item) => item.spotId),
   )
-  const spots: CheckinSpotView[] = (checkinSpots as CheckinSpot[]).map((spot) => ({
+  const scopedSpots = filterByBusinessScenicId(checkinSpots as CheckinSpot[], scenicId)
+  const spots: CheckinSpotView[] = scopedSpots.map((spot) => ({
     ...spot,
     checkedInToday: checkedToday.has(spot.spotId),
   }))
@@ -633,28 +725,22 @@ export function listCheckinSpots(personaId: PersonaId): CheckinSpotsResult {
     inPark: snapshot.visitorState.inPark === true,
     currentLocation: snapshot.visitorState.currentLocation || '',
     spots,
-    checkedCountToday: checkedToday.size,
+    checkedCountToday: spots.filter((item) => item.checkedInToday).length,
   }
 }
 
-/** 可变虚拟排队订单（演示会话内） */
-const virtualQueueByPersona: Record<PersonaId, VirtualQueueOrder[]> = {
-  demo_new: JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[],
-  demo_mid: JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[],
-  demo_vip: JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[],
-}
-
-function cloneVirtualQueueSeed(): VirtualQueueOrder[] {
-  return JSON.parse(JSON.stringify(virtualQueueSeed)) as VirtualQueueOrder[]
-}
-
 export function getVirtualQueueOrders(personaId: PersonaId): VirtualQueueOrder[] {
-  return virtualQueueByPersona[personaId] ?? cloneVirtualQueueSeed()
+  return getMockRuntime().virtualQueueByPersona[personaId] ?? cloneVirtualQueueSeed()
 }
 
-export function getVirtualQueueCatalog(personaId: PersonaId): VirtualQueueCatalog {
+export function getVirtualQueueCatalog(
+  personaId: PersonaId,
+  scenicId?: string | null,
+): VirtualQueueCatalog {
   const snapshot = getMutableSnapshot(personaId)
-  const list = (activities as Activity[]).filter((item) => item.virtualQueue?.enabled)
+  const list = filterByBusinessScenicId(activities as Activity[], scenicId).filter(
+    (item) => item.virtualQueue?.enabled,
+  )
   return {
     inPark: snapshot.visitorState.inPark === true,
     activities: list,
@@ -665,6 +751,7 @@ export function takeVirtualQueue(
   personaId: PersonaId,
   activityId: string,
   mode: 'free' | 'paid',
+  scenicId?: string | null,
 ):
   | { ok: true; data: VirtualQueueTakeResult }
   | { ok: false; message: string } {
@@ -673,7 +760,9 @@ export function takeVirtualQueue(
     return { ok: false, message: '入园后才可使用虚拟排队' }
   }
 
-  const activity = (activities as Activity[]).find((item) => item.activityId === activityId)
+  const activity = filterByBusinessScenicId(activities as Activity[], scenicId).find(
+    (item) => item.activityId === activityId,
+  )
   if (!activity?.virtualQueue?.enabled) {
     return { ok: false, message: '该项目不支持虚拟排队' }
   }
@@ -686,8 +775,8 @@ export function takeVirtualQueue(
     return { ok: false, message: '该项目支持免费取号，无需支付' }
   }
 
-  const orders = virtualQueueByPersona[personaId] ?? cloneVirtualQueueSeed()
-  virtualQueueByPersona[personaId] = orders
+  const orders = getMockRuntime().virtualQueueByPersona[personaId] ?? cloneVirtualQueueSeed()
+  getMockRuntime().virtualQueueByPersona[personaId] = orders
 
   const existing = orders.find(
     (item) => item.activityId === activityId && item.status === 'waiting',
@@ -737,6 +826,7 @@ export function takeVirtualQueue(
 export function submitCheckin(
   personaId: PersonaId,
   spotId: string,
+  scenicId?: string | null,
 ):
   | { ok: true; data: CheckinSubmitResult }
   | { ok: false; message: string } {
@@ -745,7 +835,9 @@ export function submitCheckin(
     return { ok: false, message: '入园后才可打卡' }
   }
 
-  const spot = (checkinSpots as CheckinSpot[]).find((item) => item.spotId === spotId)
+  const spot = filterByBusinessScenicId(checkinSpots as CheckinSpot[], scenicId).find(
+    (item) => item.spotId === spotId,
+  )
   if (!spot) {
     return { ok: false, message: '打卡点不存在' }
   }
@@ -759,7 +851,7 @@ export function submitCheckin(
   }
 
   const today = formatTodayDate()
-  const records = checkinRecordsByPersona[personaId] ?? []
+  const records = getMockRuntime().checkinRecordsByPersona[personaId] ?? []
   if (records.some((item) => item.spotId === spotId && item.date === today)) {
     return { ok: false, message: '该点位今日已打卡' }
   }
@@ -767,7 +859,7 @@ export function submitCheckin(
   const checkedAt = new Date().toISOString()
   const checkinId = `ck_${Date.now()}`
   records.push({ spotId, date: today, checkinId, checkedAt })
-  checkinRecordsByPersona[personaId] = records
+  getMockRuntime().checkinRecordsByPersona[personaId] = records
 
   const rewardPoints = Math.max(0, spot.rewardPoints || 0)
   snapshot.visitorState.points += rewardPoints
@@ -826,6 +918,7 @@ export type DemoOpsAction =
   | 'ensure_today_paid_order'
   | 'ensure_today_completed_order'
   | 'reset_invoice_status'
+  | 'reset_quiz_progress'
 
 export type DemoOpsResult = {
   ok: true
@@ -835,9 +928,10 @@ export type DemoOpsResult = {
   order?: Order
   removedCouponCount?: number
   resetInvoiceCount?: number
+  resetQuizCount?: number
 }
 
-/** 清空当前账号新人券（可再领）；同时刷新注册时间为昨天，避免领取窗口已过仍不可见入口 */
+/** 清空当前账号全部景区的新人券（可再领）；同时刷新注册时间为昨天，避免领取窗口已过仍不可见入口 */
 export function clearNewGuestCoupon(personaId: PersonaId): DemoOpsResult {
   const snapshot = getMutableSnapshot(personaId)
   const before = snapshot.visitorState.coupons.length
@@ -857,8 +951,8 @@ export function clearNewGuestCoupon(personaId: PersonaId): DemoOpsResult {
     removedCouponCount,
     message:
       removedCouponCount > 0
-        ? `已清空 ${removedCouponCount} 张新人券，可再次领取`
-        : '当前账号无新人券（已确保领取窗口有效）',
+        ? `已清空本账号全部景区共 ${removedCouponCount} 张新人券，可再次领取（请重新打开聊天页）`
+        : '当前账号无新人券（已确保领取窗口有效，请重新打开聊天页）',
   }
 }
 
@@ -875,10 +969,14 @@ function upsertDemoOrder(personaId: PersonaId, order: Order): Order {
 }
 
 /** upsert 当日待出行订单（paid + visitDate=今天） */
-export function ensureTodayPaidOrder(personaId: PersonaId): DemoOpsResult {
+export function ensureTodayPaidOrder(
+  personaId: PersonaId,
+  scenicId?: string | null,
+): DemoOpsResult {
   const today = todayIsoDate()
+  const resolvedScenicId = resolveBusinessScenicId(scenicId)
   const order: Order = {
-    orderId: DEMO_TODAY_PAID_ORDER_ID,
+    orderId: `${DEMO_TODAY_PAID_ORDER_ID}__${resolvedScenicId}`,
     ticketType: 'family_bundle',
     ticketName: '家庭套票（2大1小）· 演示待出行',
     quantity: { adult: 2, child: 1 },
@@ -888,6 +986,7 @@ export function ensureTodayPaidOrder(personaId: PersonaId): DemoOpsResult {
     visitDate: today,
     invoiceStatus: 'none',
     createdAt: new Date().toISOString(),
+    scenicId: resolvedScenicId,
   }
   const saved = upsertDemoOrder(personaId, order)
   return {
@@ -895,16 +994,20 @@ export function ensureTodayPaidOrder(personaId: PersonaId): DemoOpsResult {
     action: 'ensure_today_paid_order',
     personaId,
     order: saved,
-    message: `已设置当日待出行订单（${today}）`,
+    message: `已设置当日待出行订单（${today} / ${resolvedScenicId}）`,
   }
 }
 
 /** upsert 当日已核销订单（completed + visitDate=今天） */
-export function ensureTodayCompletedOrder(personaId: PersonaId): DemoOpsResult {
+export function ensureTodayCompletedOrder(
+  personaId: PersonaId,
+  scenicId?: string | null,
+): DemoOpsResult {
   const today = todayIsoDate()
   const now = new Date().toISOString()
+  const resolvedScenicId = resolveBusinessScenicId(scenicId)
   const order: Order = {
-    orderId: DEMO_TODAY_COMPLETED_ORDER_ID,
+    orderId: `${DEMO_TODAY_COMPLETED_ORDER_ID}__${resolvedScenicId}`,
     ticketType: 'family_bundle',
     ticketName: '家庭套票（2大1小）· 演示已核销',
     quantity: { adult: 2, child: 1 },
@@ -916,6 +1019,7 @@ export function ensureTodayCompletedOrder(personaId: PersonaId): DemoOpsResult {
     invoiceStatus: 'none',
     reviewStatus: 'none',
     createdAt: now,
+    scenicId: resolvedScenicId,
   }
   const saved = upsertDemoOrder(personaId, order)
   return {
@@ -923,11 +1027,11 @@ export function ensureTodayCompletedOrder(personaId: PersonaId): DemoOpsResult {
     action: 'ensure_today_completed_order',
     personaId,
     order: saved,
-    message: `已设置当日已核销订单（${today}）`,
+    message: `已设置当日已核销订单（${today} / ${resolvedScenicId}）`,
   }
 }
 
-/** 当前账号全部订单发票状态重置为未开票 */
+/** 当前账号全部订单发票状态重置为未开票（不按景区过滤） */
 export function resetInvoiceStatus(personaId: PersonaId): DemoOpsResult {
   const snapshot = getMutableSnapshot(personaId)
   let resetInvoiceCount = 0
@@ -944,21 +1048,51 @@ export function resetInvoiceStatus(personaId: PersonaId): DemoOpsResult {
     resetInvoiceCount,
     message:
       resetInvoiceCount > 0
-        ? `已将 ${resetInvoiceCount} 笔订单重置为未开票`
-        : '当前订单均为未开票，无需重置',
+        ? `已将本账号全部景区共 ${resetInvoiceCount} 笔订单重置为未开票（请重新打开聊天页）`
+        : '当前账号订单均为未开票，无需重置',
   }
 }
 
-export function runDemoOps(personaId: PersonaId, action: DemoOpsAction): DemoOpsResult {
+/** 清空当前账号全部答题成功记录（可再次出现答题邀请） */
+export function resetQuizProgress(personaId: PersonaId): DemoOpsResult {
+  const snapshot = getMutableSnapshot(personaId)
+  const resetQuizCount = snapshot.visitorState.completedQuizIds?.length ?? 0
+  snapshot.visitorState.completedQuizIds = []
+
+  const runtime = getMockRuntime()
+  const prefix = `${personaId}:`
+  for (const key of [...runtime.quizSessions.keys()]) {
+    if (key.startsWith(prefix)) runtime.quizSessions.delete(key)
+  }
+
+  return {
+    ok: true,
+    action: 'reset_quiz_progress',
+    personaId,
+    resetQuizCount,
+    message:
+      resetQuizCount > 0
+        ? `已清空本账号 ${resetQuizCount} 套答题成功记录，可再次演示答题邀请（请重新打开聊天页）`
+        : '当前账号无已完成答题记录，已清除进行中的答题会话（请重新打开聊天页）',
+  }
+}
+
+export function runDemoOps(
+  personaId: PersonaId,
+  action: DemoOpsAction,
+  scenicId?: string | null,
+): DemoOpsResult {
   switch (action) {
     case 'clear_new_guest_coupon':
       return clearNewGuestCoupon(personaId)
     case 'ensure_today_paid_order':
-      return ensureTodayPaidOrder(personaId)
+      return ensureTodayPaidOrder(personaId, scenicId)
     case 'ensure_today_completed_order':
-      return ensureTodayCompletedOrder(personaId)
+      return ensureTodayCompletedOrder(personaId, scenicId)
     case 'reset_invoice_status':
       return resetInvoiceStatus(personaId)
+    case 'reset_quiz_progress':
+      return resetQuizProgress(personaId)
     default: {
       const _exhaustive: never = action
       throw new Error(`未知演示操作: ${_exhaustive}`)
@@ -968,17 +1102,172 @@ export function runDemoOps(personaId: PersonaId, action: DemoOpsAction): DemoOps
 
 /** 演示版：将全部 persona 业务快照恢复为 JSON 初始态 */
 export function resetAllDemoSnapshots(): void {
+  const runtime = getMockRuntime()
   const personas: PersonaId[] = ['demo_new', 'demo_mid', 'demo_vip']
   for (const personaId of personas) {
-    snapshots[personaId] = cloneSnapshot(baselineByPersona[personaId])
-    checkinRecordsByPersona[personaId] = []
-    virtualQueueByPersona[personaId] = cloneVirtualQueueSeed()
+    runtime.snapshots[personaId] = cloneSnapshot(baselineByPersona[personaId])
+    runtime.checkinRecordsByPersona[personaId] = []
+    runtime.virtualQueueByPersona[personaId] = cloneVirtualQueueSeed()
   }
-  refreshDemoNewRegistrationDate(snapshots.demo_new)
-  orderDrafts.clear()
-  for (const key of Object.keys(plateOverrides) as PersonaId[]) {
-    delete plateOverrides[key]
+  refreshDemoNewRegistrationDate(runtime.snapshots.demo_new)
+  runtime.orderDrafts.clear()
+  runtime.quizSessions.clear()
+  for (const key of Object.keys(runtime.plateOverrides) as PersonaId[]) {
+    delete runtime.plateOverrides[key]
   }
 }
 
-export { snapshots, personaLabels, ticketProducts }
+function quizSessionKey(personaId: PersonaId, quizId: string): string {
+  return `${personaId}:${quizId}`
+}
+
+export function listQuizSets(): QuizSet[] {
+  return cloneSnapshot(quizSets as QuizSet[])
+}
+
+export function getQuizSet(quizId: string): QuizSet | null {
+  const found = (quizSets as QuizSet[]).find((item) => item.quizId === quizId)
+  return found ? cloneSnapshot(found) : null
+}
+
+export function listScenicStars(scenicId?: string | null): ScenicStar[] {
+  const list = scenicStars as ScenicStar[]
+  if (!scenicId) return cloneSnapshot(list)
+  return cloneSnapshot(list.filter((item) => item.scenicId === scenicId))
+}
+
+export function findScenicStarByMessage(
+  message: string,
+  scenicId?: string | null,
+): ScenicStar | null {
+  const text = message.trim()
+  if (!text) return null
+  const list = listScenicStars(scenicId)
+  for (const star of list) {
+    const keys = [star.species, star.name, ...(star.aliases ?? [])]
+    if (keys.some((key) => key && text.includes(key))) return star
+  }
+  return null
+}
+
+export function isQuizCompleted(personaId: PersonaId, quizId: string): boolean {
+  const ids = getMutableSnapshot(personaId).visitorState.completedQuizIds ?? []
+  return ids.includes(quizId)
+}
+
+export function buildQuizInvite(
+  personaId: PersonaId,
+  quizId: string,
+): { quizId: string; hint: string; buttonLabel: string } | undefined {
+  if (!getQuizSet(quizId) || isQuizCompleted(personaId, quizId)) return undefined
+  return {
+    quizId,
+    hint: '想跟我做个答题游戏么？全部答对可领消费券和积分～',
+    buttonLabel: '开始答题',
+  }
+}
+
+export function startQuiz(
+  personaId: PersonaId,
+  quizId: string,
+):
+  | {
+      ok: true
+      quiz: QuizSet
+      questionIndex: number
+      alreadyCompleted?: boolean
+    }
+  | { ok: false; message: string; alreadyCompleted?: boolean } {
+  const quiz = getQuizSet(quizId)
+  if (!quiz) return { ok: false, message: '题集不存在' }
+  if (isQuizCompleted(personaId, quizId)) {
+    return { ok: false, message: '您已完成本套答题并领取过奖励', alreadyCompleted: true }
+  }
+  const runtime = getMockRuntime()
+  runtime.quizSessions.set(quizSessionKey(personaId, quizId), 0)
+  return { ok: true, quiz, questionIndex: 0 }
+}
+
+export function submitQuizAnswer(
+  personaId: PersonaId,
+  quizId: string,
+  questionIndex: number,
+  optionKey: string,
+): QuizAnswerResult {
+  const quiz = getQuizSet(quizId)
+  if (!quiz) {
+    return { correct: false, finished: true, message: '题集不存在' }
+  }
+  if (isQuizCompleted(personaId, quizId)) {
+    return {
+      correct: false,
+      finished: true,
+      alreadyCompleted: true,
+      message: '您已完成本套答题，无需重复作答',
+    }
+  }
+
+  const runtime = getMockRuntime()
+  const key = quizSessionKey(personaId, quizId)
+  const expected = runtime.quizSessions.get(key)
+  if (expected == null) {
+    return { correct: false, finished: true, message: '请先点击「开始答题」' }
+  }
+  if (questionIndex !== expected) {
+    return { correct: false, finished: true, message: '请按顺序作答当前题目' }
+  }
+
+  const question = quiz.questions[questionIndex]
+  if (!question) {
+    return { correct: false, finished: true, message: '题目不存在' }
+  }
+
+  if (optionKey !== question.correctKey) {
+    runtime.quizSessions.delete(key)
+    return {
+      correct: false,
+      finished: true,
+      message: '答错了，本次挑战结束。下次查询相关项目或明星时仍可再试～',
+    }
+  }
+
+  const nextIndex = questionIndex + 1
+  if (nextIndex >= quiz.questions.length) {
+    runtime.quizSessions.delete(key)
+    const snapshot = getMutableSnapshot(personaId)
+    snapshot.visitorState.points += quiz.rewardPoints
+    snapshot.memberInfo.points = snapshot.visitorState.points
+    const completed = snapshot.visitorState.completedQuizIds ?? []
+    if (!completed.includes(quizId)) {
+      snapshot.visitorState.completedQuizIds = [...completed, quizId]
+    }
+    let coupon: Coupon | undefined
+    const issued = issueCoupon(personaId, quiz.rewardCouponProductId, 'purchase')
+    if (issued.ok) coupon = issued.coupon
+
+    return {
+      correct: true,
+      finished: true,
+      rewardPoints: quiz.rewardPoints,
+      pointsTotal: snapshot.visitorState.points,
+      coupon,
+      message: `全部答对！已获得 ${quiz.rewardPoints} 积分${coupon ? `和「${coupon.title}」` : ''}。`,
+    }
+  }
+
+  runtime.quizSessions.set(key, nextIndex)
+  const next = quiz.questions[nextIndex]
+  return {
+    correct: true,
+    finished: false,
+    nextQuestion: {
+      questionIndex: nextIndex,
+      questionId: next.questionId,
+      question: next.question,
+      options: next.options,
+    },
+    message: '回答正确，继续下一题！',
+  }
+}
+
+export { personaLabels, ticketProducts }

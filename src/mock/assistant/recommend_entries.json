@@ -5,7 +5,7 @@
     "icon": "shopping-cart-o",
     "target": "chat",
     "skillId": "ticket_purchase",
-    "promptHint": "我想买门票，两大一小有优惠吗",
+    "promptHint": "第一次购票，有推荐的门票和优惠吗？",
     "enabled": true,
     "rules": [
       {
@@ -14,7 +14,12 @@
         "value": "demo_new"
       }
     ],
-    "priority": 10
+    "priority": 10,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "traffic_guide",
@@ -34,7 +39,12 @@
         ]
       }
     ],
-    "priority": 10
+    "priority": 8,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "new_guest_coupon",
@@ -46,11 +56,16 @@
     "rules": [
       {
         "op": "eq",
-        "field": "personaId",
-        "value": "demo_new"
+        "field": "canClaimNewGuestCoupon",
+        "value": true
       }
     ],
-    "priority": 9
+    "priority": 9,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "parking_pay",
@@ -63,11 +78,16 @@
     "rules": [
       {
         "op": "eq",
-        "field": "personaId",
-        "value": "demo_vip"
+        "field": "inPark",
+        "value": true
       }
     ],
-    "priority": 9
+    "priority": 7,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "today_route",
@@ -77,11 +97,21 @@
     "skillId": "travel_guide",
     "promptHint": "我现在在园区内，请根据当前位置和排队情况推荐今日路线。",
     "enabled": true,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ],
     "rules": [
       {
         "op": "eq",
-        "field": "personaId",
-        "value": "demo_mid"
+        "field": "hasPendingVisitOrder",
+        "value": true
+      },
+      {
+        "op": "eq",
+        "field": "inPark",
+        "value": true
       }
     ],
     "priority": 9
@@ -97,11 +127,16 @@
     "rules": [
       {
         "op": "eq",
-        "field": "personaId",
-        "value": "demo_vip"
+        "field": "inPark",
+        "value": true
       }
     ],
-    "priority": 9
+    "priority": 8,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "batch_invoice",
@@ -114,12 +149,17 @@
     "rules": [
       {
         "op": "eq",
-        "field": "personaId",
-        "value": "demo_vip"
+        "field": "hasInvoiceableOrders",
+        "value": true
       }
     ],
-    "priority": 8,
-    "targetPath": "/invoice/batch"
+    "priority": 5,
+    "targetPath": "/invoice/batch",
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "travel_strategy",
@@ -127,7 +167,7 @@
     "icon": "notes-o",
     "target": "chat",
     "skillId": "travel_guide",
-    "promptHint": "请推荐适合今天的游玩项目和路线，不需要交通和入园信息",
+    "promptHint": "请推荐适合游玩的项目和路线",
     "enabled": true,
     "rules": [
       {
@@ -136,7 +176,12 @@
         "value": "demo_mid"
       }
     ],
-    "priority": 7
+    "priority": 6,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "review_service",
@@ -149,11 +194,16 @@
     "rules": [
       {
         "op": "eq",
-        "field": "personaId",
-        "value": "demo_vip"
+        "field": "hasReviewableOrders",
+        "value": true
       }
     ],
-    "priority": 7
+    "priority": 6,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "view_orders",
@@ -164,12 +214,21 @@
     "enabled": true,
     "rules": [
       {
-        "op": "eq",
+        "op": "in",
         "field": "personaId",
-        "value": "demo_new"
+        "values": [
+          "demo_new",
+          "demo_mid",
+          "demo_vip"
+        ]
       }
     ],
-    "priority": 6
+    "priority": 2,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   },
   {
     "entryId": "member_coupon",
@@ -181,14 +240,16 @@
     "enabled": true,
     "rules": [
       {
-        "op": "in",
+        "op": "eq",
         "field": "personaId",
-        "values": [
-          "demo_vip",
-          "demo_mid"
-        ]
+        "value": "demo_mid"
       }
     ],
-    "priority": 6
+    "priority": 7,
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
   }
 ]

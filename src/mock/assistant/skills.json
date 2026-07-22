@@ -6,7 +6,7 @@
     "enabled": true,
     "triggerKeywords": ["买票", "购票", "买门票", "两大一小", "年卡", "套票", "家庭票", "首次购票", "购票指引"],
     "tools": ["getProductCatalog", "getCoupons", "issueCoupon", "createOrderDraft", "getMemberInfo"],
-    "promptAddon": "你是购票专家。多轮引导：先问人数（含老人/小孩）→ 再问出行日期 → 无可用新客券时可发购票10元券 → 按人数推荐唯一票产品（2大0小=成人票×张数，2大1小=家庭套票）→ 用户在推荐卡上点击「确认并生成订单」后生成订单草稿。下单页再选手实名出行人。",
+    "promptAddon": "你是购票专家。多轮引导：先问人数（含老人/小孩）→ 再问出行日期 → 仅当已获得出行人数或游玩日期（任一即可）且无可用新客券时，可发购票10元券；仅询问买票、尚未提供人数/日期时不要发券 → 按人数推荐唯一票产品（2大0小=成人票×张数，2大1小=家庭套票）→ 用户在推荐卡上点击「确认并生成订单」后生成订单草稿。下单页再选手实名出行人。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "nod", "onFail": "shake" }
   },
   {
@@ -30,6 +30,9 @@
       "出行攻略",
       "近期出游",
       "按订单做攻略",
+      "有什么好玩",
+      "项目推荐",
+      "推荐项目",
       "交通",
       "攻略",
       "路线",
@@ -38,7 +41,7 @@
       "出游计划"
     ],
     "tools": ["generateTravelGuide", "getContentBlocks", "getScenicActivities", "getOrders"],
-    "promptAddon": "你是游玩攻略助手。用户单独问交通（怎么去/交通指南/停车）时调用 getContentBlocks(type=traffic)；单独问入园准备（入园须知/入园提醒/要带什么）时调用 getContentBlocks(type=entry_notice)；用户已在景区内询问今日路线、先玩哪里时调用 generateTravelGuide(scope=in_park)；用户问游玩攻略、规划路线、玩什么时调用 generateTravelGuide(scope=recommend)，不含交通与入园；用户明确要求按订单/出行计划做完整攻略时调用 generateTravelGuide(scope=full)。结合 getOrders 了解待出行订单。",
+    "promptAddon": "你是游玩攻略助手。用户单独问交通（怎么去/交通指南/停车）时调用 getContentBlocks(type=traffic)；单独问入园准备（入园须知/入园提醒/要带什么）时调用 getContentBlocks(type=entry_notice)；用户已在景区内询问今日路线、先玩哪里时调用 generateTravelGuide(scope=in_park)；用户问游玩攻略、规划路线、玩什么、有什么好玩的项目时调用 generateTravelGuide(scope=recommend)，不含交通与入园、不展示园内排队；用户明确要求按订单/出行计划做完整攻略时调用 generateTravelGuide(scope=full)。结合 getOrders 了解待出行订单。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "point", "onFail": "shake" }
   },
   {
@@ -149,5 +152,26 @@
     "tools": ["getScenicActivities"],
     "promptAddon": "用户要打卡、签到时，引导至 /checkin；需在园（inPark）才可打卡；不要编造点位。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "point" }
+  },
+  {
+    "skillId": "member_offer",
+    "name": "会员权益选品",
+    "description": "按会员等级、折扣、可用券与用户标签推荐门票组合",
+    "enabled": true,
+    "triggerKeywords": [
+      "会员专属推荐",
+      "会员专属套餐",
+      "会员套餐",
+      "适合我的套餐",
+      "按会员等级",
+      "会员怎么买最划算",
+      "黄金会员推荐",
+      "专属门票推荐",
+      "会员权益推荐",
+      "推荐适合我的门票组合"
+    ],
+    "tools": ["getMemberInfo", "getProductCatalog", "getCoupons"],
+    "promptAddon": "用户要按会员等级/标签做门票组合推荐时：结合 getMemberInfo、getUserTags、getProductCatalog、getCoupons，给出等级折扣+可用券+标签匹配票品；不要代替购票槽位追问，也不要代替纯查券。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "point", "onFail": "shake" }
   }
 ]

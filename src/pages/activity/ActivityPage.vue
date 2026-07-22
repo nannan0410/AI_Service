@@ -46,8 +46,15 @@ function activityLabel(act: Activity) {
 </script>
 
 <template>
-  <div class="page">
-    <van-nav-bar title="园区项目" left-arrow fixed placeholder @click-left="$router.back()" />
+  <div class="page activity-page">
+    <van-nav-bar
+      title="园区项目"
+      left-arrow
+      fixed
+      placeholder
+      class="activity-page__nav"
+      @click-left="$router.back()"
+    />
     <van-tabs v-model:active="activeCategory" @change="onCategoryChange">
       <van-tab
         v-for="opt in categoryOptions"
@@ -74,13 +81,25 @@ function activityLabel(act: Activity) {
 </template>
 
 <style scoped>
-.page {
+.activity-page {
+  width: 100%;
+  max-width: 430px;
   min-height: 100vh;
+  margin: 0;
   background: #f7f8fa;
 }
+
+.activity-page__nav:deep(.van-nav-bar) {
+  width: 100%;
+  max-width: 430px;
+  left: 0;
+  right: auto;
+}
+
 .list {
   margin-top: 12px;
 }
+
 .tag {
   margin-left: 4px;
 }

@@ -15,6 +15,20 @@
       "group": "user"
     },
     {
+      "fieldId": "scenicId",
+      "label": "当前服务景区",
+      "valueType": "enum",
+      "source": "computed",
+      "computeHint": "conversation.scenicId / X-Scenic-Id",
+      "enumOptions": [
+        { "value": "scenic_hlg", "label": "上海奇趣乐园" },
+        { "value": "scenic_hy", "label": "上海海洋公园" },
+        { "value": "scenic_sz_eco", "label": "深圳绿野公园" }
+      ],
+      "ruleEligible": true,
+      "group": "visit"
+    },
+    {
       "fieldId": "memberLevel",
       "label": "会员等级",
       "valueType": "string",
@@ -55,11 +69,20 @@
       "group": "order"
     },
     {
+      "fieldId": "hasVisitToday",
+      "label": "今日有待出行订单",
+      "valueType": "boolean",
+      "source": "computed",
+      "computeHint": "orders: paid/pending 且 visitDate = 今天",
+      "ruleEligible": true,
+      "group": "order"
+    },
+    {
       "fieldId": "hasInvoiceableOrders",
       "label": "有可开票订单",
       "valueType": "boolean",
       "source": "computed",
-      "computeHint": "completed + invoiceStatus=none + 30天内",
+      "computeHint": "completed + invoiceStatus=none + 90天内",
       "ruleEligible": true,
       "group": "order"
     },

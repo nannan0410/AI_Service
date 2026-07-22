@@ -67,6 +67,10 @@ export interface RecommendEntryConfig {
   priority: number
   /** 默认 true */
   enabled?: boolean
+  /** 仅该景区展示；与 scenicIds 二选一或同时用（需都满足） */
+  scenicId?: string
+  /** 适用景区列表；缺省时运行时仍视为全景区，后台编辑/默认 JSON 应显式列出 */
+  scenicIds?: string[]
   rules: RuleExpression[]
 }
 
@@ -75,6 +79,7 @@ export interface WelcomeQuestionConfig {
   id: string
   icon: string
   text: string
+  /** 点击开聊时的提示词；target=page/h5 时可作兜底文案 */
   prompt: string
   badgeColor?: string
   /** 游游推荐卡片副标题 */
@@ -82,6 +87,22 @@ export interface WelcomeQuestionConfig {
   /** 默认 true */
   enabled?: boolean
   priority?: number
+  scenicId?: string
+  /** 适用景区列表；缺省时运行时仍视为全景区，后台编辑/默认 JSON 应显式列出 */
+  scenicIds?: string[]
+  /**
+   * 强制置顶：命中后插到游游推荐第一位（同列表多条置顶时取 priority 最高的一条）
+   */
+  pinTop?: boolean
+  /**
+   * 点击行为；缺省 chat（兼容旧配置）
+   * - chat：发起对话（用 prompt）
+   * - page：跳转小程序/H5 内页
+   * - h5：外链或 H5 路径
+   */
+  target?: RecommendEntryTarget
+  /** page / h5 / mini_program 跳转路径或 URL */
+  targetPath?: string
   /** 触发规则（与 RecommendEntry.rules 相同） */
   rules: RuleExpression[]
 }
@@ -89,6 +110,9 @@ export interface WelcomeQuestionConfig {
 /** 按 persona 的欢迎页模板文案（游游推荐已独立为 welcomeQuestions） */
 export interface WelcomeTemplateConfig {
   personaId: PersonaId
+  /** 仅该景区；缺省表示全景区通用（可用 {{scenicName}}） */
+  scenicId?: string
+  scenicIds?: string[]
   title: string
   subtitle: string
   body: string

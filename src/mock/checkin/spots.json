@@ -5,21 +5,24 @@
     "activityId": "act_002",
     "location": "极限区",
     "rewardPoints": 20,
-    "rewardCouponProductId": "cp_prod_checkin"
+    "rewardCouponProductId": "cp_prod_checkin",
+    "scenicId": "scenic_hlg"
   },
   {
     "spotId": "spot_drift",
     "name": "亲子漂流",
     "activityId": "act_001",
     "location": "漂流入口",
-    "rewardPoints": 15
+    "rewardPoints": 15,
+    "scenicId": "scenic_hlg"
   },
   {
     "spotId": "spot_lightshow",
     "name": "水上灯光秀",
     "activityId": "act_003",
     "location": "中心湖",
-    "rewardPoints": 15
+    "rewardPoints": 15,
+    "scenicId": "scenic_hlg"
   },
   {
     "spotId": "spot_pet",
@@ -27,6 +30,40 @@
     "activityId": "act_004",
     "location": "东区",
     "rewardPoints": 10,
-    "rewardCouponProductId": "cp_prod_checkin"
+    "rewardCouponProductId": "cp_prod_checkin",
+    "scenicId": "scenic_hlg"
+  },
+  {
+    "spotId": "spot_hy_dolphin",
+    "name": "海豚表演",
+    "activityId": "act_hy_001",
+    "location": "海洋剧场",
+    "rewardPoints": 20,
+    "scenicId": "scenic_hy"
+  },
+  {
+    "spotId": "spot_hy_tunnel",
+    "name": "海底隧道",
+    "activityId": "act_hy_002",
+    "location": "探索馆",
+    "rewardPoints": 15,
+    "rewardCouponProductId": "cp_prod_hy_dining",
+    "scenicId": "scenic_hy"
+  },
+  {
+    "spotId": "spot_sz_wt_coaster",
+    "name": "海湾过山车",
+    "activityId": "act_sz_wt_001",
+    "location": "冒险区",
+    "rewardPoints": 20,
+    "scenicId": "scenic_sz_eco"
+  },
+  {
+    "spotId": "spot_sz_eco_bird",
+    "name": "湿地观鸟",
+    "activityId": "act_sz_eco_001",
+    "location": "生态湿地",
+    "rewardPoints": 15,
+    "scenicId": "scenic_sz_eco"
   }
 ]

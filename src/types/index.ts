@@ -1,5 +1,38 @@
 export type PersonaId = 'demo_new' | 'demo_mid' | 'demo_vip'
 
+/** 可服务城市（多景区模式：先选城市再选景区） */
+export interface CityProfile {
+  cityId: string
+  name: string
+  /** 用于 Mock / 真机定位默认城市 */
+  lat?: number
+  lng?: number
+  enabled?: boolean
+}
+
+/** 可服务景区（多景区模式） */
+export interface ScenicProfile {
+  scenicId: string
+  /** 所属城市 */
+  cityId: string
+  name: string
+  coverUrl: string
+  description?: string
+  openTime?: string
+  address?: string
+  enabled: boolean
+}
+
+/** AI 助手会话：绑定 scenicId，切换景区须新建 */
+export interface Conversation {
+  conversationId: string
+  scenicId: string
+  memberId: string
+  personaId?: PersonaId
+  createdAt: string
+  updatedAt: string
+}
+
 export type SalesChannel = 'self' | 'ota' | 'ta'
 
 export type OrderSource = 'self' | 'ota' | 'ta'
@@ -34,6 +67,8 @@ export type MessageType =
   | 'page_guide'
   | 'review'
   | 'guide'
+  | 'star_intro'
+  | 'quiz'
   | 'system'
 
 export type AssistantMotionId =
@@ -89,6 +124,8 @@ export interface Coupon {
   /** 快票/兑换券关联项目 */
   redeemActivityId?: string
   redeemActivityName?: string
+  /** 所属景区；缺省表示集团通用券 */
+  scenicId?: string
 }
 
 export interface Order {
@@ -105,6 +142,8 @@ export interface Order {
   reviewStatus?: ReviewStatus
   visitors?: CommonVisitor[]
   createdAt: string
+  /** 门票所属景区（查单仅返回当前景区） */
+  scenicId?: string
 }
 
 export interface ReviewSubmitPayload {
@@ -134,6 +173,8 @@ export interface VisitorState {
   coupons: Coupon[]
   commonVisitors: CommonVisitor[]
   preferences: VisitorPreferences
+  /** 已全部答对并领奖的题集 id */
+  completedQuizIds?: string[]
 }
 
 export interface MemberInfo {
@@ -154,6 +195,8 @@ export interface CheckinSpot {
   location: string
   rewardPoints: number
   rewardCouponProductId?: string
+  /** 所属景区；缺省视为默认景区 */
+  scenicId?: string
 }
 
 export interface CheckinSpotView extends CheckinSpot {
@@ -220,6 +263,10 @@ export interface Activity {
   /** 热门项目（前期攻略中提示提早前往、预留排队时间） */
   isHot?: boolean
   virtualQueue?: ActivityVirtualQueue
+  /** 绑定答题套题（演示） */
+  quizId?: string
+  /** 所属景区；缺省按默认景区处理 */
+  scenicId?: string
 }
 
 export interface VirtualQueueOrder {
@@ -316,6 +363,8 @@ export interface OrderDraft {
   visitors: CommonVisitor[]
   status: 'draft'
   createdAt: string
+  /** 下单景区（提交后写入 Order.scenicId） */
+  scenicId?: string
 }
 
 export interface CouponCardPayload {
@@ -372,6 +421,87 @@ export interface SceneRecommendPayload {
   hasRemainingSlots?: boolean
   coupon?: CouponCardPayload
   activities: ActivityCardPayload[]
+  /** 附属答题邀请（与业务卡同气泡） */
+  quizInvite?: QuizInvitePayload
+}
+
+/** 答题邀请（挂在演出/明星结果上） */
+export interface QuizInvitePayload {
+  quizId: string
+  hint: string
+  buttonLabel: string
+}
+
+export interface ScenicStar {
+  starId: string
+  name: string
+  species: string
+  aliases?: string[]
+  location: string
+  scenicId: string
+  quizId: string
+  intro: string
+}
+
+export interface StarIntroPayload {
+  starId: string
+  name: string
+  species: string
+  location: string
+  intro: string
+  quizInvite?: QuizInvitePayload
+}
+
+export interface QuizOption {
+  key: string
+  text: string
+}
+
+export interface QuizQuestion {
+  questionId: string
+  question: string
+  options: QuizOption[]
+  correctKey: string
+}
+
+export interface QuizSet {
+  quizId: string
+  title: string
+  scenicId: string
+  linkedActivityId?: string
+  linkedStarId?: string
+  questions: QuizQuestion[]
+  rewardPoints: number
+  rewardCouponProductId: string
+}
+
+/** 对话内答题卡（单题） */
+export interface QuizCardPayload {
+  quizId: string
+  title: string
+  questionIndex: number
+  totalQuestions: number
+  questionId: string
+  question: string
+  options: QuizOption[]
+  status: 'active' | 'wrong' | 'finished'
+  selectedKey?: string
+}
+
+export interface QuizAnswerResult {
+  correct: boolean
+  finished: boolean
+  alreadyCompleted?: boolean
+  rewardPoints?: number
+  pointsTotal?: number
+  coupon?: Coupon
+  nextQuestion?: {
+    questionIndex: number
+    questionId: string
+    question: string
+    options: QuizOption[]
+  }
+  message: string
 }
 
 /** 虚拟排队目录（含在园状态） */
@@ -565,6 +695,8 @@ export interface ContentBlock {
   title: string
   body: string
   media?: string[]
+  /** 所属景区；缺省按默认景区处理 */
+  scenicId?: string
 }
 
 export interface TicketProduct {
@@ -579,6 +711,8 @@ export interface TicketProduct {
   tags?: string[]
   /** 购票卡片右上角推荐标签；留空则不展示 */
   recommendLabel?: string
+  /** 所属景区；缺省按默认景区处理 */
+  scenicId?: string
 }
 
 export interface AssistantSkillConfig {

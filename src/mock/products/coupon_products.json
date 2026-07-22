@@ -3,19 +3,25 @@
     "productId": "cp_prod_new",
     "name": "新客专享 20 元券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 20,
     "condition": "满 200 可用",
     "couponType": "cash",
-    "tags": ["新客"],
+    "tags": [
+      "新客"
+    ],
     "claimWindowDays": 30
   },
   {
     "productId": "cp_prod_parking",
     "name": "停车 5 元券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 5,
     "couponType": "parking",
@@ -25,100 +31,183 @@
     "productId": "cp_prod_purchase",
     "name": "购票10元券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 10,
     "condition": "满 200 可用",
     "couponType": "cash",
-    "tags": ["老用户优先", "购票营销"]
+    "tags": [
+      "老用户优先",
+      "购票营销"
+    ]
   },
   {
     "productId": "cp_prod_manual",
     "name": "购票优享 5 元券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 5,
     "condition": "购票列表下单可用",
     "couponType": "cash",
-    "tags": ["无法闭环兜底", "手动购票"]
+    "tags": [
+      "无法闭环兜底",
+      "手动购票"
+    ]
   },
   {
     "productId": "cp_prod_vip",
     "name": "黄金会员 50 元券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 50,
     "condition": "会员专享",
     "couponType": "cash",
-    "tags": ["高价值"]
+    "tags": [
+      "高价值",
+      "会员"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "cp_prod_dining_guide",
     "name": "美食券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 15,
     "condition": "满 69 可用",
     "couponType": "dining",
-    "tags": ["餐饮", "攻略推荐"]
+    "tags": [
+      "餐饮",
+      "攻略推荐"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "cp_prod_retail_guide",
     "name": "商品券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 30,
     "condition": "满 128 可用",
     "couponType": "retail",
-    "tags": ["零售", "攻略推荐"]
+    "tags": [
+      "零售",
+      "攻略推荐"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "cp_prod_express_act002",
     "name": "快票兑换券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 1,
     "condition": "兑换项目「极限过山车」一次",
     "couponType": "express",
-    "tags": ["游乐", "攻略推荐"],
-    "redeemActivityId": "act_002"
+    "tags": [
+      "游乐",
+      "攻略推荐"
+    ],
+    "redeemActivityId": "act_002",
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "cp_prod_review_dining",
     "name": "点评专享餐饮8折券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 0,
     "condition": "指定餐厅 8 折",
     "couponType": "dining",
-    "tags": ["点评奖励"]
+    "tags": [
+      "点评奖励"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "cp_prod_review_parking",
     "name": "点评当日停车券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 15,
     "condition": "当日离场可用",
     "couponType": "parking",
-    "tags": ["点评奖励"]
+    "tags": [
+      "点评奖励"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "cp_prod_checkin",
     "name": "打卡小礼券",
     "type": "coupon_product",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "value": 5,
     "condition": "餐饮满 39 可用",
     "couponType": "dining",
-    "tags": ["打卡奖励"]
+    "tags": [
+      "打卡奖励"
+    ],
+    "scenicId": "scenic_hlg"
+  },
+  {
+    "productId": "cp_prod_hy_dining",
+    "name": "上海海洋公园餐厅 20 元券",
+    "type": "coupon_product",
+    "channels": [
+      "self"
+    ],
+    "status": "on",
+    "value": 20,
+    "condition": "满 88 可用",
+    "couponType": "dining",
+    "tags": [
+      "餐饮",
+      "上海海洋公园"
+    ],
+    "scenicId": "scenic_hy"
+  },
+  {
+    "productId": "cp_prod_hy_quiz",
+    "name": "海洋答题奖励券",
+    "type": "coupon_product",
+    "channels": [
+      "self"
+    ],
+    "status": "on",
+    "value": 15,
+    "condition": "园内餐饮满 59 可用",
+    "couponType": "dining",
+    "tags": [
+      "答题奖励",
+      "上海海洋公园"
+    ],
+    "scenicId": "scenic_hy"
   }
 ]

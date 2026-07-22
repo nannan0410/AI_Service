@@ -1,5 +1,6 @@
 import activities from '@/mock/activities.json'
 import type { Activity } from '@/types'
+import { matchActivityByName } from '@/utils/activityNameMatch'
 
 /** 支持虚拟排队的项目（按名称长度降序，便于点名匹配） */
 export function listVirtualQueueActivities(): Activity[] {
@@ -45,14 +46,22 @@ export function isFreeQueueRecommendIntent(message: string): boolean {
   )
 }
 
-/** 消息中点名的虚拟排队项目 */
-export function matchVirtualQueueActivityByName(message: string): Activity | null {
-  const text = message.trim()
-  if (!text) return null
-  for (const activity of listVirtualQueueActivities()) {
-    if (text.includes(activity.name)) return activity
-  }
-  return null
+/**
+ * 消息中点名的虚拟排队项目（支持简称，如「过山车」→「极限过山车」）
+ * @param candidates 传入时优先在该列表匹配（如当前景区 API 结果）
+ * @param scenicId 未传 candidates 时按景区过滤静态列表
+ */
+export function matchVirtualQueueActivityByName(
+  message: string,
+  options?: {
+    candidates?: Activity[]
+    scenicId?: string | null
+  },
+): Activity | null {
+  const pool =
+    options?.candidates?.filter((item) => item.virtualQueue?.enabled) ??
+    listVirtualQueueActivities()
+  return matchActivityByName(message, pool, options?.scenicId)
 }
 
 /** 是否走虚拟排队推荐 Workflow */

@@ -10,4 +10,12 @@ export const STORAGE_SUFFIX = {
   VISITOR: 'visitor_state',
   ORDERS: 'orders',
   RECEIPTS: 'receipt_records',
+  LAST_SCENIC_ID: 'last_scenic_id',
+  LAST_CITY_ID: 'last_city_id',
+  CONVERSATION: 'conversation',
 } as const
+
+/** 按景区分桶的聊天记录 suffix */
+export function chatStorageSuffix(scenicId: string): string {
+  return `${STORAGE_SUFFIX.CHAT}_${scenicId}`
+}

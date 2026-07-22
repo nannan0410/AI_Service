@@ -69,8 +69,12 @@ const preferential = computed(() => preferentialAmount(props.payload));
 }
 
 .ticket-card__tag--reason {
+  flex-shrink: 1;
+  max-width: 100%;
   color: #ff7a45;
   background: #fff3e8;
+  white-space: pre-line;
+  line-height: 1.4;
 }
 
 .ticket-card__date {

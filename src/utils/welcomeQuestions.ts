@@ -6,13 +6,16 @@ import {
   type DemoRuleLiveOverrides,
 } from '@/utils/demoRuleContext'
 import { evaluateRules } from '@/utils/ruleEngine'
+import { matchesScenicScope } from '@/utils/scenicScope'
 import {
   buildWelcomeTemplateVars,
   replaceWelcomePlaceholders,
   type WelcomeTemplateVarContext,
 } from '@/utils/welcomeTemplateVars'
+import { MAX_WELCOME_RECOMMEND } from '@/utils/welcomeLayout'
 
-export const MAX_SUGGESTED_QUESTIONS = 6
+/** @deprecated 请使用 MAX_WELCOME_RECOMMEND；保持导出兼容 */
+export const MAX_SUGGESTED_QUESTIONS = MAX_WELCOME_RECOMMEND
 
 function cloneRules(rules: RuleExpression[] | undefined): RuleExpression[] {
   return (rules ?? []).map((rule) => {
@@ -34,6 +37,10 @@ export function cloneWelcomeQuestions(
 ): WelcomeQuestionConfig[] {
   return questions.map((question) => ({
     ...question,
+    scenicIds: question.scenicIds ? [...question.scenicIds] : undefined,
+    targetPath: question.targetPath,
+    pinTop: question.pinTop === true,
+    target: question.target,
     rules: cloneRules(question.rules),
     enabled: question.enabled !== false,
     priority: question.priority ?? 0,
@@ -45,6 +52,7 @@ export function cloneWelcomeTemplates(
 ): WelcomeTemplateConfig[] {
   return templates.map((template) => ({
     ...template,
+    scenicIds: template.scenicIds ? [...template.scenicIds] : undefined,
     highlights: [...(template.highlights ?? [])],
     suggestedQuestions: [],
   }))
@@ -91,6 +99,24 @@ function replacePlaceholders(
   return replaceWelcomePlaceholders(text, vars)
 }
 
+/**
+ * 置顶项强制第一：命中列表中 pinTop 取 priority 最高一条置顶，其余按 priority 降序
+ */
+export function sortWelcomeQuestionsWithPin(
+  questions: WelcomeQuestionConfig[],
+): WelcomeQuestionConfig[] {
+  const byPriority = (a: WelcomeQuestionConfig, b: WelcomeQuestionConfig) =>
+    (b.priority ?? 0) - (a.priority ?? 0)
+
+  const pinned = questions.filter((item) => item.pinTop === true).sort(byPriority)
+  const top = pinned[0]
+  if (!top) {
+    return [...questions].sort(byPriority)
+  }
+  const rest = questions.filter((item) => item.id !== top.id).sort(byPriority)
+  return [top, ...rest]
+}
+
 /** 按规则过滤游游推荐（与快捷服务同一套 evaluateRules） */
 export function resolveSuggestedQuestions(
   questions: WelcomeQuestionConfig[],
@@ -107,14 +133,16 @@ export function resolveSuggestedQuestions(
     registeredAt: couponCtx.registeredAt,
     orders: welcomeCtx?.orders,
     nickname: welcomeCtx?.nickname,
+    scenicId: welcomeCtx?.scenicId ?? null,
   }
   const ctx = buildDemoRuleContext(personaId, live)
   const matched = questions
     .filter((question) => question.enabled !== false)
+    .filter((question) => matchesScenicScope(question, ctx.scenicId))
     .filter((question) => evaluateRules(question.rules ?? [], ctx))
-    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
 
-  const filtered = filterNewGuestClaimWelcomeItems(matched, couponCtx).slice(
+  const sorted = sortWelcomeQuestionsWithPin(matched)
+  const filtered = filterNewGuestClaimWelcomeItems(sorted, couponCtx).slice(
     0,
     MAX_SUGGESTED_QUESTIONS,
   )
@@ -129,12 +157,15 @@ export function resolveSuggestedQuestions(
 export function previewWelcomeQuestions(
   questions: WelcomeQuestionConfig[],
   personaId: PersonaId,
+  live?: DemoRuleLiveOverrides,
 ): { matched: WelcomeQuestionConfig[]; unmatched: WelcomeQuestionConfig[] } {
-  const ctx = buildDemoRuleContext(personaId)
-  const enabled = questions.filter((question) => question.enabled !== false)
-  const matched = enabled
-    .filter((question) => evaluateRules(question.rules ?? [], ctx))
-    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+  const ctx = buildDemoRuleContext(personaId, live)
+  const enabled = questions
+    .filter((question) => question.enabled !== false)
+    .filter((question) => matchesScenicScope(question, ctx.scenicId))
+  const matched = sortWelcomeQuestionsWithPin(
+    enabled.filter((question) => evaluateRules(question.rules ?? [], ctx)),
+  )
   const matchedIds = new Set(matched.map((item) => item.id))
   const unmatched = enabled.filter((item) => !matchedIds.has(item.id))
   return { matched, unmatched }

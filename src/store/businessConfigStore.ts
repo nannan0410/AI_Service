@@ -18,6 +18,7 @@ import {
   setAdminBusinessOverride,
 } from '@/utils/adminBusinessConfig'
 import { resolveActiveRecommendEntries } from '@/utils/recommendEntries'
+import { matchesScenicScope } from '@/utils/scenicScope'
 import { normalizeSkillsTriggerKeywords } from '@/utils/skillKeywordValidation'
 import type { AdminBusinessPatch } from '@/types/businessConfig'
 import defaultSkills from '@/mock/assistant/skills.json'
@@ -40,6 +41,10 @@ import {
   getDemoSnapshotOrders,
   type WelcomeTemplateVarContext,
 } from '@/utils/welcomeTemplateVars'
+
+function cloneJsonDefault<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
 
 export const useBusinessConfigStore = defineStore('businessConfig', () => {
   const baseSkills = ref<AssistantSkillConfig[]>([])
@@ -108,15 +113,20 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     if (!force && baseSkills.value.length) {
       return syncSkills()
     }
+    if (force) {
+      // 强制恢复：直接用客户端打包的 JSON，避免 mock 进程缓存旧 import
+      baseSkills.value = cloneJsonDefault(defaultSkills) as AssistantSkillConfig[]
+      return syncSkills()
+    }
     try {
       const { data: res } = await fetchAssistantSkills()
       if (res.code === 200 && Array.isArray(res.data)) {
         baseSkills.value = res.data
       } else {
-        baseSkills.value = defaultSkills as AssistantSkillConfig[]
+        baseSkills.value = cloneJsonDefault(defaultSkills) as AssistantSkillConfig[]
       }
     } catch {
-      baseSkills.value = defaultSkills as AssistantSkillConfig[]
+      baseSkills.value = cloneJsonDefault(defaultSkills) as AssistantSkillConfig[]
     }
     return syncSkills()
   }
@@ -125,15 +135,25 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     if (!force && baseRecommendEntries.value.length) {
       return syncRecommendEntries()
     }
+    if (force) {
+      baseRecommendEntries.value = cloneJsonDefault(
+        defaultRecommendEntries,
+      ) as RecommendEntryConfig[]
+      return syncRecommendEntries()
+    }
     try {
       const { data: res } = await fetchRecommendEntriesConfig()
       if (res.code === 200 && Array.isArray(res.data)) {
         baseRecommendEntries.value = res.data as RecommendEntryConfig[]
       } else {
-        baseRecommendEntries.value = defaultRecommendEntries as RecommendEntryConfig[]
+        baseRecommendEntries.value = cloneJsonDefault(
+          defaultRecommendEntries,
+        ) as RecommendEntryConfig[]
       }
     } catch {
-      baseRecommendEntries.value = defaultRecommendEntries as RecommendEntryConfig[]
+      baseRecommendEntries.value = cloneJsonDefault(
+        defaultRecommendEntries,
+      ) as RecommendEntryConfig[]
     }
     return syncRecommendEntries()
   }
@@ -142,15 +162,25 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     if (!force && baseWelcomeTemplates.value.length) {
       return syncWelcomeTemplates()
     }
+    if (force) {
+      baseWelcomeTemplates.value = cloneJsonDefault(
+        defaultWelcomeTemplates,
+      ) as WelcomeTemplateConfig[]
+      return syncWelcomeTemplates()
+    }
     try {
       const { data: res } = await fetchWelcomeTemplatesConfig()
       if (res.code === 200 && Array.isArray(res.data)) {
         baseWelcomeTemplates.value = res.data as WelcomeTemplateConfig[]
       } else {
-        baseWelcomeTemplates.value = defaultWelcomeTemplates as WelcomeTemplateConfig[]
+        baseWelcomeTemplates.value = cloneJsonDefault(
+          defaultWelcomeTemplates,
+        ) as WelcomeTemplateConfig[]
       }
     } catch {
-      baseWelcomeTemplates.value = defaultWelcomeTemplates as WelcomeTemplateConfig[]
+      baseWelcomeTemplates.value = cloneJsonDefault(
+        defaultWelcomeTemplates,
+      ) as WelcomeTemplateConfig[]
     }
     return syncWelcomeTemplates()
   }
@@ -159,15 +189,25 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     if (!force && baseWelcomeQuestions.value.length) {
       return syncWelcomeQuestions()
     }
+    if (force) {
+      baseWelcomeQuestions.value = cloneJsonDefault(
+        defaultWelcomeQuestions,
+      ) as WelcomeQuestionConfig[]
+      return syncWelcomeQuestions()
+    }
     try {
       const { data: res } = await fetchWelcomeQuestionsConfig()
       if (res.code === 200 && Array.isArray(res.data)) {
         baseWelcomeQuestions.value = res.data as WelcomeQuestionConfig[]
       } else {
-        baseWelcomeQuestions.value = defaultWelcomeQuestions as WelcomeQuestionConfig[]
+        baseWelcomeQuestions.value = cloneJsonDefault(
+          defaultWelcomeQuestions,
+        ) as WelcomeQuestionConfig[]
       }
     } catch {
-      baseWelcomeQuestions.value = defaultWelcomeQuestions as WelcomeQuestionConfig[]
+      baseWelcomeQuestions.value = cloneJsonDefault(
+        defaultWelcomeQuestions,
+      ) as WelcomeQuestionConfig[]
     }
     return syncWelcomeQuestions()
   }
@@ -201,15 +241,38 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
       nickname?: string
       memberLevel?: string
       inPark?: boolean
+      scenicId?: string | null
     },
   ): RecommendEntry[] {
     const merged = syncRecommendEntries()
     return resolveActiveRecommendEntries(merged, personaId, live)
   }
 
-  function getWelcomeTemplate(personaId: PersonaId): WelcomeTemplateConfig | undefined {
+  function pickWelcomeTemplate(
+    templates: WelcomeTemplateConfig[],
+    personaId: PersonaId,
+    scenicId?: string | null,
+  ): WelcomeTemplateConfig | undefined {
+    const forPersona = templates.filter((item) => item.personaId === personaId)
+    const scoped = forPersona.filter((item) => matchesScenicScope(item, scenicId))
+    if (!scoped.length) return undefined
+    if (scenicId) {
+      const exact = scoped.find(
+        (item) =>
+          item.scenicId === scenicId || item.scenicIds?.includes(scenicId),
+      )
+      if (exact) return exact
+    }
+    const generic = scoped.find((item) => !item.scenicId && !item.scenicIds?.length)
+    return generic ?? scoped[0]
+  }
+
+  function getWelcomeTemplate(
+    personaId: PersonaId,
+    scenicId?: string | null,
+  ): WelcomeTemplateConfig | undefined {
     const merged = syncWelcomeTemplates()
-    return merged.find((template) => template.personaId === personaId)
+    return pickWelcomeTemplate(merged, personaId, scenicId)
   }
 
   function getResolvedWelcomeTemplate(
@@ -217,8 +280,12 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
     ctx: WelcomeTemplateVarContext,
   ): WelcomeTemplateConfig | undefined {
     const merged = syncWelcomeTemplates()
-    const template = merged.find((item) => item.personaId === personaId)
-    const base = baseWelcomeTemplates.value.find((item) => item.personaId === personaId)
+    const template = pickWelcomeTemplate(merged, personaId, ctx.scenicId)
+    const base = pickWelcomeTemplate(
+      baseWelcomeTemplates.value,
+      personaId,
+      ctx.scenicId,
+    )
     if (!template) return undefined
     const source = coalesceDynamicWelcomeTemplate(base, template)
     const orders =
@@ -244,6 +311,8 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
       nickname: welcomeCtx?.nickname,
       orders,
       ref: welcomeCtx?.ref,
+      scenicId: welcomeCtx?.scenicId,
+      scenicName: welcomeCtx?.scenicName,
     }
     return resolveSuggestedQuestions(questions, personaId, couponCtx, resolvedCtx)
   }
@@ -275,6 +344,17 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
 
   function clearAdminPatch() {
     setAdminBusinessOverride(null)
+    // 同步用仓库 JSON 覆盖内存基线，避免「清了 LocalStorage 仍显示旧 override 合并前的缓存」
+    baseSkills.value = cloneJsonDefault(defaultSkills) as AssistantSkillConfig[]
+    baseRecommendEntries.value = cloneJsonDefault(
+      defaultRecommendEntries,
+    ) as RecommendEntryConfig[]
+    baseWelcomeTemplates.value = cloneJsonDefault(
+      defaultWelcomeTemplates,
+    ) as WelcomeTemplateConfig[]
+    baseWelcomeQuestions.value = cloneJsonDefault(
+      defaultWelcomeQuestions,
+    ) as WelcomeQuestionConfig[]
     syncSkills()
     syncRecommendEntries()
     syncWelcomeTemplates()

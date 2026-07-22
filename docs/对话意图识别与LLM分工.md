@@ -1,7 +1,7 @@
 # 对话意图识别与 LLM 分工
 
 > **文档用途**：梳理演示版聊天中「哪些场景用 LLM、哪些用代码/后端规则」，并说明购票流程为何不走 LLM。  
-> **更新日期**：2026-07-21  
+> **更新日期**：2026-07-22  
 > **相关代码**：`ChatPage.vue` → `onSend`；`src/ai/workflow/*`；`src/ai/llm.ts`；`src/ai/skills/router.ts`
 
 **相关文档：**
@@ -21,11 +21,11 @@
     │
     ├─ skillStore.resolveSkill(text)     // skills.json triggerKeywords（关键词，非 LLM）
     │
-    ├─① Workflow 层（代码正则，最高优先级）
-    │     isNewGuestCouponClaimIntent      → runNewGuestCouponWorkflow
-    │     ticket_purchase + 购票正则 / 已有会话 → runTicketPurchaseWorkflow
-    │     travel_guide + 攻略正则           → runTravelGuideWorkflow
-    │     order_query + 订单正则            → runOrderQueryWorkflow
+    ├─① Workflow 层（代码正则，最高优先级；ChatPage 执行顺序摘要）
+    │     新客领券 / 停车 / 虚拟排队 / 明星介绍 / 演出场次
+    │     游玩攻略（travel_guide）
+    │     购票会话 / 会员权益选品（member_offer，优先于泛查券）
+    │     主动营销（餐饮零售） / 发票 / 打卡 / 点评 / 订单…
     │
     ├─② 未命中 Workflow → sendChatMessage
     │     → LLM + Tool Calling（有 API Key）
@@ -34,7 +34,8 @@
     └─③ formatters → 业务卡片 / 文本回复
 ```
 
-**优先级**：Workflow 正则 > Skill 关键词 > LLM / 离线兜底。
+**优先级**：Workflow 正则 > Skill 关键词 > LLM / 离线兜底。  
+**分流要点**：命中 `shouldRunShowScheduleWorkflow` 时**不**走 `travel_guide`；`member_offer` 优先于 `proactive_marketing` 泛查券。
 
 **说明**：UI 上的「理解用户意图」步骤（`aiExecutionStore`）是展示用；命中 Workflow 时会立刻 `markIntentDone()`，**并不调用 LLM 做意图分类**。
 
@@ -51,6 +52,7 @@
 | **购票·确认** | 推荐卡按钮点击 | `ChatPage.onTicketConfirm` | ❌ | **保持规则**（不用打字「确认」） |
 | **购票·选品/算价** | 规则引擎 | `recommend.ts`、`couponDiscount.ts` | ❌ | **保持规则**；不宜交给 LLM |
 | **购票·营销券** | 规则 | `purchaseMarketing.ts` | ❌ | **保持规则** |
+| **会员权益选品** | Skill + 选品正则 | `memberOffer.ts` + `memberOfferRecommend.ts` | ❌ | **保持规则**；等级折扣+券+标签 |
 | **游玩攻略** | Skill + 攻略正则 + **LLM 子意图** | `travelGuideIntent.ts` + `nlu/classifyTravelGuideIntent.ts` | ⚡ 混合 | 已实现 P0-3 |
 | **订单查询** | Skill + 订单正则 | `orderQuery.ts` | ❌ | **可保持规则** |
 | **发票服务** | Skill + 发票正则 | `invoiceService.ts` | ❌ | **保持规则**；引导假页 |
@@ -85,7 +87,7 @@
 | 入口条件 | `purchaseStore.session !== null`（且未被其它明确意图打断）**或**（Skill=`ticket_purchase` **且** `isTicketPurchaseIntent`） |
 | 入口正则 | `shouldRunTicketWorkflow`：买票、两大一小、首次购票、买/购/订+门票等；**不含**裸门票 FAQ；**不含**人数/日期启发式冷启动 |
 | 会话内 | `parsePartyFromMessage`、`parseVisitDateFromMessage`；确认靠推荐卡按钮 |
-| 会话打断 | `shouldInterruptPurchaseSession`：明确攻略 / 营销 / 停车 / 订单 / 演出 / 发票 / 点评 / 领券 |
+| 会话打断 | `shouldInterruptPurchaseSession`：明确攻略 / 营销 / **会员选品** / 停车 / 订单 / 演出 / 发票 / 点评 / 领券 |
 | 状态机 | `ask_party` → `ask_date` → `recommend` → `confirm` |
 | 文件 | `src/ai/workflow/ticketPurchase.ts`、`src/store/purchaseStore.ts` |
 
@@ -95,10 +97,11 @@
 
 | 项 | 说明 |
 |----|------|
-| 入口 | Skill=`travel_guide` + `shouldRunTravelGuideWorkflow` |
+| 入口 | Skill=`travel_guide` + `shouldRunTravelGuideWorkflow`；**若已命中演出场次则跳过** |
 | 子意图（正则） | `isTrafficGuideIntent` / `isEntryNoticeIntent` / `isInParkRouteIntent` / `isFullTravelGuideIntent` |
 | 子意图（P0-3） | 泛化说法（如「出行指南」）→ `resolveTravelGuideIntentRoute` → LLM 细分（含 `in_park`） |
-| **园内路线** | demo_vip「为您推荐 → 今日推荐路线」或「猜你想问 → 排队少的项目」；识别在园游客后仅返回 **日程建议 + 推荐项目**，不含交通/入园 |
+| **完整攻略** | 游游推荐「出行前要准备什么？」→ `scope=full` 单卡（交通+入园+热门） |
+| **园内路线** | 「今日推荐路线」（在园+待出行）等；仅返回 **日程建议 + 推荐项目**，不含交通/入园 |
 | 过程面板 | 走 LLM 时显示「识别攻略类型」 |
 | 文件 | `src/utils/travelGuideIntent.ts`、`src/ai/nlu/resolveTravelGuideIntent.ts`、`src/ai/workflow/travelGuide.ts` |
 
@@ -126,8 +129,8 @@
 | 条件 | **仅在园**（`visitorState.inPark`）；非在园提示入园后可用 |
 | 免费包 | 「虚拟排队」「排队少的项目」等 → 2 免费项目，每卡「立即取号排队」→ `/queue/take` |
 | 付费单 | 「快速排队」等 → 极限过山车 +「¥10元快速排队」→ `/queue/pay` |
-| 点名 | 消息含支持虚拟排队的项目名 → 单卡 + 对应 CTA |
-| 实现 | `queueRecommendIntent.ts` + `queueRecommend.ts`；`scene_recommend(scene=queue)` |
+| 点名 | 消息含支持虚拟排队的项目名（含**简称模糊匹配**，如「过山车」→「极限过山车」）→ 单卡 + 对应 CTA；优先于演出/攻略 |
+| 实现 | `queueRecommendIntent.ts`、`activityNameMatch.ts`、`queueRecommend.ts`；`scene_recommend(scene=queue)` |
 
 ### 3.7 停车缴费
 
@@ -141,9 +144,33 @@
 
 | 项 | 说明 |
 |----|------|
-| 入口 | Skill=`scenic_recommend` + `shouldRunShowScheduleWorkflow` |
-| 行为 | `getScenicActivities` → **单条** `scene_recommend`；`dayKind`：today / tomorrow / day_after / general（「演出推荐」等） |
+| 入口 | Skill=`scenic_recommend` + `shouldRunShowScheduleWorkflow`；**优先于** `travel_guide` |
+| 行为 | `getScenicActivities` → **单条** `scene_recommend`；`dayKind`：today / tomorrow / day_after / general（「演出推荐」「有哪些演出项目」等） |
 | 文件 | `src/utils/showScheduleIntent.ts`、`src/utils/showSchedule.ts`、`src/ai/workflow/showSchedule.ts` |
+
+### 3.9 主动营销（餐饮 / 零售）
+
+| 项 | 说明 |
+|----|------|
+| 入口 | 餐饮/美食、伴手礼等正则 → `runProactiveMarketingWorkflow` |
+| 推券 | **仅在园**发场景券；非在园只推荐店铺/项目，不发券 |
+| 文件 | `src/ai/workflow/proactiveMarketing.ts` |
+
+### 3.10 会员权益选品
+
+| 项 | 说明 |
+|----|------|
+| 入口 | Skill=`member_offer` + `shouldRunMemberOfferWorkflow`；**优先于**泛查券营销 |
+| 行为 | 会员等级折扣 + 可用券 + 标签匹配票品 → Coupon + Ticket 卡；默认可确认下单 |
+| 文件 | `memberOfferIntent.ts`、`memberOfferRecommend.ts`、`memberOffer.ts` |
+
+### 3.11 答题互动（挂靠）
+
+| 项 | 说明 |
+|----|------|
+| 入口 | **无**「我想答题」；明星「企鹅/白鲸」→ `star_intro`；演出含海豚表演 → 场次卡 CTA |
+| 行为 | 同条消息邀请；QuizCard 点选；错停；全对券+积分；完成后隐藏 CTA |
+| 文件 | `starIntent.ts`、`starIntro.ts`、`quizInvite.ts`、`QuizCard.vue` |
 
 ---
 
@@ -161,11 +188,16 @@
 | `invoice_service` | 发票、开票、报销、开发票、批量开票 | `skills.json` |
 | `parking_pay` | 停车缴费、交停车费、车牌… | `skills.json` |
 | `scenic_recommend` | 今日演出、演出推荐、灯光秀、花车… | `skills.json` |
+| `member_offer` | 会员专属推荐、适合我的套餐、按会员等级… | `skills.json` |
+| `proactive_marketing` | 有什么券、美食、伴手礼… | `skills.json` |
+| `queue_recommend` | 虚拟排队、快速排队、排队少的项目… | `skills.json` |
+| `review_service` | 点评、评价、我要点评… | `skills.json` |
+| `checkin_service` | 打卡、签到、园区打卡… | `skills.json` |
 
 作用：为 **LLM 路径** 注入 `promptAddon` 与 Tool 白名单。Workflow 命中时，Skill 主要参与 **入口判断**，不参与槽位填充。
 
 未启用 Skill（`enabled: false`）：部分扩展场景 — 只能靠 LLM 通用模式或离线正则。  
-**已启用 Workflow**：购票、攻略、订单、**发票**、停车、**演出场次**、点评、主动营销、**虚拟排队**、打卡等见 `skills.json` + `src/ai/workflow/*`。
+**已启用 Workflow**：购票、攻略、订单、**发票**、停车、**演出场次**、**会员权益选品**、点评、主动营销、**虚拟排队**、打卡等见 `skills.json` + `src/ai/workflow/*`。
 
 ---
 
@@ -440,6 +472,7 @@ npx vite-node scripts/test-travel-guide-intent-route.mts
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-22 | 答题挂靠演出/明星；新增 `member_offer`；演出优先于攻略；点名项目简称模糊匹配；餐饮/零售非在园不推券 |
 | 2026-07-22 | 虚拟排队 `queue_recommend` Workflow；欢迎 Hero 当日天气本地 Mock |
 | 2026-07-21 | 服务点评「帮我写评价」：LLM / 离线模板草稿（非 Workflow；不自动提交） |
 | 2026-07-21 | 发票对话：X笔+立即开票→批量页；0笔固定文案；演出 `scene_recommend` / general；快捷开发票走 chat |

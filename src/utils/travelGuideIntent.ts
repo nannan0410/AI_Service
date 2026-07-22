@@ -1,5 +1,6 @@
 import { isParkingLocationIntent, isParkingPayIntent } from '@/utils/parkingPayIntent'
 import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
+import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
 
 /** 完整出行攻略（交通 + 入园 + 推荐项目）— 需明确出行/订单语境 */
 export function isFullTravelGuideIntent(message: string): boolean {
@@ -11,7 +12,10 @@ export function isFullTravelGuideIntent(message: string): boolean {
       message,
     ) ||
     /最近.{0,12}待出行.{0,16}攻略/.test(message) ||
-    /当天游玩.{0,6}攻略|轻松游玩攻略|新客攻略/.test(message) ||
+    /当天游玩.{0,6}攻略|轻松游玩攻略|新客攻略|完整出行攻略/.test(message) ||
+    /怎么去景区.{0,12}入园|入园准备与门票|交通.{0,6}入园.{0,6}(?:热门|游玩)/.test(
+      message,
+    ) ||
     /(?:做|整理|规划).{0,10}(?:出行|出游|当天).{0,6}攻略/.test(message)
   )
 }
@@ -77,19 +81,27 @@ export function isInParkRouteIntent(message: string): boolean {
 }
 
 /**
- * 游玩攻略 / 项目推荐 — 日程建议 + 推荐项目，不含交通与入园
+ * 游玩攻略 / 项目推荐 — 日程建议 + 推荐项目，不含交通与入园、不含园内排队
  */
 export function isRecommendTravelGuideIntent(message: string): boolean {
   if (isFullTravelGuideIntent(message)) return false
   if (isTrafficGuideIntent(message)) return false
   if (isEntryNoticeIntent(message)) return false
   if (isInParkRouteIntent(message)) return false
+  // 「演出项目推荐」等归 scenic_recommend，避免被「项目推荐」误抢
+  if (shouldRunShowScheduleWorkflow(message)) return false
 
   return (
-    /游玩攻略|景区攻略|玩什么|推荐项目|景点推荐|怎么玩|一天怎么玩|规划路线|游玩路线|帮我规划|热门线路/.test(
+    /游玩攻略|景区攻略|玩什么|推荐项目|项目推荐|景点推荐|怎么玩|一天怎么玩|规划路线|游玩路线|帮我规划|热门线路/.test(
       message,
     ) ||
-    /游玩项目|适合今天.*(?:游玩|路线)|推荐.*(?:游玩项目|路线)/.test(message) ||
+    /好玩(?:的)?项目|有什么好玩|推荐.{0,12}好玩|好玩.{0,12}推荐/.test(message) ||
+    /游玩项目|适合(?:今天)?游玩|适合游玩的?项目|推荐.*(?:游玩项目|路线|项目)/.test(
+      message,
+    ) ||
+    /必看场次|必看项目|游玩顺序|参观顺序|推荐今天|今天的必看|场次和游玩/.test(
+      message,
+    ) ||
     /(?:做|生成|整理).{0,10}游玩攻略/.test(message) ||
     /不需要交通|不含交通|不要交通|不需要入园/.test(message)
   )
@@ -115,13 +127,17 @@ export function resolveTravelGuideIntent(message: string): TravelGuideIntentKind
 export function shouldRunTravelGuideWorkflow(message: string): boolean {
   if (isParkingPayIntent(message)) return false
   if (shouldRunQueueRecommendWorkflow(message)) return false
+  // 演出/场次专项查询优先，避免「演出项目推荐」落入订单攻略
+  if (shouldRunShowScheduleWorkflow(message)) return false
   return (
     isFullTravelGuideIntent(message) ||
     isTrafficGuideIntent(message) ||
     isEntryNoticeIntent(message) ||
     isInParkRouteIntent(message) ||
     isRecommendTravelGuideIntent(message) ||
-    /交通|攻略|怎么去|路线|出行|出游|指南|入园/.test(message) ||
+    /交通|攻略|怎么去|路线|出行|出游|指南|入园|必看|场次|游玩顺序|参观顺序/.test(
+      message,
+    ) ||
     isParkingLocationIntent(message)
   )
 }
@@ -132,6 +148,7 @@ export function shouldRunTravelGuideWorkflow(message: string): boolean {
  */
 export function isTravelGuidePreferredOverTicket(message: string): boolean {
   if (shouldRunQueueRecommendWorkflow(message)) return false
+  if (shouldRunShowScheduleWorkflow(message)) return false
   return (
     isEntryNoticeIntent(message) ||
     isRecommendTravelGuideIntent(message) ||

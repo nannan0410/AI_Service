@@ -32,9 +32,9 @@ npm run dev
 
 | 账号 | 说明 |
 |------|------|
-| 新用户 | 无订单、无车牌；演示购票发券全流程 |
-| 中级会员 | 三笔待出行订单（6-30 / 7-30 / 8-18）；出行日当天欢迎页「今日出行」；快捷服务含停车缴费 |
-| 高级会员 | 含自营 + OTA/TA 订单；演示订单只读查询 |
+| 新用户 | 无订单、无车牌；演示购票发券全流程；游游推荐含「出行前要准备什么？」 |
+| 中级会员 | 有待出行订单；**不在园**见「帮我规划路线」，**在园**见「今日推荐路线」/停车/打卡；海洋公园有一笔可开票已完成单 |
+| 高级会员 | 含自营 + OTA/TA 订单；演示订单只读查询、开票、虚拟排队、打卡 |
 
 ### 常用入口
 
@@ -60,11 +60,11 @@ npm run dev
 ### AI 对话（`/chat`）
 
 - **Tool Calling**：`getOrders`、`getProductCatalog`、`generateTravelGuide` 等 10 个 Tool，步骤可在 `ToolProcessPanel` 查看
-- Skill 关键词路由 + 语义补全（`ticket_purchase` / `travel_guide` / `order_query`）
+- Skill 关键词路由 + 语义补全（含 `ticket_purchase` / `travel_guide` / `member_offer` / `order_query` 等）
 - NLU 增强说明见 [对话意图识别与LLM分工](./docs/对话意图识别与LLM分工.md)
 - 意图与 LLM 分工说明：[`docs/对话意图识别与LLM分工.md`](./docs/对话意图识别与LLM分工.md)
-- **业务卡片**：TicketCard、CouponCard、OrderCard、ContentCard、ActivityCard、GuideCard、VisitorPicker
-- **欢迎页**：Hero 介绍气泡含 **当日景区天气**（本地 Mock）；底部**快捷服务**（`recommend_entries`，最多 4）+ **游游推荐**（`welcome_questions` + rules，最多 6）；均来自 `businessConfigStore`（JSON + `/config/business` LocalStorage）
+- **业务卡片**：TicketCard、CouponCard、OrderCard、ContentCard、ActivityCard、GuideCard、VisitorPicker、QuizCard、StarIntroCard
+- **欢迎页**：Hero 介绍气泡含 **当日景区天气**（本地 Mock）；底部**快捷服务**（`recommend_entries`，最多 4）+ **游游推荐**（`welcome_questions` + rules，最多 8；含 VIP 奇趣乐园「会员专属怎么买最划算？」）；均来自 `businessConfigStore`（JSON + `/config/business` LocalStorage）
 
 ### 购票闭环（多轮对话）
 
@@ -94,19 +94,18 @@ npm run dev
 
 | # | 场景 | 账号 | 操作 |
 |---|------|------|------|
-| 1 | 新客多轮购票 | demo_new | 「首次购票指引」→ 2大1小 + 日期 → 确认 → `/order/submit` 选游客 → 支付 |
-| 2 | 老客 2 大 0 小 | demo_mid | 「买票」→ 2 大无小孩 + 下周末 → 成人票×2 + 购票10元券营销 |
-| 3 | 交通指南 | demo_mid | 「交通指南」（绑定最近未过期待出行订单） |
-| 4 | 游玩攻略 | demo_mid | 「游玩攻略」或快捷服务「游玩攻略」 |
-| 5 | 停车缴费 | demo_mid | 快捷服务「停车缴费」或「交停车费」→ 引导卡 → `/parking` |
-| 5b | 今日出行 | demo_mid | 2026-06-30 当天打开 /chat → 游游推荐副标题「今日出行」 |
-| 6 | OTA 订单只读 | demo_vip | 「查一下我的订单」 |
-| 7 | 批量开发票 | demo_vip | 快捷「开发票」→ 对话「立即开票」→ `/invoice/batch` 勾选提交 |
-| 7b | 对话开票 | demo_vip | 「开发票」→「您当前有X笔…」+「立即开票」；0 笔固定文案 |
-| 7c | 演出推荐 | 任意 | 「演出推荐」/「今天有演出吗」→ 单条 scene_recommend |
+| 1 | 新客多轮购票 | demo_new | 「第一次购票，有推荐的门票和优惠吗？」/「首次购票指引」→ 2大1小 + 日期 → 确认 → 下单支付 |
+| 2 | 出行前准备 | demo_new/mid | 「出行前要准备什么？」→ 单条 full GuideCard |
+| 3 | 路线互斥 | demo_mid | 不在园「帮我规划路线」；在园「今日推荐路线」/停车/打卡 |
+| 4 | 停车缴费 | demo_mid | 在园时快捷「停车缴费」或「交停车费」→ `/parking` |
+| 5 | OTA 订单只读 | demo_vip | 「查一下我的订单」 |
+| 6 | 批量开发票 | demo_vip / mid | 快捷「开发票」（需当前景区有可开票单）→「立即开票」→ `/invoice/batch` |
+| 7 | 演出推荐 | 任意 / mid | 「演出推荐」/「有哪些演出项目？」→ general；「今天有演出吗」→ today |
+| 7b | 点名项目 | 奇趣乐园 | 「过山车」→「极限过山车」虚拟排队，不进演出列表 |
+| 7c | 会员权益选品 | demo_vip @ 奇趣乐园 | 游游「会员专属怎么买最划算？」或「请按我的会员等级和优惠，推荐适合我的门票组合」→ 95 折+券+家庭套票/年卡 |
 | 8 | 虚拟排队 | demo_vip | 「虚拟排队」→ 免费取号；「快速排队」→ ¥10 支付取号 |
 | 9 | 园区打卡 | demo_vip | 「我要打卡」→ `/checkin` |
-| 10 | 欢迎天气 | 任意 | 打开 /chat 欢迎页 →「我是游游」上方天气 Mock |
+| 10 | 多景区 | 任意 | 上海两园 + **深圳仅绿野**可选；天气按园 Mock |
 
 ## 助手 UI 配置（简易后台）
 
@@ -120,7 +119,7 @@ npm run dev
 
 - **Hero 天气**：介绍气泡「我是游游」上方一行（`scenicWeather.ts` 本地 Mock，如「今天景区天气 26°C，多云，适合出游」）
 - **welcome_templates.json**：欢迎标题区 title / subtitle / body（按 persona）
-- **welcome_questions.json**：**游游推荐**卡片（规则过滤，最多 6 条）；可在 `/config/business` 覆盖
+- **welcome_questions.json**：**游游推荐**卡片（规则过滤，最多 8 条）；可在 `/config/business` 覆盖
 - **RecommendEntry API**：**快捷服务**规则入口（交通指南、开发票、园区打卡等，最多 4 个）
 
 ## 技术栈

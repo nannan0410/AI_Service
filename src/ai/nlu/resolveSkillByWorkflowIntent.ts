@@ -7,7 +7,9 @@ import { shouldRunCheckinWorkflow } from '@/utils/checkinIntent'
 import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
 import { shouldRunParkingPayWorkflow } from '@/utils/parkingPayIntent'
 import { shouldRunProactiveMarketingWorkflow } from '@/utils/proactiveMarketingIntent'
+import { shouldRunMemberOfferWorkflow } from '@/utils/memberOfferIntent'
 import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
+import { shouldRunStarIntroWorkflow } from '@/utils/starIntent'
 import {
   isTicketPurchaseIntent,
 } from '@/utils/ticketPurchaseIntent'
@@ -36,6 +38,10 @@ export function resolveSkillByWorkflowIntent(
   if (isTicketPurchaseIntent(message)) {
     return getSkillById(skills, 'ticket_purchase') ?? null
   }
+  // 会员权益选品优先于泛查券营销
+  if (shouldRunMemberOfferWorkflow(message)) {
+    return getSkillById(skills, 'member_offer') ?? null
+  }
   // 餐饮/零售/查券营销优先于宽泛攻略，避免美食询问落到 LLM 闲聊
   if (shouldRunProactiveMarketingWorkflow(message)) {
     return getSkillById(skills, 'proactive_marketing') ?? null
@@ -44,14 +50,19 @@ export function resolveSkillByWorkflowIntent(
   if (shouldRunQueueRecommendWorkflow(message)) {
     return getSkillById(skills, 'queue_recommend') ?? null
   }
+  // 动物明星介绍优先于演出场次
+  if (shouldRunStarIntroWorkflow(message)) {
+    return getSkillById(skills, 'scenic_recommend') ?? null
+  }
+  // 演出项目 / 场次查询优先于宽泛游玩攻略（避免「演出项目推荐」进订单攻略）
+  if (shouldRunShowScheduleWorkflow(message)) {
+    return getSkillById(skills, 'scenic_recommend') ?? null
+  }
   if (shouldRunTravelGuideWorkflow(message)) {
     return getSkillById(skills, 'travel_guide') ?? null
   }
   if (shouldRunOrderQueryWorkflow(message)) {
     return getSkillById(skills, 'order_query') ?? null
-  }
-  if (shouldRunShowScheduleWorkflow(message)) {
-    return getSkillById(skills, 'scenic_recommend') ?? null
   }
   if (shouldRunInvoiceWorkflow(message)) {
     return getSkillById(skills, 'invoice_service') ?? null
@@ -71,10 +82,12 @@ export function shouldSkipLlmSkillRouting(message: string): boolean {
   if (shouldRunParkingPayWorkflow(message)) return true
   if (isTravelGuidePreferredOverTicket(message)) return true
   if (isTicketPurchaseIntent(message)) return true
+  if (shouldRunMemberOfferWorkflow(message)) return true
   if (shouldRunProactiveMarketingWorkflow(message)) return true
+  if (shouldRunStarIntroWorkflow(message)) return true
+  if (shouldRunShowScheduleWorkflow(message)) return true
   if (shouldRunTravelGuideWorkflow(message)) return true
   if (shouldRunOrderQueryWorkflow(message)) return true
-  if (shouldRunShowScheduleWorkflow(message)) return true
   if (shouldRunInvoiceWorkflow(message)) return true
   if (shouldRunCheckinWorkflow(message)) return true
   if (shouldRunQueueRecommendWorkflow(message)) return true

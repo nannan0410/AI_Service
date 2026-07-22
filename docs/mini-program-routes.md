@@ -121,3 +121,12 @@ H5 演示版与微信小程序的路径对照，供产品化对接参考。
 **入口**：RecommendEntry `review_service`（规则 `hasReviewableOrders=true`，demo_vip）；对话「我要点评」→ `review_service` Workflow → 对话内 `ReviewCard`（主路径）；`/review` 为兜底假页（同样支持 AI 草稿）。
 
 **实现**：`src/utils/generateReviewDraft.ts`（输入：星级、标签、票种、景区名 + 关键词）。
+
+## AI 助手 / 多景区入口（P0）
+
+| H5 | 小程序（示例） | 说明 |
+|----|----------------|------|
+| `/chat?scenicId=scenic_hlg` | 景区小程序进客服 | **独立景区入口**：强制该景区，并写入上次记忆 |
+| `/chat` 或 `/chat?from=group` | 集团小程序 AI 入口 | **集团入口**：有 `lastScenicId` 则静默进入；否则弹窗必选 |
+
+演示城市：上海 / 深圳。**启用**景区：`scenic_hlg`（上海奇趣乐园）、`scenic_hy`（上海海洋公园）、`scenic_sz_eco`（深圳绿野公园）。`scenic_sz_wt`（深圳湾）保留数据但 `enabled:false`。详见 [`多景区模式-落地计划.md`](./多景区模式-落地计划.md)。

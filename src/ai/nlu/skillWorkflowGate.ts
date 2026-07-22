@@ -9,7 +9,9 @@ import { shouldRunInvoiceWorkflow } from '@/utils/invoiceIntent'
 import { shouldRunReviewWorkflow } from '@/utils/reviewIntent'
 import { shouldRunParkingPayWorkflow } from '@/utils/parkingPayIntent'
 import { shouldRunProactiveMarketingWorkflow } from '@/utils/proactiveMarketingIntent'
+import { shouldRunMemberOfferWorkflow } from '@/utils/memberOfferIntent'
 import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
+import { shouldRunStarIntroWorkflow } from '@/utils/starIntent'
 import { shouldRunCheckinWorkflow } from '@/utils/checkinIntent'
 import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
 import {
@@ -56,6 +58,9 @@ export function shouldRunTravelGuideWorkflowFromRoute(
   route: SkillRouteResult,
   message: string,
 ): boolean {
+  // 演出专项 / 明星介绍 不进攻略
+  if (shouldRunShowScheduleWorkflow(message)) return false
+  if (shouldRunStarIntroWorkflow(message)) return false
   // 门票 FAQ 等可能被关键词误标为购票，仍按攻略走
   if (isTravelGuidePreferredOverTicket(message)) return true
   if (route.skill?.skillId !== 'travel_guide') return false
@@ -82,8 +87,17 @@ export function shouldRunShowScheduleWorkflowFromRoute(
   route: SkillRouteResult,
   message: string,
 ): boolean {
+  if (shouldRunStarIntroWorkflow(message)) return false
   if (route.skill?.skillId !== 'scenic_recommend') return false
-  return shouldRunShowScheduleWorkflow(message) || isLlmWorkflowEntry(route, 'scenic_recommend')
+  // 须有演出类话术才进场次流，避免「过山车」等项目简称被 LLM 标成园区推荐后误进演出
+  return shouldRunShowScheduleWorkflow(message)
+}
+
+export function shouldRunStarIntroWorkflowFromRoute(
+  _route: SkillRouteResult,
+  message: string,
+): boolean {
+  return shouldRunStarIntroWorkflow(message)
 }
 
 export function shouldRunInvoiceWorkflowFromRoute(
@@ -125,11 +139,24 @@ export function shouldRunProactiveMarketingWorkflowFromRoute(
   route: SkillRouteResult,
   message: string,
 ): boolean {
+  if (shouldRunMemberOfferWorkflow(message)) return false
   if (route.skill?.skillId !== 'proactive_marketing') return false
   // 关键词已命中本 Skill 时直接进 Workflow，避免「优惠券」等短句意图正则漏匹配
   if (route.source === 'keyword') return true
   return (
     shouldRunProactiveMarketingWorkflow(message) ||
     isLlmWorkflowEntry(route, 'proactive_marketing')
+  )
+}
+
+export function shouldRunMemberOfferWorkflowFromRoute(
+  route: SkillRouteResult,
+  message: string,
+): boolean {
+  if (route.skill?.skillId !== 'member_offer') return false
+  if (route.source === 'keyword') return true
+  return (
+    shouldRunMemberOfferWorkflow(message) ||
+    isLlmWorkflowEntry(route, 'member_offer')
   )
 }

@@ -74,6 +74,34 @@ function buildQueueCard(
   }
 }
 
+function buildNamedActivityResult(
+  activity: Activity,
+  inPark: boolean,
+): LlmChatResult {
+  if (!inPark) {
+    return {
+      content: `已为您找到「${activity.name}」。入园后可使用虚拟排队取号。`,
+      skillId: 'queue_recommend',
+      toolCallsUsed: ['getScenicActivities'],
+      cards: [
+        {
+          type: 'activity',
+          role: 'assistant',
+          content: '',
+          payload: activityToCardPayload(activity, {
+            guideContext: 'pre_visit',
+          }),
+        },
+      ],
+    }
+  }
+  const isFree = activity.virtualQueue?.isFree
+  const content = isFree
+    ? `「${activity.name}」支持免费虚拟排队，可立即取号。`
+    : `「${activity.name}」支持付费快速排队（¥${activity.virtualQueue?.queuePrice ?? 10}）。`
+  return buildQueueCard(content, [activity])
+}
+
 export async function runQueueRecommendWorkflow(
   message: string,
   callbacks?: ToolExecutionCallbacks,
@@ -91,6 +119,26 @@ export async function runQueueRecommendWorkflow(
     }
 
     const { inPark, activities } = res.data
+    const namedInScenic = matchVirtualQueueActivityByName(message, {
+      candidates: activities,
+    })
+    const kind = namedInScenic
+      ? ('named' as const)
+      : resolveQueueRecommendKind(message)
+
+    if (kind === 'named') {
+      const activity = namedInScenic
+      if (!activity?.virtualQueue?.enabled) {
+        return {
+          content:
+            '当前景区未找到支持虚拟排队的对应项目，可说「虚拟排队」查看可取号推荐。',
+          skillId: 'queue_recommend',
+          toolCallsUsed: ['getScenicActivities'],
+        }
+      }
+      return buildNamedActivityResult(activity, inPark)
+    }
+
     if (!inPark) {
       return {
         content: '您当前不在园区内，入园后即可使用虚拟排队取号。',
@@ -100,26 +148,6 @@ export async function runQueueRecommendWorkflow(
     }
 
     const byId = new Map(activities.map((item) => [item.activityId, item]))
-    const kind = resolveQueueRecommendKind(message)
-
-    if (kind === 'named') {
-      const named = matchVirtualQueueActivityByName(message)
-      const activity = named
-        ? byId.get(named.activityId) ?? named
-        : null
-      if (!activity?.virtualQueue?.enabled) {
-        return {
-          content: '未找到支持虚拟排队的对应项目，可说「虚拟排队」查看免费取号推荐。',
-          skillId: 'queue_recommend',
-          toolCallsUsed: ['getScenicActivities'],
-        }
-      }
-      const isFree = activity.virtualQueue.isFree
-      const content = isFree
-        ? `「${activity.name}」支持免费虚拟排队，可立即取号。`
-        : `「${activity.name}」支持付费快速排队（¥${activity.virtualQueue.queuePrice ?? 10}）。`
-      return buildQueueCard(content, [activity])
-    }
 
     if (kind === 'paid_single') {
       const paid =

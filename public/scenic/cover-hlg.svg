@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180" fill="none">
+  <defs>
+    <linearGradient id="cover-hlg" x1="0" y1="0" x2="320" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34D399"/>
+      <stop offset="1" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="180" rx="16" fill="url(#cover-hlg)"/>
+  <circle cx="250" cy="40" r="28" fill="#ffffff" fill-opacity="0.35"/>
+  <path d="M24 130c28-34 56-34 84 0s56 34 84 0 56-34 84 0v50H24v-50z" fill="#ffffff" fill-opacity="0.28"/>
+  <text x="24" y="52" fill="#ffffff" font-size="20" font-family="system-ui,sans-serif" font-weight="700">奇趣乐园</text>
+</svg>

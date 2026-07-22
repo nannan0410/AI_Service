@@ -3,71 +3,186 @@
     "productId": "tkt_adult",
     "name": "成人票",
     "type": "ticket",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "price": 299,
     "ticketTypeId": "adult",
-    "tags": ["成人"]
+    "tags": [
+      "成人"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "tkt_child",
     "name": "儿童票（折扣票）",
     "type": "ticket",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "price": 129,
     "ticketTypeId": "child",
-    "tags": ["儿童", "亲子"]
+    "tags": [
+      "儿童",
+      "亲子"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "tkt_family",
     "name": "家庭套票（2大1小）",
     "type": "ticket",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "price": 669,
     "ticketTypeId": "family_bundle",
-    "composition": { "adult": 2, "child": 1 },
-    "tags": ["亲子", "套票"],
-    "recommendLabel": "家庭套票"
+    "composition": {
+      "adult": 2,
+      "child": 1
+    },
+    "tags": [
+      "亲子",
+      "套票",
+      "会员"
+    ],
+    "recommendLabel": "家庭套票",
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "tkt_annual",
     "name": "家庭年卡（2大1小）",
     "type": "ticket",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "price": 2999,
     "ticketTypeId": "family_annual",
-    "composition": { "adult": 2, "child": 1 },
-    "tags": ["亲子", "年卡"]
+    "composition": {
+      "adult": 2,
+      "child": 1
+    },
+    "tags": [
+      "亲子",
+      "年卡",
+      "会员"
+    ],
+    "recommendLabel": "会员年卡",
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "tkt_holiday",
     "name": "假日特惠票",
     "type": "ticket",
-    "channels": ["self"],
+    "channels": [
+      "self"
+    ],
     "status": "on",
     "price": 399,
     "ticketTypeId": "holiday_special",
-    "tags": ["假日"]
+    "tags": [
+      "假日"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "tkt_ota_001",
     "name": "OTA 渠道双人票",
     "type": "ticket",
-    "channels": ["ota"],
+    "channels": [
+      "ota"
+    ],
     "status": "on",
     "price": 558,
-    "tags": ["OTA"]
+    "tags": [
+      "OTA"
+    ],
+    "scenicId": "scenic_hlg"
   },
   {
     "productId": "tkt_ta_001",
     "name": "TA 旅行社团队票",
     "type": "ticket",
-    "channels": ["ta"],
+    "channels": [
+      "ta"
+    ],
     "status": "on",
     "price": 250,
-    "tags": ["TA", "团队"]
+    "tags": [
+      "TA",
+      "团队"
+    ],
+    "scenicId": "scenic_hlg"
+  },
+  {
+    "productId": "tkt_hy_adult",
+    "name": "上海海洋公园成人票",
+    "type": "ticket",
+    "channels": [
+      "self"
+    ],
+    "status": "on",
+    "price": 259,
+    "ticketTypeId": "adult",
+    "tags": [
+      "成人"
+    ],
+    "scenicId": "scenic_hy"
+  },
+  {
+    "productId": "tkt_hy_family",
+    "name": "上海海洋公园家庭套票（2大1小）",
+    "type": "ticket",
+    "channels": [
+      "self"
+    ],
+    "status": "on",
+    "price": 599,
+    "ticketTypeId": "family_bundle",
+    "composition": {
+      "adult": 2,
+      "child": 1
+    },
+    "tags": [
+      "亲子",
+      "套票"
+    ],
+    "recommendLabel": "家庭套票",
+    "scenicId": "scenic_hy"
+  },
+  {
+    "productId": "tkt_sz_wt_adult",
+    "name": "深圳绿野公园畅玩成人票",
+    "type": "ticket",
+    "channels": [
+      "self"
+    ],
+    "status": "on",
+    "price": 279,
+    "ticketTypeId": "adult",
+    "tags": [
+      "成人",
+      "畅玩"
+    ],
+    "scenicId": "scenic_sz_eco"
+  },
+  {
+    "productId": "tkt_sz_eco_adult",
+    "name": "深圳绿野公园成人票",
+    "type": "ticket",
+    "channels": [
+      "self"
+    ],
+    "status": "on",
+    "price": 128,
+    "ticketTypeId": "adult",
+    "tags": [
+      "成人"
+    ],
+    "scenicId": "scenic_sz_eco"
   }
 ]

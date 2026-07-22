@@ -103,7 +103,7 @@ async function onSubmit() {
       <div class="invoice-batch-page__body">
         <div class="invoice-batch-page__toolbar">
           <van-checkbox v-model="allSelected">全选（{{ invoiceable.length }} 笔）</van-checkbox>
-          <span class="invoice-batch-page__hint">仅展示 30 天内已完成且未开票订单</span>
+          <span class="invoice-batch-page__hint">仅展示 90 天内已完成且未开票订单</span>
         </div>
 
         <van-checkbox-group v-model="selected">

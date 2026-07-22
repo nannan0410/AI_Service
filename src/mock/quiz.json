@@ -1,13 +1,122 @@
-{
-  "quizId": "quiz_001",
-  "title": "景区知识小问答",
-  "description": "答对可获得 10 积分",
-  "question": "欢乐景区的开园时间是？",
-  "options": [
-    { "key": "A", "text": "08:00-20:00" },
-    { "key": "B", "text": "09:00-21:00" },
-    { "key": "C", "text": "10:00-22:00" }
-  ],
-  "correctKey": "B",
-  "rewardPoints": 10
-}
+[
+  {
+    "quizId": "quiz_hy_dolphin",
+    "title": "海豚表演小问答",
+    "scenicId": "scenic_hy",
+    "linkedActivityId": "act_hy_001",
+    "rewardPoints": 20,
+    "rewardCouponProductId": "cp_prod_hy_quiz",
+    "questions": [
+      {
+        "questionId": "q_dolphin_1",
+        "question": "海洋公园海豚表演通常在哪个场馆举行？",
+        "options": [
+          { "key": "A", "text": "海洋剧场" },
+          { "key": "B", "text": "极地馆" },
+          { "key": "C", "text": "海底隧道" }
+        ],
+        "correctKey": "A"
+      },
+      {
+        "questionId": "q_dolphin_2",
+        "question": "海豚表演单场建议预留多久观看体验？",
+        "options": [
+          { "key": "A", "text": "约 15 分钟" },
+          { "key": "B", "text": "约 40 分钟" },
+          { "key": "C", "text": "约 2 小时" }
+        ],
+        "correctKey": "B"
+      },
+      {
+        "questionId": "q_dolphin_3",
+        "question": "观看海豚表演时更建议怎么做？",
+        "options": [
+          { "key": "A", "text": "开场后再入场找座" },
+          { "key": "B", "text": "提前到场、勿投喂打扰" },
+          { "key": "C", "text": "带闪光灯近距离拍摄" }
+        ],
+        "correctKey": "B"
+      }
+    ]
+  },
+  {
+    "quizId": "quiz_hy_penguin",
+    "title": "企鹅明星小问答",
+    "scenicId": "scenic_hy",
+    "linkedStarId": "star_hy_penguin",
+    "rewardPoints": 20,
+    "rewardCouponProductId": "cp_prod_hy_quiz",
+    "questions": [
+      {
+        "questionId": "q_penguin_1",
+        "question": "企鹅主要依靠什么保持体温？",
+        "options": [
+          { "key": "A", "text": "厚羽毛与脂肪层" },
+          { "key": "B", "text": "厚厚的鳞片" },
+          { "key": "C", "text": "经常晒太阳" }
+        ],
+        "correctKey": "A"
+      },
+      {
+        "questionId": "q_penguin_2",
+        "question": "在海洋公园观察企鹅时，下列哪项更合适？",
+        "options": [
+          { "key": "A", "text": "敲击玻璃吸引注意" },
+          { "key": "B", "text": "保持安静、勿投喂" },
+          { "key": "C", "text": "把零食塞进围栏" }
+        ],
+        "correctKey": "B"
+      },
+      {
+        "questionId": "q_penguin_3",
+        "question": "企鹅更擅长的活动方式是？",
+        "options": [
+          { "key": "A", "text": "长途飞行" },
+          { "key": "B", "text": "在水中游泳捕猎" },
+          { "key": "C", "text": "树上筑巢" }
+        ],
+        "correctKey": "B"
+      }
+    ]
+  },
+  {
+    "quizId": "quiz_hy_beluga",
+    "title": "白鲸明星小问答",
+    "scenicId": "scenic_hy",
+    "linkedStarId": "star_hy_beluga",
+    "rewardPoints": 20,
+    "rewardCouponProductId": "cp_prod_hy_quiz",
+    "questions": [
+      {
+        "questionId": "q_beluga_1",
+        "question": "白鲸额头隆起的部位常被称为？",
+        "options": [
+          { "key": "A", "text": "瓜头（melon）" },
+          { "key": "B", "text": "背鳍" },
+          { "key": "C", "text": "喷水孔盖" }
+        ],
+        "correctKey": "A"
+      },
+      {
+        "questionId": "q_beluga_2",
+        "question": "白鲸沟通时常发出怎样的声音特点？",
+        "options": [
+          { "key": "A", "text": "几乎完全无声" },
+          { "key": "B", "text": "叫声多样，有「海洋金丝雀」之称" },
+          { "key": "C", "text": "只会拍打水面" }
+        ],
+        "correctKey": "B"
+      },
+      {
+        "questionId": "q_beluga_3",
+        "question": "近距离观看白鲸时应注意？",
+        "options": [
+          { "key": "A", "text": "跟随工作人员指引，勿敲击观赏窗" },
+          { "key": "B", "text": "随意投喂游客自带食物" },
+          { "key": "C", "text": "用手拍打水面召唤" }
+        ],
+        "correctKey": "A"
+      }
+    ]
+  }
+]

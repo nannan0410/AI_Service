@@ -9,11 +9,13 @@ import { useSkillStore } from "@/store/skillStore";
 import { toolRegistry } from "@/ai/tools";
 import { STAGE2_SKILL_IDS } from "@/ai/skills/utils";
 import {
-  DEMO_PERSONA_OPTIONS,
   buildDemoCouponFilterCtx,
   buildDemoRuleContext,
+  DEMO_PERSONA_OPTIONS,
 } from "@/utils/demoRuleContext";
 import { previewRecommendEntries } from "@/utils/recommendEntries";
+import { useScenicStore } from "@/store/scenicStore";
+import ScenicPickerSheet from "@/components/scenic/ScenicPickerSheet.vue";
 import {
   cloneWelcomeQuestions,
   cloneWelcomeTemplates,
@@ -24,6 +26,7 @@ import { MAX_QUICK_SERVICES, MAX_WELCOME_RECOMMEND } from "@/utils/welcomeLayout
 import { postDemoOps, resetDemoBusinessData, type DemoOpsAction } from "@/api/business";
 import { clearDemoClientStorage } from "@/utils/demoReset";
 import { useAuthStore } from "@/store/authStore";
+import { matchesScenicScope } from "@/utils/scenicScope";
 import type { AssistantSkillConfig, PersonaId, RecommendEntry } from "@/types";
 import type {
   FieldCatalogItem,
@@ -47,6 +50,7 @@ const assistantStore = useAssistantStore();
 const businessConfigStore = useBusinessConfigStore();
 const skillStore = useSkillStore();
 const authStore = useAuthStore();
+const scenicStore = useScenicStore();
 
 const currentPersonaLabel = computed(() => {
   const id = authStore.personaId;
@@ -54,7 +58,39 @@ const currentPersonaLabel = computed(() => {
   return DEMO_PERSONA_OPTIONS.find((item) => item.value === id)?.label ?? id;
 });
 
+const previewScenicId = computed(
+  () => scenicStore.currentScenicId ?? scenicStore.enabledScenics[0]?.scenicId ?? null,
+);
+
+const previewScenicName = computed(
+  () =>
+    scenicStore.currentScenicName ||
+    scenicStore.enabledScenics.find((s) => s.scenicId === previewScenicId.value)?.name ||
+    "未选景区",
+);
+
+const previewCityName = computed(() => {
+  const scenic = scenicStore.enabledScenics.find(
+    (s) => s.scenicId === previewScenicId.value,
+  );
+  if (!scenic) return scenicStore.currentCityName || "";
+  return (
+    scenicStore.enabledCities.find((c) => c.cityId === scenic.cityId)?.name || ""
+  );
+});
+
+const previewScenicLive = computed(() => ({
+  scenicId: previewScenicId.value,
+}));
+
+const scenicPickerVisible = ref(false);
+/** false：列表只显示当前预览景区相关项；true：显示全部 */
+const listShowAllScenics = ref(false);
+
 const activeTab = ref<"skill" | "entry">("skill");
+/** 各 tab 下模块折叠：默认全部收起（空数组） */
+const skillSectionOpen = ref<string[]>([]);
+const entrySectionOpen = ref<string[]>([]);
 const workingSkills = ref<AssistantSkillConfig[]>([]);
 const workingEntries = ref<RecommendEntryConfig[]>([]);
 const workingWelcomeTemplates = ref<WelcomeTemplateConfig[]>([]);
@@ -114,11 +150,17 @@ const editEntryForm = ref({
   targetPath: "",
   skillId: "",
   promptHint: "",
+  /** 空 = 全景区通用 */
+  scenicIds: [] as string[],
   ruleField: "personaId",
   /** eq 单值；boolean / enum / string */
   ruleValue: "demo_new" as string | boolean,
   /** personaId 多选时写入 in 规则 */
   rulePersonaValues: ["demo_new"] as string[],
+  /** 附加 AND 条件（如：有待出行 且 非今日出行） */
+  andRuleEnabled: false,
+  andRuleField: "hasVisitToday",
+  andRuleValue: false as boolean,
 });
 
 const editQuestionForm = ref({
@@ -130,9 +172,16 @@ const editQuestionForm = ref({
   badgeColor: "#54c783",
   enabled: true,
   priority: 10,
+  pinTop: false,
+  target: "chat" as RecommendEntry["target"],
+  targetPath: "",
+  scenicIds: [] as string[],
   ruleField: "personaId",
   ruleValue: "demo_new" as string | boolean,
   rulePersonaValues: ["demo_new"] as string[],
+  andRuleEnabled: false,
+  andRuleField: "hasVisitToday",
+  andRuleValue: false as boolean,
 });
 
 const BADGE_COLOR_PRESETS = ["#54c783", "#4aa3ff", "#ffb020", "#ff6b6b"];
@@ -147,6 +196,20 @@ const sortedWorkingQuestions = computed(() =>
     (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
   ),
 );
+
+const displayWorkingEntries = computed(() => {
+  const sorted = sortedWorkingEntries.value;
+  if (listShowAllScenics.value || !previewScenicId.value) return sorted;
+  return sorted.filter((entry) => matchesScenicScope(entry, previewScenicId.value));
+});
+
+const displayWorkingQuestions = computed(() => {
+  const sorted = sortedWorkingQuestions.value;
+  if (listShowAllScenics.value || !previewScenicId.value) return sorted;
+  return sorted.filter((question) =>
+    matchesScenicScope(question, previewScenicId.value),
+  );
+});
 
 const primaryColor = computed(() => assistantStore.primaryColor);
 const themeVars = computed(() => ({
@@ -179,6 +242,21 @@ const selectedQuestionRuleFieldMeta = computed((): FieldCatalogItem | undefined 
   ruleEligibleFields.value.find((f) => f.fieldId === editQuestionForm.value.ruleField)
 );
 
+const andRuleFieldOptions = computed(() =>
+  ruleEligibleFields.value.filter(
+    (f) =>
+      f.valueType === "boolean" && f.fieldId !== editEntryForm.value.ruleField,
+  ),
+);
+
+const andQuestionRuleFieldOptions = computed(() =>
+  ruleEligibleFields.value.filter(
+    (f) =>
+      f.valueType === "boolean" &&
+      f.fieldId !== editQuestionForm.value.ruleField,
+  ),
+);
+
 const editSkillSubIntents = computed((): SkillSubIntentDef[] =>
   getSkillSubIntents(editSkillForm.value.skillId),
 );
@@ -194,8 +272,9 @@ const editSkillExtensionKeywords = computed(() =>
 );
 
 function buildContextSummary(personaId: (typeof DEMO_PERSONA_OPTIONS)[number]["value"]) {
-  const ctx = buildDemoRuleContext(personaId);
+  const ctx = buildDemoRuleContext(personaId, previewScenicLive.value);
   return [
+    `景区 ${ctx.scenicId || "未选"}`,
     `在园 ${ctx.inPark ? "是" : "否"}`,
     `有待出行 ${ctx.hasPendingVisitOrder ? "是" : "否"}`,
     ctx.hasVisitToday ? "今日出行" : ctx.nextVisitDate ? `最近 ${ctx.nextVisitDate}` : "无待出行",
@@ -208,9 +287,11 @@ function buildContextSummary(personaId: (typeof DEMO_PERSONA_OPTIONS)[number]["v
 
 const personaPreviews = computed(() =>
   DEMO_PERSONA_OPTIONS.map((opt) => {
+    const live = previewScenicLive.value;
     const { matched, unmatched } = previewRecommendEntries(
       workingEntries.value,
       opt.value,
+      live,
     );
     return {
       personaId: opt.value,
@@ -222,6 +303,11 @@ const personaPreviews = computed(() =>
         workingQuestions.value,
         opt.value,
         buildDemoCouponFilterCtx(opt.value),
+        {
+          scenicId: live.scenicId,
+          scenicName:
+            scenicStore.enabledScenics.find((s) => s.scenicId === live.scenicId)?.name,
+        },
       ),
     };
   }),
@@ -243,6 +329,7 @@ function cloneEntries(
   return entries
     .map((entry) => ({
       ...entry,
+      scenicIds: entry.scenicIds ? [...entry.scenicIds] : undefined,
       rules: (entry.rules ?? []).map((rule) => {
         if (rule.op === "in") {
           return { op: "in" as const, field: rule.field, values: [...(rule.values ?? [])] };
@@ -259,6 +346,62 @@ function cloneEntries(
     .sort((a, b) => b.priority - a.priority);
 }
 
+function scenicNameById(scenicId: string) {
+  return (
+    scenicStore.enabledScenics.find((item) => item.scenicId === scenicId)?.name ??
+    scenicId
+  );
+}
+
+function allEnabledScenicIds(): string[] {
+  return scenicStore.enabledScenics.map((s) => s.scenicId);
+}
+
+/** 配置项景区作用域摘要（无 scenicIds = 视为全部启用景区） */
+function scenicScopeSummary(item: {
+  scenicId?: string;
+  scenicIds?: string[];
+}) {
+  if (item.scenicIds?.length) {
+    return item.scenicIds.map(scenicNameById).join("、");
+  }
+  if (item.scenicId) return scenicNameById(item.scenicId);
+  return allEnabledScenicIds().map(scenicNameById).join("、") || "全景区";
+}
+
+/** 编辑表单：缺省/全景区 → 默认勾选全部启用景区 */
+function resolveItemScenicIds(item: {
+  scenicId?: string;
+  scenicIds?: string[];
+}): string[] {
+  if (item.scenicIds?.length) return [...item.scenicIds];
+  if (item.scenicId) return [item.scenicId];
+  return allEnabledScenicIds();
+}
+
+function toggleEntryScenicId(scenicId: string) {
+  const current = editEntryForm.value.scenicIds;
+  if (current.includes(scenicId)) {
+    editEntryForm.value.scenicIds = current.filter((id) => id !== scenicId);
+  } else {
+    editEntryForm.value.scenicIds = [...current, scenicId];
+  }
+}
+
+function toggleQuestionScenicId(scenicId: string) {
+  const current = editQuestionForm.value.scenicIds;
+  if (current.includes(scenicId)) {
+    editQuestionForm.value.scenicIds = current.filter((id) => id !== scenicId);
+  } else {
+    editQuestionForm.value.scenicIds = [...current, scenicId];
+  }
+}
+
+function onConfigScenicPicked(scenicId: string) {
+  scenicStore.selectScenic(scenicId);
+  scenicPickerVisible.value = false;
+}
+
 function personaLabel(personaId: PersonaId) {
   return DEMO_PERSONA_OPTIONS.find((item) => item.value === personaId)?.label ?? personaId;
 }
@@ -273,11 +416,7 @@ function skillStatusLabel(skill: AssistantSkillConfig) {
   return "已启用 · 待接入";
 }
 
-function entryRuleSummary(
-  entry: Pick<RecommendEntryConfig | WelcomeQuestionConfig, "rules">,
-) {
-  const rule = entry.rules?.[0];
-  if (!rule) return "无规则（始终展示）";
+function formatSingleRuleSummary(rule: RuleExpression): string {
   if (rule.op === "eq") {
     const fieldMeta = ruleEligibleFields.value.find((f) => f.fieldId === rule.field);
     const fieldLabel = fieldMeta?.label ?? rule.field;
@@ -299,9 +438,18 @@ function entryRuleSummary(
     return `${fieldLabel} ∈ ${values.map(String).join("、")}`;
   }
   if (rule.op === "and" || rule.op === "or") {
-    return `${rule.op.toUpperCase()}（${rule.rules?.length ?? 0} 条）`;
+    const joiner = rule.op === "and" ? " 且 " : " 或 ";
+    return (rule.rules ?? []).map(formatSingleRuleSummary).join(joiner);
   }
   return "复杂规则";
+}
+
+function entryRuleSummary(
+  entry: Pick<RecommendEntryConfig | WelcomeQuestionConfig, "rules">,
+) {
+  const rules = entry.rules ?? [];
+  if (!rules.length) return "无规则（始终展示）";
+  return rules.map(formatSingleRuleSummary).join(" 且 ");
 }
 
 function questionRuleSummary(question: WelcomeQuestionConfig) {
@@ -363,12 +511,34 @@ function buildRuleFromForm(form: {
   return { op: "eq", field: ruleField, value: ruleValue };
 }
 
-function buildEntryRule(): RuleExpression {
-  return buildRuleFromForm(editEntryForm.value);
+function buildRulesFromForm(form: {
+  ruleField: string;
+  ruleValue: string | boolean;
+  rulePersonaValues: string[];
+  andRuleEnabled: boolean;
+  andRuleField: string;
+  andRuleValue: boolean;
+}): RuleExpression[] {
+  const primary = buildRuleFromForm(form);
+  if (
+    !form.andRuleEnabled ||
+    !form.andRuleField ||
+    form.andRuleField === form.ruleField
+  ) {
+    return [primary];
+  }
+  return [
+    primary,
+    { op: "eq", field: form.andRuleField, value: form.andRuleValue },
+  ];
 }
 
-function buildQuestionRule(): RuleExpression {
-  return buildRuleFromForm(editQuestionForm.value);
+function buildEntryRules(): RuleExpression[] {
+  return buildRulesFromForm(editEntryForm.value);
+}
+
+function buildQuestionRules(): RuleExpression[] {
+  return buildRulesFromForm(editQuestionForm.value);
 }
 
 function togglePersonaRuleValue(personaId: string) {
@@ -393,21 +563,45 @@ function toggleQuestionPersonaRuleValue(personaId: string) {
   }
 }
 
+function flattenSimpleRules(rules: RuleExpression[] | undefined): RuleExpression[] {
+  const out: RuleExpression[] = [];
+  for (const rule of rules ?? []) {
+    if (rule.op === "and") {
+      out.push(...flattenSimpleRules(rule.rules));
+    } else {
+      out.push(rule);
+    }
+  }
+  return out;
+}
+
 function parseRuleIntoForm(rules: RuleExpression[] | undefined): {
   ruleField: string;
   ruleValue: string | boolean;
   rulePersonaValues: string[];
+  andRuleEnabled: boolean;
+  andRuleField: string;
+  andRuleValue: boolean;
 } {
-  const rule = rules?.[0];
+  const flat = flattenSimpleRules(rules);
+  const rule = flat[0];
+  const andRule = flat[1];
+  const allPersonaIds = DEMO_PERSONA_OPTIONS.map((item) => item.value);
   let ruleField = "personaId";
   let ruleValue: string | boolean = "demo_new";
-  let rulePersonaValues = ["demo_new"];
+  /** 无规则 = 始终展示：编辑器勾选全部演示账号，避免误显示成「仅新客」 */
+  let rulePersonaValues = [...allPersonaIds];
+  let andRuleEnabled = false;
+  let andRuleField = "hasVisitToday";
+  let andRuleValue = false;
 
   if (rule?.op === "eq") {
     ruleField = String(rule.field);
     ruleValue = rule.value as string | boolean;
     if (ruleField === "personaId" && typeof ruleValue === "string") {
       rulePersonaValues = [ruleValue];
+    } else if (ruleField !== "personaId") {
+      rulePersonaValues = [];
     }
   } else if (rule?.op === "in") {
     ruleField = String(rule.field);
@@ -417,13 +611,34 @@ function parseRuleIntoForm(rules: RuleExpression[] | undefined): {
       ruleValue = values[0];
     } else if (values.length) {
       ruleValue = values[0];
+      rulePersonaValues = [];
     }
   }
 
-  return { ruleField, ruleValue, rulePersonaValues };
+  if (andRule?.op === "eq" && typeof andRule.value === "boolean") {
+    andRuleEnabled = true;
+    andRuleField = String(andRule.field);
+    andRuleValue = andRule.value;
+  }
+
+  return {
+    ruleField,
+    ruleValue,
+    rulePersonaValues,
+    andRuleEnabled,
+    andRuleField,
+    andRuleValue,
+  };
 }
 
 onMounted(async () => {
+  if (authStore.memberId) scenicStore.bindMember(authStore.memberId);
+  scenicStore.loadCatalog();
+  if (!scenicStore.currentScenicId && scenicStore.enabledScenics[0]) {
+    scenicStore.selectScenic(scenicStore.enabledScenics[0].scenicId, {
+      persist: false,
+    });
+  }
   await Promise.all([
     assistantStore.loadConfig(),
     businessConfigStore.loadAll(true),
@@ -542,7 +757,14 @@ function openEntryEditor(entryId: string) {
   if (index < 0) return;
   editingEntryIndex.value = index;
   const entry = workingEntries.value[index];
-  const { ruleField, ruleValue, rulePersonaValues } = parseRuleIntoForm(entry.rules);
+  const {
+    ruleField,
+    ruleValue,
+    rulePersonaValues,
+    andRuleEnabled,
+    andRuleField,
+    andRuleValue,
+  } = parseRuleIntoForm(entry.rules);
 
   editEntryForm.value = {
     entryId: entry.entryId,
@@ -554,9 +776,13 @@ function openEntryEditor(entryId: string) {
     targetPath: entry.targetPath ?? "",
     skillId: entry.skillId ?? "",
     promptHint: entry.promptHint ?? "",
+    scenicIds: resolveItemScenicIds(entry),
     ruleField,
     ruleValue,
     rulePersonaValues,
+    andRuleEnabled,
+    andRuleField,
+    andRuleValue,
   };
   entryEditorVisible.value = true;
 }
@@ -570,6 +796,18 @@ function confirmEntryEditor() {
   if (editingEntryIndex.value < 0) return;
   const current = workingEntries.value[editingEntryIndex.value];
   const parsedPriority = Number(editEntryForm.value.priority);
+  const scopedScenicIds = editEntryForm.value.scenicIds.filter(Boolean);
+  if (!scopedScenicIds.length) {
+    appToast("请至少选择一个适用景区");
+    return;
+  }
+  if (
+    editEntryForm.value.ruleField === "personaId" &&
+    !editEntryForm.value.rulePersonaValues.length
+  ) {
+    appToast("请至少选择一个适用演示账号");
+    return;
+  }
   workingEntries.value[editingEntryIndex.value] = {
     ...current,
     title: editEntryForm.value.title.trim() || current.title,
@@ -580,7 +818,9 @@ function confirmEntryEditor() {
     targetPath: editEntryForm.value.targetPath.trim() || undefined,
     skillId: editEntryForm.value.skillId.trim() || undefined,
     promptHint: editEntryForm.value.promptHint.trim() || undefined,
-    rules: [buildEntryRule()],
+    scenicId: undefined,
+    scenicIds: scopedScenicIds,
+    rules: buildEntryRules(),
   };
   // 保存后按优先级重排，保证列表顺序与预览一致
   workingEntries.value = [...workingEntries.value].sort(
@@ -613,9 +853,14 @@ function openQuestionEditor(questionId: string) {
   if (index < 0) return;
   editingQuestionIndex.value = index;
   const question = workingQuestions.value[index];
-  const { ruleField, ruleValue, rulePersonaValues } = parseRuleIntoForm(
-    question.rules,
-  );
+  const {
+    ruleField,
+    ruleValue,
+    rulePersonaValues,
+    andRuleEnabled,
+    andRuleField,
+    andRuleValue,
+  } = parseRuleIntoForm(question.rules);
   editQuestionForm.value = {
     id: question.id,
     text: question.text,
@@ -625,9 +870,16 @@ function openQuestionEditor(questionId: string) {
     badgeColor: question.badgeColor ?? "#54c783",
     enabled: question.enabled !== false,
     priority: question.priority ?? 10,
+    pinTop: question.pinTop === true,
+    target: question.target || "chat",
+    targetPath: question.targetPath ?? "",
+    scenicIds: resolveItemScenicIds(question),
     ruleField,
     ruleValue,
     rulePersonaValues,
+    andRuleEnabled,
+    andRuleField,
+    andRuleValue,
   };
   questionEditorVisible.value = true;
 }
@@ -648,6 +900,20 @@ function confirmQuestionEditor() {
   if (editingQuestionIndex.value < 0) return;
   const current = workingQuestions.value[editingQuestionIndex.value];
   const parsedPriority = Number(editQuestionForm.value.priority);
+  const scopedScenicIds = editQuestionForm.value.scenicIds.filter(Boolean);
+  if (!scopedScenicIds.length) {
+    appToast("请至少选择一个适用景区");
+    return;
+  }
+  if (
+    editQuestionForm.value.ruleField === "personaId" &&
+    !editQuestionForm.value.rulePersonaValues.length
+  ) {
+    appToast("请至少选择一个适用演示账号");
+    return;
+  }
+  const target = editQuestionForm.value.target || "chat";
+  const targetPath = editQuestionForm.value.targetPath.trim();
   workingQuestions.value[editingQuestionIndex.value] = {
     ...current,
     id: editQuestionForm.value.id.trim() || current.id,
@@ -660,7 +926,13 @@ function confirmQuestionEditor() {
     priority: Number.isFinite(parsedPriority)
       ? parsedPriority
       : (current.priority ?? 0),
-    rules: [buildQuestionRule()],
+    pinTop: editQuestionForm.value.pinTop === true,
+    target,
+    targetPath:
+      target === "chat" ? undefined : targetPath || undefined,
+    scenicId: undefined,
+    scenicIds: scopedScenicIds,
+    rules: buildQuestionRules(),
   };
   workingQuestions.value = [...workingQuestions.value].sort(
     (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
@@ -728,13 +1000,20 @@ async function onSave() {
 }
 
 async function onReset() {
-  await showConfirmDialog({
-    title: "恢复默认配置？",
-    message: "将清除本地 Skill、快捷服务与游游推荐覆盖并读取 JSON 默认项",
-  });
+  try {
+    await showConfirmDialog({
+      title: "恢复默认配置？",
+      message:
+        "将删除本机 LocalStorage 键 scenic_admin_business_override，并重新加载仓库里的 JSON 默认项（Skill / 快捷服务 / 游游推荐）。",
+    });
+  } catch {
+    return;
+  }
   businessConfigStore.clearAdminPatch();
   await Promise.all([
     skillStore.loadSkills(true),
+    businessConfigStore.loadSkills(true),
+    businessConfigStore.loadRecommendEntries(true),
     businessConfigStore.loadWelcomeTemplates(true),
     businessConfigStore.loadWelcomeQuestions(true),
   ]);
@@ -748,7 +1027,7 @@ async function onReset() {
   workingQuestions.value = cloneWelcomeQuestions(
     businessConfigStore.welcomeQuestions,
   );
-  appToast("已恢复默认");
+  appToast("已清除覆盖并恢复 JSON 默认");
 }
 
 async function onClearDemoData() {
@@ -774,37 +1053,65 @@ const DEMO_OPS_ITEMS: Array<{
   action: DemoOpsAction;
   title: string;
   confirm: string;
+  /** 是否依赖当前预览景区（建单类需要；清券/重置开票/重置答题为账号级） */
+  needsScenic?: boolean;
 }> = [
   {
     action: "clear_new_guest_coupon",
     title: "清空新人券",
-    confirm: "将清空当前账号的新人专享券，可再次演示领取。",
+    confirm:
+      "将清空当前账号在全部景区下的新人专享券，可再次演示领取。请重新打开聊天页验证。",
+    needsScenic: false,
   },
   {
     action: "ensure_today_paid_order",
     title: "当日待出行订单",
-    confirm: "将为当前账号 upsert 一笔今日待出行订单（paid）。",
+    confirm: "将为当前账号 upsert 一笔「当前景区」今日待出行订单（paid）。",
+    needsScenic: true,
   },
   {
     action: "ensure_today_completed_order",
     title: "当日已核销订单",
-    confirm: "将为当前账号 upsert 一笔今日已核销订单（completed，可开票/点评）。",
+    confirm: "将为当前账号 upsert 一笔「当前景区」今日已核销订单（completed，可开票/点评）。",
+    needsScenic: true,
   },
   {
     action: "reset_invoice_status",
     title: "重置开票状态",
-    confirm: "将当前账号全部订单的发票状态重置为未开票。",
+    confirm:
+      "将当前账号全部景区订单的发票状态重置为未开票。请重新打开聊天页验证。",
+    needsScenic: false,
+  },
+  {
+    action: "reset_quiz_progress",
+    title: "重置答题为未答题状态",
+    confirm:
+      "将清空当前账号全部答题成功记录，演出/明星结果可再次出现答题邀请。请重新打开聊天页验证。",
+    needsScenic: false,
   },
 ];
 
-async function onDemoOps(action: DemoOpsAction, title: string, confirm: string) {
+async function onDemoOps(
+  action: DemoOpsAction,
+  title: string,
+  confirm: string,
+  needsScenic = true,
+) {
   if (!authStore.personaId) {
     appToast("请先登录演示账号");
     return;
   }
+  if (needsScenic && !previewScenicId.value) {
+    appToast("请先选择预览景区");
+    scenicPickerVisible.value = true;
+    return;
+  }
+  const scenicLine = previewScenicId.value
+    ? `当前景区：${previewScenicName.value}（${previewScenicId.value}）\n`
+    : "";
   await showConfirmDialog({
     title,
-    message: `当前账号：${currentPersonaLabel.value}\n${confirm}`,
+    message: `当前账号：${currentPersonaLabel.value}\n${scenicLine}${confirm}`,
   });
   try {
     const { data: res } = await postDemoOps(action);
@@ -832,168 +1139,196 @@ function goPreviewChat() {
       text="演示版：快捷服务规则改完点「确定」即写入本机；须用规则匹配的演示账号登录后打开聊天欢迎页。最多展示 4 个（按优先级）。"
     />
 
+    <section class="admin-ui__block admin-business__scenic-bar">
+      <van-cell
+        title="当前预览景区"
+        :value="previewScenicName"
+        is-link
+        :label="
+          [previewCityName, previewScenicId].filter(Boolean).join(' · ') || '未选择'
+        "
+        @click="scenicPickerVisible = true"
+      />
+      <van-cell title="列表显示全部景区配置">
+        <template #right-icon>
+          <van-switch v-model="listShowAllScenics" size="20px" />
+        </template>
+      </van-cell>
+    </section>
+
     <van-tabs v-model:active="activeTab" class="admin-business__tabs">
       <van-tab title="Skill 场景" name="skill">
-        <section class="admin-ui__block">
-          <p class="admin-ui__block-title">
-            Skill 场景（{{ workingSkills.length }}）
-          </p>
-          <div class="admin-ui__panel admin-ui__panel--card">
-            <van-cell
-              v-for="(skill, index) in workingSkills"
-              :key="skill.skillId"
-              :title="skill.name"
-              :label="`${skill.skillId} · ${skillStatusLabel(skill)}`"
-              is-link
-              @click="openSkillEditor(index)"
-            >
-              <template #value>
-                <van-switch
-                  :model-value="skill.enabled"
-                  size="20px"
-                  @click.stop
-                  @update:model-value="onToggleSkillEnabled(index, $event)"
-                />
-              </template>
-            </van-cell>
-          </div>
-        </section>
+        <van-collapse v-model="skillSectionOpen" class="admin-business__collapse">
+          <van-collapse-item
+            name="skills"
+            :title="`Skill 场景（${workingSkills.length}）`"
+          >
+            <div class="admin-ui__panel admin-ui__panel--card">
+              <van-cell
+                v-for="(skill, index) in workingSkills"
+                :key="skill.skillId"
+                :title="skill.name"
+                :label="`${skill.skillId} · ${skillStatusLabel(skill)}`"
+                is-link
+                @click="openSkillEditor(index)"
+              >
+                <template #value>
+                  <van-switch
+                    :model-value="skill.enabled"
+                    size="20px"
+                    @click.stop
+                    @update:model-value="onToggleSkillEnabled(index, $event)"
+                  />
+                </template>
+              </van-cell>
+            </div>
+          </van-collapse-item>
 
-        <section class="admin-ui__block">
-          <p class="admin-ui__block-title">卡片展示配置（只读）</p>
-          <div class="admin-ui__panel admin-ui__panel--card">
-            <van-cell
-              v-for="view in businessConfigStore.cardViews"
-              :key="view.cardType"
-              :title="view.label"
-              :label="`${view.cardType} · 最多 ${view.maxItems ?? '-'} 条`"
-            />
-          </div>
-        </section>
+          <van-collapse-item name="cardViews" title="卡片展示配置（只读）">
+            <div class="admin-ui__panel admin-ui__panel--card">
+              <van-cell
+                v-for="view in businessConfigStore.cardViews"
+                :key="view.cardType"
+                :title="view.label"
+                :label="`${view.cardType} · 最多 ${view.maxItems ?? '-'} 条`"
+              />
+            </div>
+          </van-collapse-item>
+        </van-collapse>
       </van-tab>
 
       <van-tab title="欢迎页入口" name="entry">
-        <section class="admin-ui__block">
-          <p class="admin-ui__block-title">
-            快捷服务（{{ workingEntries.length }}，展示最多 {{ MAX_QUICK_SERVICES }} 个，按优先级降序）
-          </p>
-          <div class="admin-ui__panel admin-ui__panel--card">
-            <van-cell
-              v-for="entry in sortedWorkingEntries"
-              :key="entry.entryId"
-              :title="entry.title"
-              :label="`${entry.entryId} · 优先级 ${entry.priority} · ${entryRuleSummary(entry)}`"
-              is-link
-              @click="openEntryEditor(entry.entryId)"
-            >
-              <template #value>
-                <van-switch
-                  :model-value="entry.enabled !== false"
-                  size="20px"
-                  @click.stop
-                  @update:model-value="onToggleEntryEnabled(entry.entryId, $event)"
-                />
-              </template>
-            </van-cell>
-          </div>
-        </section>
-
-        <section class="admin-ui__block">
-          <p class="admin-ui__block-title">
-            游游推荐（{{ workingQuestions.length }}，每账号最多 {{ MAX_WELCOME_RECOMMEND }} 条，按优先级降序）
-          </p>
-          <div class="admin-ui__panel admin-ui__panel--card">
-            <van-cell
-              v-for="question in sortedWorkingQuestions"
-              :key="question.id"
-              :title="question.text"
-              :label="`${question.id} · 优先级 ${question.priority ?? 0} · ${questionRuleSummary(question)}`"
-              is-link
-              @click="openQuestionEditor(question.id)"
-            >
-              <template #value>
-                <van-switch
-                  :model-value="question.enabled !== false"
-                  size="20px"
-                  @click.stop
-                  @update:model-value="
-                    onToggleQuestionEnabled(question.id, $event)
-                  "
-                />
-              </template>
-            </van-cell>
-          </div>
-        </section>
-
-        <section class="admin-ui__block">
-          <p class="admin-ui__block-title">规则预览（三个演示账号）</p>
-          <p class="admin-business__hint admin-business__hint--block">
-            同时展示各账号在当前配置下的命中结果，无需切换账号。
-          </p>
-          <div
-            v-for="preview in personaPreviews"
-            :key="preview.personaId"
-            class="admin-ui__panel admin-ui__panel--card admin-business__preview admin-business__preview-panel"
+        <van-collapse v-model="entrySectionOpen" class="admin-business__collapse">
+          <van-collapse-item
+            name="quickServices"
+            :title="`快捷服务（${displayWorkingEntries.length}/${workingEntries.length}，展示最多 ${MAX_QUICK_SERVICES} 个）`"
           >
-            <p class="admin-business__preview-persona">{{ preview.label }}</p>
-            <p class="admin-business__hint admin-business__hint--ctx">
-              {{ preview.contextSummary }}
+            <p class="admin-business__hint admin-business__hint--block">
+              {{
+                listShowAllScenics
+                  ? "当前显示全部景区配置；编辑时可指定适用景区。"
+                  : `仅显示适用于「${previewScenicName}」的配置（含全景区通用）。`
+              }}
             </p>
-            <p class="admin-business__preview-label">
-              快捷服务（优先级降序，最多 {{ MAX_QUICK_SERVICES }} 个）
-            </p>
-            <van-cell
-              v-for="entry in preview.quickServices"
-              :key="entry.entryId"
-              :title="entry.title"
-              :label="`${entry.target}${entry.skillId ? ' · ' + entry.skillId : ''} · 优先级 ${entry.priority}`"
-            />
-            <van-empty
-              v-if="!preview.quickServices.length"
-              description="暂无快捷服务"
-              image-size="56"
-            />
-            <p class="admin-business__preview-label">
-              游游推荐（最多 {{ MAX_WELCOME_RECOMMEND }} 条）
-            </p>
-            <van-cell
-              v-for="question in preview.welcomeRecommend"
-              :key="`${preview.personaId}-${question.id}`"
-              :title="question.text"
-              :label="question.desc || question.prompt"
-            />
-            <van-empty
-              v-if="!preview.welcomeRecommend.length"
-              description="暂无游游推荐"
-              image-size="56"
-            />
-            <p
-              v-if="preview.unmatched.length"
-              class="admin-business__preview-label admin-business__preview-label--muted"
-            >
-              未命中（已启用）
-            </p>
-            <van-cell
-              v-for="entry in preview.unmatched"
-              :key="'u-' + preview.personaId + '-' + entry.entryId"
-              :title="entry.title"
-              :label="entryRuleSummary(entry)"
-              class="admin-business__unmatched"
-            />
-          </div>
-        </section>
+            <div class="admin-ui__panel admin-ui__panel--card">
+              <van-cell
+                v-for="entry in displayWorkingEntries"
+                :key="entry.entryId"
+                :title="entry.title"
+                :label="`${entry.entryId} · ${scenicScopeSummary(entry)} · 优先级 ${entry.priority} · ${entryRuleSummary(entry)}`"
+                is-link
+                @click="openEntryEditor(entry.entryId)"
+              >
+                <template #value>
+                  <van-switch
+                    :model-value="entry.enabled !== false"
+                    size="20px"
+                    @click.stop
+                    @update:model-value="onToggleEntryEnabled(entry.entryId, $event)"
+                  />
+                </template>
+              </van-cell>
+            </div>
+          </van-collapse-item>
 
-        <section class="admin-ui__block">
-          <p class="admin-ui__block-title">规则字段目录（只读）</p>
-          <div class="admin-ui__panel admin-ui__panel--card">
-            <van-cell
-              v-for="field in ruleEligibleFields"
-              :key="field.fieldId"
-              :title="field.label"
-              :label="`${field.fieldId} · ${field.valueType}`"
-            />
-          </div>
-        </section>
+          <van-collapse-item
+            name="welcomeRecommend"
+            :title="`游游推荐（${displayWorkingQuestions.length}/${workingQuestions.length}，每账号最多 ${MAX_WELCOME_RECOMMEND} 条）`"
+          >
+            <div class="admin-ui__panel admin-ui__panel--card">
+              <van-cell
+                v-for="question in displayWorkingQuestions"
+                :key="question.id"
+                :title="question.text"
+                :label="`${question.id} · ${scenicScopeSummary(question)}${question.pinTop ? ' · 置顶' : ''} · ${question.target || 'chat'} · 优先级 ${question.priority ?? 0} · ${questionRuleSummary(question)}`"
+                is-link
+                @click="openQuestionEditor(question.id)"
+              >
+                <template #value>
+                  <van-switch
+                    :model-value="question.enabled !== false"
+                    size="20px"
+                    @click.stop
+                    @update:model-value="
+                      onToggleQuestionEnabled(question.id, $event)
+                    "
+                  />
+                </template>
+              </van-cell>
+            </div>
+          </van-collapse-item>
+
+          <van-collapse-item
+            name="rulePreview"
+            :title="`规则预览（三个演示账号 · ${previewScenicName}）`"
+          >
+            <p class="admin-business__hint admin-business__hint--block">
+              同时展示各账号在当前预览景区下的命中结果，无需切换账号。
+            </p>
+            <div
+              v-for="preview in personaPreviews"
+              :key="preview.personaId"
+              class="admin-ui__panel admin-ui__panel--card admin-business__preview admin-business__preview-panel"
+            >
+              <p class="admin-business__preview-persona">{{ preview.label }}</p>
+              <p class="admin-business__hint admin-business__hint--ctx">
+                {{ preview.contextSummary }}
+              </p>
+              <p class="admin-business__preview-label">
+                快捷服务（优先级降序，最多 {{ MAX_QUICK_SERVICES }} 个）
+              </p>
+              <van-cell
+                v-for="entry in preview.quickServices"
+                :key="entry.entryId"
+                :title="entry.title"
+                :label="`${entry.target}${entry.skillId ? ' · ' + entry.skillId : ''} · 优先级 ${entry.priority}`"
+              />
+              <van-empty
+                v-if="!preview.quickServices.length"
+                description="暂无快捷服务"
+                image-size="56"
+              />
+              <p class="admin-business__preview-label">
+                游游推荐（最多 {{ MAX_WELCOME_RECOMMEND }} 条）
+              </p>
+              <van-cell
+                v-for="question in preview.welcomeRecommend"
+                :key="`${preview.personaId}-${question.id}`"
+                :title="question.text"
+                :label="question.desc || question.prompt"
+              />
+              <van-empty
+                v-if="!preview.welcomeRecommend.length"
+                description="暂无游游推荐"
+                image-size="56"
+              />
+              <p
+                v-if="preview.unmatched.length"
+                class="admin-business__preview-label admin-business__preview-label--muted"
+              >
+                未命中（已启用）
+              </p>
+              <van-cell
+                v-for="entry in preview.unmatched"
+                :key="'u-' + preview.personaId + '-' + entry.entryId"
+                :title="entry.title"
+                :label="entryRuleSummary(entry)"
+                class="admin-business__unmatched"
+              />
+            </div>
+          </van-collapse-item>
+
+          <van-collapse-item name="fieldCatalog" title="规则字段目录（只读）">
+            <div class="admin-ui__panel admin-ui__panel--card">
+              <van-cell
+                v-for="field in ruleEligibleFields"
+                :key="field.fieldId"
+                :title="field.label"
+                :label="`${field.fieldId} · ${field.valueType}`"
+              />
+            </div>
+          </van-collapse-item>
+        </van-collapse>
       </van-tab>
     </van-tabs>
 
@@ -1029,17 +1364,34 @@ function goPreviewChat() {
     </div>
 
     <section class="admin-ui__block admin-business__demo-ops">
-      <p class="admin-ui__block-title">演示快捷工具（当前账号）</p>
-      <p class="admin-business__hint admin-business__hint--block">
-        作用于已登录账号：{{ currentPersonaLabel }}。订单操作为 upsert，重复点击不会堆单。改完后请重新打开聊天页查看。
+      <p class="admin-ui__block-title">
+        演示快捷工具 · {{ previewScenicName }}
       </p>
+      <p class="admin-business__hint admin-business__hint--block">
+        作用于已登录账号：{{ currentPersonaLabel }}；订单写入景区
+        {{ previewScenicId || "未选" }}。订单操作为 upsert，重复点击不会堆单。改完后请重新打开聊天页查看。
+      </p>
+      <van-cell
+        title="切换操作景区"
+        :value="previewScenicName"
+        is-link
+        class="admin-business__demo-ops-scenic"
+        @click="scenicPickerVisible = true"
+      />
       <div class="admin-business__demo-ops-grid">
         <button
           v-for="item in DEMO_OPS_ITEMS"
           :key="item.action"
           type="button"
           class="admin-ui__btn admin-ui__btn--outline admin-business__demo-ops-btn"
-          @click="onDemoOps(item.action, item.title, item.confirm)"
+          @click="
+            onDemoOps(
+              item.action,
+              item.title,
+              item.confirm,
+              item.needsScenic !== false,
+            )
+          "
         >
           {{ item.title }}
         </button>
@@ -1281,9 +1633,28 @@ function goPreviewChat() {
           </div>
 
           <div class="admin-business__section">
+            <p class="admin-business__section-title">适用景区（可多选，至少选一个）</p>
+            <van-cell
+              v-for="scenic in scenicStore.enabledScenics"
+              :key="scenic.scenicId"
+              :title="scenic.name"
+              :label="`${scenicStore.enabledCities.find((c) => c.cityId === scenic.cityId)?.name || ''} · ${scenic.scenicId}`"
+              clickable
+              @click="toggleEntryScenicId(scenic.scenicId)"
+            >
+              <template #right-icon>
+                <van-checkbox
+                  :model-value="editEntryForm.scenicIds.includes(scenic.scenicId)"
+                  @click.stop="toggleEntryScenicId(scenic.scenicId)"
+                />
+              </template>
+            </van-cell>
+          </div>
+
+          <div class="admin-business__section">
             <p class="admin-business__section-title">触发规则</p>
             <p class="admin-business__hint admin-business__hint--block">
-              数字越大越靠前；规则字段除「演示账号」外，按各账号当前上下文（在园、待出行订单等）求值。
+              数字越大越靠前；无规则时对所有演示账号展示（编辑器会默认勾选全部账号）。仅勾选「新客」并点确定后，中级/VIP 才不会看到。其它字段按各账号上下文（在园、待出行订单等）求值。
             </p>
             <van-cell title="条件字段">
               <template #value>
@@ -1362,6 +1733,37 @@ function goPreviewChat() {
               label="条件值"
               @update:model-value="editEntryForm.ruleValue = $event"
             />
+            <van-cell title="附加条件（且）">
+              <template #right-icon>
+                <van-switch v-model="editEntryForm.andRuleEnabled" size="20px" />
+              </template>
+            </van-cell>
+            <template v-if="editEntryForm.andRuleEnabled">
+              <van-cell title="附加字段">
+                <template #value>
+                  <select
+                    v-model="editEntryForm.andRuleField"
+                    class="admin-business__select"
+                  >
+                    <option
+                      v-for="field in andRuleFieldOptions"
+                      :key="field.fieldId"
+                      :value="field.fieldId"
+                    >
+                      {{ field.label }}
+                    </option>
+                  </select>
+                </template>
+              </van-cell>
+              <van-cell title="附加条件值">
+                <template #value>
+                  <van-switch
+                    v-model="editEntryForm.andRuleValue"
+                    size="20px"
+                  />
+                </template>
+              </van-cell>
+            </template>
           </div>
         </div>
       </div>
@@ -1388,12 +1790,41 @@ function goPreviewChat() {
             label="卡片副标题"
             placeholder="如：首次入园游客最常咨询的问题"
           />
+          <van-cell title="强制置顶（游游推荐第一位）">
+            <template #value>
+              <van-switch v-model="editQuestionForm.pinTop" size="20px" />
+            </template>
+          </van-cell>
+          <van-cell title="点击行为">
+            <template #value>
+              <select v-model="editQuestionForm.target" class="admin-business__select">
+                <option
+                  v-for="opt in TARGET_OPTIONS"
+                  :key="opt.value"
+                  :value="opt.value"
+                >
+                  {{ opt.label }}
+                </option>
+              </select>
+            </template>
+          </van-cell>
+          <van-field
+            v-if="editQuestionForm.target === 'page' || editQuestionForm.target === 'h5'"
+            v-model="editQuestionForm.targetPath"
+            label="跳转路径"
+            placeholder="如 /activity 或 https://…"
+          />
           <van-field
             v-model="editQuestionForm.prompt"
             label="点击 prompt"
             type="textarea"
             rows="3"
             autosize
+            :placeholder="
+              editQuestionForm.target === 'chat'
+                ? '点击后发起对话的内容'
+                : '可选；跳转类可不填'
+            "
           />
           <van-field
             v-model="editQuestionForm.priority"
@@ -1437,9 +1868,27 @@ function goPreviewChat() {
             <van-field v-model="editQuestionForm.badgeColor" label="色值" placeholder="#54c783" />
           </div>
           <div class="admin-business__section">
+            <p class="admin-business__section-title">适用景区（可多选，至少选一个）</p>
+            <van-cell
+              v-for="scenic in scenicStore.enabledScenics"
+              :key="scenic.scenicId"
+              :title="scenic.name"
+              :label="`${scenicStore.enabledCities.find((c) => c.cityId === scenic.cityId)?.name || ''} · ${scenic.scenicId}`"
+              clickable
+              @click="toggleQuestionScenicId(scenic.scenicId)"
+            >
+              <template #right-icon>
+                <van-checkbox
+                  :model-value="editQuestionForm.scenicIds.includes(scenic.scenicId)"
+                  @click.stop="toggleQuestionScenicId(scenic.scenicId)"
+                />
+              </template>
+            </van-cell>
+          </div>
+          <div class="admin-business__section">
             <p class="admin-business__section-title">触发规则</p>
             <p class="admin-business__hint admin-business__hint--block">
-              数字越大越靠前；规则字段除「演示账号」外，按各账号当前上下文（在园、待出行订单等）求值。
+              数字越大越靠前；无规则时对所有演示账号展示（编辑器会默认勾选全部账号）。仅勾选「新客」并点确定后，中级/VIP 才不会看到。其它字段按各账号上下文（在园、待出行订单等）求值。
             </p>
             <van-cell title="条件字段">
               <template #value>
@@ -1521,6 +1970,37 @@ function goPreviewChat() {
               label="条件值"
               @update:model-value="editQuestionForm.ruleValue = $event"
             />
+            <van-cell title="附加条件（且）">
+              <template #right-icon>
+                <van-switch v-model="editQuestionForm.andRuleEnabled" size="20px" />
+              </template>
+            </van-cell>
+            <template v-if="editQuestionForm.andRuleEnabled">
+              <van-cell title="附加字段">
+                <template #value>
+                  <select
+                    v-model="editQuestionForm.andRuleField"
+                    class="admin-business__select"
+                  >
+                    <option
+                      v-for="field in andQuestionRuleFieldOptions"
+                      :key="field.fieldId"
+                      :value="field.fieldId"
+                    >
+                      {{ field.label }}
+                    </option>
+                  </select>
+                </template>
+              </van-cell>
+              <van-cell title="附加条件值">
+                <template #value>
+                  <van-switch
+                    v-model="editQuestionForm.andRuleValue"
+                    size="20px"
+                  />
+                </template>
+              </van-cell>
+            </template>
           </div>
         </div>
       </div>
@@ -1538,6 +2018,16 @@ function goPreviewChat() {
       :actions="QUESTION_ICON_PRESETS.map((name) => ({ name }))"
       @select="onPickQuestionIconAction"
     />
+    <ScenicPickerSheet
+      v-model:show="scenicPickerVisible"
+      :cities="scenicStore.enabledCities"
+      :scenics="scenicStore.enabledScenics"
+      :current-scenic-id="previewScenicId"
+      :initial-city-id="scenicStore.resolvePickerCityId(previewScenicId)"
+      title="选择预览 / 操作景区"
+      @select="onConfigScenicPicked"
+      @update:city-id="(cityId) => scenicStore.selectCity(cityId)"
+    />
   </div>
 </template>
 
@@ -1550,6 +2040,43 @@ function goPreviewChat() {
 
 .admin-business__tabs :deep(.van-tabs__wrap) {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.admin-business__collapse {
+  margin: 8px 12px 12px;
+  background: transparent;
+}
+
+.admin-business__collapse :deep(.van-collapse-item) {
+  margin-bottom: 10px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+.admin-business__collapse :deep(.van-collapse-item__title) {
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #323233;
+  align-items: center;
+}
+
+.admin-business__collapse :deep(.van-collapse-item__content) {
+  padding: 0 12px 12px;
+  color: inherit;
+  background: #fff;
+}
+
+.admin-business__collapse :deep(.van-collapse-item__content) > .admin-ui__panel {
+  box-shadow: none;
+  border: 1px solid #ebedf0;
+}
+
+.admin-business__collapse :deep(.van-hairline--top-bottom::after),
+.admin-business__collapse :deep(.van-collapse-item--border::after) {
+  border: none;
 }
 
 .admin-ui__block {
@@ -1844,5 +2371,19 @@ function goPreviewChat() {
 .admin-business__color-swatch--active {
   border-color: #323233;
   box-shadow: 0 0 0 2px #fff inset;
+}
+
+.admin-business__scenic-bar {
+  margin-bottom: 4px;
+}
+
+.admin-business__scenic-bar :deep(.van-cell) {
+  background: #fff;
+}
+
+.admin-business__demo-ops-scenic {
+  margin-bottom: 10px;
+  border-radius: 10px;
+  overflow: hidden;
 }
 </style>

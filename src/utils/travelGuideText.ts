@@ -30,9 +30,9 @@ export function buildRecommendGuideReply(
       guide.visitorCount && guide.visitorCount > 0
         ? `，游客 ${guide.visitorCount} 名`
         : ''
-    return `结合您 ${guide.visitDate}${weekdayLabel} 的「${guide.ticketName}」${countLabel}，为您推荐游玩路线与热门项目，详见下方卡片（不含交通与入园提醒）。`
+    return `结合您 ${guide.visitDate}${weekdayLabel} 的「${guide.ticketName}」${countLabel}，为您推荐游玩路线与热门项目，详见下方卡片。`
   }
-  return '为您推荐游玩路线与热门项目，详见下方卡片（不含交通与入园提醒）。'
+  return '为您推荐游玩路线与热门项目，详见下方卡片。'
 }
 
 /** 完整出行攻略 — 含交通与入园 */

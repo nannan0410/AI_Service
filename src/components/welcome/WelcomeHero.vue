@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { DEFAULT_ABILITY_ROWS } from '@/utils/welcomeLayout'
 import { formatScenicWeatherLine } from '@/utils/scenicWeather'
+import type { CrowdLevel } from '@/utils/scenicCrowd'
 
 defineProps<{
   nickname: string
@@ -8,6 +9,10 @@ defineProps<{
   abilityRows?: readonly (readonly [string, string])[]
   /** 覆盖默认 Mock 天气文案；不传则用本地常量 */
   weatherLine?: string
+  /** 客流口语文案 */
+  crowdLine?: string
+  /** 客流档位：决定文字颜色 */
+  crowdLevel?: CrowdLevel
 }>()
 
 const defaultWeatherLine = formatScenicWeatherLine()
@@ -17,9 +22,19 @@ const defaultWeatherLine = formatScenicWeatherLine()
   <section class="welcome-hero" aria-label="欢迎介绍">
     <div class="welcome-hero__main">
       <div class="welcome-hero__bubble">
+        <!-- ① 天气 -->
         <p class="welcome-hero__weather">
           <span aria-hidden="true">🌤 </span>{{ weatherLine ?? defaultWeatherLine }}
         </p>
+        <!-- ② 客流 -->
+        <p
+          v-if="crowdLine"
+          class="welcome-hero__crowd"
+          :class="crowdLevel ? `welcome-hero__crowd--${crowdLevel}` : undefined"
+        >
+          <span aria-hidden="true">👥 </span>{{ crowdLine }}
+        </p>
+        <!-- ③ 游游介绍 -->
         <p class="welcome-hero__greeting">
           我是{{ nickname }} <span aria-hidden="true">✨</span>
         </p>
@@ -72,6 +87,8 @@ const defaultWeatherLine = formatScenicWeatherLine()
   gap: 10px;
   width: 100%;
   height: 280px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .welcome-hero__cloud {
@@ -109,7 +126,11 @@ const defaultWeatherLine = formatScenicWeatherLine()
   z-index: 2;
   flex: 0 0 auto;
   align-self: flex-start;
-  width: fit-content;
+  box-sizing: border-box;
+  /* 固定气泡宽度，为右侧 IP 预留空间；窄屏再收紧 */
+  width: 200px;
+  max-width: calc(100% - 118px);
+  min-width: 0;
   padding: 20px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.92);
@@ -140,6 +161,31 @@ const defaultWeatherLine = formatScenicWeatherLine()
   font-weight: 500;
   color: #5b7c99;
   line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.welcome-hero__crowd {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.welcome-hero__crowd--idle {
+  color: #2d8f57;
+}
+
+.welcome-hero__crowd--normal {
+  color: #b78103;
+}
+
+.welcome-hero__crowd--busy {
+  color: #d4380d;
 }
 
 .welcome-hero__greeting {
@@ -188,12 +234,13 @@ const defaultWeatherLine = formatScenicWeatherLine()
 .welcome-hero__character-wrap {
   position: relative;
   z-index: 1;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-width: 108px;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
   height: 280px;
-  overflow: visible;
+  overflow: hidden;
   pointer-events: none;
   animation: welcome-char-in 800ms ease both;
 }
@@ -203,6 +250,7 @@ const defaultWeatherLine = formatScenicWeatherLine()
   z-index: 1;
   display: block;
   width: auto;
+  max-width: 100%;
   height: 280px;
   max-height: 280px;
   object-fit: contain;
@@ -251,7 +299,9 @@ const defaultWeatherLine = formatScenicWeatherLine()
   }
 
   .welcome-hero__bubble {
-    padding: 20px;
+    width: 184px;
+    max-width: calc(100% - 104px);
+    padding: 18px;
     border-radius: 20px;
   }
 
@@ -264,6 +314,7 @@ const defaultWeatherLine = formatScenicWeatherLine()
   }
 
   .welcome-hero__character-wrap {
+    min-width: 96px;
     height: 268px;
   }
 

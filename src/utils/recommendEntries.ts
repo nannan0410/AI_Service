@@ -5,6 +5,7 @@ import {
   type DemoRuleLiveOverrides,
 } from '@/utils/demoRuleContext'
 import { evaluateRules } from '@/utils/ruleEngine'
+import { matchesScenicScope } from '@/utils/scenicScope'
 
 export function toRecommendEntry(config: RecommendEntryConfig): RecommendEntry {
   return {
@@ -19,7 +20,7 @@ export function toRecommendEntry(config: RecommendEntryConfig): RecommendEntry {
   }
 }
 
-/** 按 persona 过滤 enabled + 规则命中，并按 priority 降序 */
+/** 按景区 + persona 规则过滤，并按 priority 降序 */
 export function resolveActiveRecommendEntries(
   entries: RecommendEntryConfig[],
   personaId: PersonaId,
@@ -28,6 +29,7 @@ export function resolveActiveRecommendEntries(
   const ctx = buildDemoRuleContext(personaId, live)
   return entries
     .filter((entry) => entry.enabled !== false)
+    .filter((entry) => matchesScenicScope(entry, ctx.scenicId))
     .filter((entry) => evaluateRules(entry.rules, ctx))
     .sort((a, b) => b.priority - a.priority)
     .map(toRecommendEntry)
@@ -37,9 +39,12 @@ export function resolveActiveRecommendEntries(
 export function previewRecommendEntries(
   entries: RecommendEntryConfig[],
   personaId: PersonaId,
+  live?: DemoRuleLiveOverrides,
 ): { matched: RecommendEntryConfig[]; unmatched: RecommendEntryConfig[] } {
-  const ctx = buildDemoRuleContext(personaId)
-  const enabled = entries.filter((entry) => entry.enabled !== false)
+  const ctx = buildDemoRuleContext(personaId, live)
+  const enabled = entries
+    .filter((entry) => entry.enabled !== false)
+    .filter((entry) => matchesScenicScope(entry, ctx.scenicId))
   const matched = enabled
     .filter((entry) => evaluateRules(entry.rules, ctx))
     .sort((a, b) => b.priority - a.priority)

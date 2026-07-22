@@ -51,4 +51,6 @@ export {
   shouldRunCheckinWorkflowFromRoute,
   shouldRunQueueRecommendWorkflowFromRoute,
   shouldRunProactiveMarketingWorkflowFromRoute,
+  shouldRunMemberOfferWorkflowFromRoute,
+  shouldRunStarIntroWorkflowFromRoute,
 } from './skillWorkflowGate'

@@ -42,7 +42,7 @@ async function onSaveGuide() {
   saving.value = true;
   try {
     await downloadGuideCardImage(el, props.payload);
-    showToast("攻略图已生成，请保存到相册");
+    showToast("攻略图已生成，请保存到本地");
   } catch {
     showToast("生成攻略图失败，请重试");
   } finally {
@@ -130,7 +130,7 @@ async function onSaveGuide() {
       :disabled="saving"
       @click="onSaveGuide"
     >
-      保存攻略图到相册
+      保存攻略图片到本地
     </van-button>
   </div>
 </template>

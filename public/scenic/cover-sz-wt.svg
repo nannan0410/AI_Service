@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180" fill="none">
+  <defs>
+    <linearGradient id="cover-sz-wt" x1="0" y1="0" x2="320" y2="180" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+  <rect width="320" height="180" rx="16" fill="url(#cover-sz-wt)"/>
+  <circle cx="240" cy="48" r="26" fill="#ffffff" fill-opacity="0.32"/>
+  <path d="M20 118c36-28 72-28 108 0s72 28 108 0 72-28 108 0v62H20v-62z" fill="#ffffff" fill-opacity="0.26"/>
+  <text x="24" y="52" fill="#ffffff" font-size="20" font-family="system-ui,sans-serif" font-weight="700">深圳湾</text>
+</svg>

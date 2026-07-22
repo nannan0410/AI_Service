@@ -16,9 +16,22 @@ import {
   takeVirtualQueue,
   ticketProducts,
   updateOrderDraftVisitors,
+  getQuizSet,
+  listScenicStars,
+  findScenicStarByMessage,
+  buildQuizInvite,
+  startQuiz,
+  submitQuizAnswer,
+  isQuizCompleted,
 } from './_utils'
 import activities from '../src/mock/activities.json'
 import parkingConfig from '../src/mock/parking.json'
+import { getScenicIdFromHeaders } from './rules'
+import {
+  filterByBusinessScenicId,
+  filterCouponsByScenic,
+  resolveBusinessScenicId,
+} from '../src/utils/scenicScope'
 
 function requirePersona(headers: Record<string, unknown>) {
   return parsePersonaFromAuthHeader(headers.authorization as string | undefined)
@@ -28,16 +41,30 @@ export default [
   {
     url: '/api/tickets/catalog',
     method: 'get',
-    response: () => ({
-      code: 200,
-      data: ticketProducts.filter((item) => item.channels.includes('self')),
-    }),
+    response: ({ headers }: { headers: Record<string, unknown> }) => {
+      const scenicId = getScenicIdFromHeaders(headers)
+      const list = filterByBusinessScenicId(
+        ticketProducts.filter((item) => item.channels.includes('self')),
+        scenicId,
+      )
+      return { code: 200, data: list }
+    },
   },
   {
     url: '/api/activities',
     method: 'get',
-    response: ({ query }: { query: Record<string, string> }) => {
-      let list = [...activities] as import('../src/types').Activity[]
+    response: ({
+      headers,
+      query,
+    }: {
+      headers: Record<string, unknown>
+      query: Record<string, string>
+    }) => {
+      const scenicId = getScenicIdFromHeaders(headers)
+      let list = filterByBusinessScenicId(
+        [...activities] as import('../src/types').Activity[],
+        scenicId,
+      )
       const tag = query.tag
       const category = query.category
       if (category) {
@@ -55,7 +82,8 @@ export default [
     response: ({ headers, query }: { headers: Record<string, unknown>; query: Record<string, string> }) => {
       const personaId = requirePersona(headers)
       if (!personaId) return { code: 401, message: '未登录', data: null }
-      let coupons = getSnapshot(personaId).visitorState.coupons
+      const scenicId = getScenicIdFromHeaders(headers)
+      let coupons = filterCouponsByScenic(getSnapshot(personaId).visitorState.coupons, scenicId)
       if (query.status) {
         coupons = coupons.filter((c) => c.status === query.status)
       }
@@ -68,7 +96,9 @@ export default [
     response: ({ headers }: { headers: Record<string, unknown> }) => {
       const personaId = requirePersona(headers)
       if (!personaId) return { code: 401, message: '未登录', data: null }
-      return { code: 200, data: getSnapshot(personaId).orders }
+      const scenicId = getScenicIdFromHeaders(headers)
+      const orders = filterByBusinessScenicId(getSnapshot(personaId).orders, scenicId)
+      return { code: 200, data: orders }
     },
   },
   {
@@ -126,6 +156,7 @@ export default [
         visitDate: body?.visitDate,
         quantity: body?.quantity,
         originalAmount: body?.originalAmount,
+        scenicId: getScenicIdFromHeaders(headers),
       })
       if (!result.ok) return { code: 400, message: result.message, data: null }
       return { code: 200, data: result.draft }
@@ -205,7 +236,13 @@ export default [
           : scopeRaw === 'full'
             ? 'full'
             : 'recommend'
-      return { code: 200, data: generateTravelGuide(personaId, { scope }) }
+      return {
+        code: 200,
+        data: generateTravelGuide(personaId, {
+          scope,
+          scenicId: getScenicIdFromHeaders(headers),
+        }),
+      }
     },
   },
   {
@@ -230,6 +267,7 @@ export default [
         status: 'pending' as const,
         invoiceStatus: 'none' as const,
         createdAt: new Date().toISOString(),
+        scenicId: resolveBusinessScenicId(getScenicIdFromHeaders(headers)),
       }
       return { code: 200, data: order }
     },
@@ -276,7 +314,7 @@ export default [
       if (!personaId) return { code: 401, message: '未登录', data: null }
       const orderId = body?.orderId?.trim()
       if (!orderId) return { code: 400, message: '缺少订单号', data: null }
-      const result = applyBatchInvoice(personaId, [orderId])
+      const result = applyBatchInvoice(personaId, [orderId], getScenicIdFromHeaders(headers))
       if (!result.ok) return { code: 400, message: result.message, data: null }
       return {
         code: 200,
@@ -298,7 +336,11 @@ export default [
     }) => {
       const personaId = requirePersona(headers)
       if (!personaId) return { code: 401, message: '未登录', data: null }
-      const result = applyBatchInvoice(personaId, body?.orderIds ?? [])
+      const result = applyBatchInvoice(
+        personaId,
+        body?.orderIds ?? [],
+        getScenicIdFromHeaders(headers),
+      )
       if (!result.ok) return { code: 400, message: result.message, data: null }
       return { code: 200, data: result }
     },
@@ -329,6 +371,7 @@ export default [
         tags: body?.tags,
         content: body?.content,
         imageIds: body?.imageIds,
+        scenicId: getScenicIdFromHeaders(headers),
       })
       if (!result.ok) return { code: 400, message: result.message, data: null }
       return {
@@ -356,7 +399,7 @@ export default [
     response: ({ headers }: { headers: Record<string, unknown> }) => {
       const personaId = requirePersona(headers)
       if (!personaId) return { code: 401, message: '未登录', data: null }
-      return { code: 200, data: listCheckinSpots(personaId) }
+      return { code: 200, data: listCheckinSpots(personaId, getScenicIdFromHeaders(headers)) }
     },
   },
   {
@@ -373,7 +416,7 @@ export default [
       if (!personaId) return { code: 401, message: '未登录', data: null }
       const spotId = body?.spotId?.trim()
       if (!spotId) return { code: 400, message: '缺少打卡点', data: null }
-      const result = submitCheckin(personaId, spotId)
+      const result = submitCheckin(personaId, spotId, getScenicIdFromHeaders(headers))
       if (!result.ok) return { code: 400, message: result.message, data: null }
       return { code: 200, data: result.data }
     },
@@ -384,7 +427,10 @@ export default [
     response: ({ headers }: { headers: Record<string, unknown> }) => {
       const personaId = requirePersona(headers)
       if (!personaId) return { code: 401, message: '未登录', data: null }
-      return { code: 200, data: getVirtualQueueCatalog(personaId) }
+      return {
+        code: 200,
+        data: getVirtualQueueCatalog(personaId, getScenicIdFromHeaders(headers)),
+      }
     },
   },
   {
@@ -401,7 +447,12 @@ export default [
       if (!personaId) return { code: 401, message: '未登录', data: null }
       const activityId = body?.activityId?.trim()
       if (!activityId) return { code: 400, message: '缺少项目', data: null }
-      const result = takeVirtualQueue(personaId, activityId, 'free')
+      const result = takeVirtualQueue(
+        personaId,
+        activityId,
+        'free',
+        getScenicIdFromHeaders(headers),
+      )
       if (!result.ok) return { code: 400, message: result.message, data: null }
       return { code: 200, data: result.data }
     },
@@ -420,7 +471,12 @@ export default [
       if (!personaId) return { code: 401, message: '未登录', data: null }
       const activityId = body?.activityId?.trim()
       if (!activityId) return { code: 400, message: '缺少项目', data: null }
-      const result = takeVirtualQueue(personaId, activityId, 'paid')
+      const result = takeVirtualQueue(
+        personaId,
+        activityId,
+        'paid',
+        getScenicIdFromHeaders(headers),
+      )
       if (!result.ok) return { code: 400, message: result.message, data: null }
       return { code: 200, data: result.data }
     },
@@ -443,5 +499,130 @@ export default [
         pointsAwarded: 88,
       },
     }),
+  },
+  {
+    url: '/api/stars',
+    method: 'get',
+    response: ({ headers }: { headers: Record<string, unknown> }) => {
+      const scenicId = getScenicIdFromHeaders(headers)
+      return { code: 200, data: listScenicStars(scenicId) }
+    },
+  },
+  {
+    url: '/api/stars/match',
+    method: 'get',
+    response: ({
+      headers,
+      query,
+    }: {
+      headers: Record<string, unknown>
+      query: Record<string, string>
+    }) => {
+      const scenicId = getScenicIdFromHeaders(headers)
+      const star = findScenicStarByMessage(query.q || '', scenicId)
+      if (!star) return { code: 200, data: null }
+      const personaId = requirePersona(headers)
+      const quizInvite =
+        personaId && star.quizId ? buildQuizInvite(personaId, star.quizId) : undefined
+      return { code: 200, data: { ...star, quizInvite } }
+    },
+  },
+  {
+    url: '/api/quiz/detail',
+    method: 'get',
+    response: ({
+      headers,
+      query,
+    }: {
+      headers: Record<string, unknown>
+      query: Record<string, string>
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      const quiz = getQuizSet(query.quizId || '')
+      if (!quiz) return { code: 404, message: '题集不存在', data: null }
+      return {
+        code: 200,
+        data: {
+          ...quiz,
+          completed: isQuizCompleted(personaId, quiz.quizId),
+          // 不把 correctKey 暴露给前端作答前窥看——仍返回完整题供演示；正式环境可裁剪
+        },
+      }
+    },
+  },
+  {
+    url: '/api/quiz/invite',
+    method: 'get',
+    response: ({
+      headers,
+      query,
+    }: {
+      headers: Record<string, unknown>
+      query: Record<string, string>
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      return {
+        code: 200,
+        data: buildQuizInvite(personaId, query.quizId || '') ?? null,
+      }
+    },
+  },
+  {
+    url: '/api/quiz/start',
+    method: 'post',
+    response: ({
+      headers,
+      body,
+    }: {
+      headers: Record<string, unknown>
+      body: { quizId?: string }
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      const result = startQuiz(personaId, body.quizId || '')
+      if (!result.ok) {
+        return {
+          code: result.alreadyCompleted ? 409 : 400,
+          message: result.message,
+          data: { alreadyCompleted: result.alreadyCompleted === true },
+        }
+      }
+      const q = result.quiz.questions[result.questionIndex]
+      return {
+        code: 200,
+        data: {
+          quizId: result.quiz.quizId,
+          title: result.quiz.title,
+          questionIndex: result.questionIndex,
+          totalQuestions: result.quiz.questions.length,
+          questionId: q.questionId,
+          question: q.question,
+          options: q.options,
+        },
+      }
+    },
+  },
+  {
+    url: '/api/quiz/answer',
+    method: 'post',
+    response: ({
+      headers,
+      body,
+    }: {
+      headers: Record<string, unknown>
+      body: { quizId?: string; questionIndex?: number; optionKey?: string }
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      const result = submitQuizAnswer(
+        personaId,
+        body.quizId || '',
+        Number(body.questionIndex ?? -1),
+        body.optionKey || '',
+      )
+      return { code: 200, data: result }
+    },
   },
 ] as MockMethod[]

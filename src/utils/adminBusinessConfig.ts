@@ -137,6 +137,9 @@ function normalizeWelcomeQuestion(
     ...question,
     enabled: question.enabled !== false,
     priority: question.priority ?? 0,
+    pinTop: question.pinTop === true,
+    target: question.target || 'chat',
+    targetPath: question.targetPath?.trim() || undefined,
     rules: Array.isArray(question.rules) ? question.rules : [],
   }
 }

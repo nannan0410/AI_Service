@@ -20,10 +20,14 @@ export interface WelcomeTemplateVarContext {
   nickname?: string
   orders?: Order[]
   ref?: Date
+  /** 当前服务景区名称，供 {{scenicName}} 占位符 */
+  scenicName?: string
+  scenicId?: string | null
 }
 
 export interface ResolvedWelcomeTemplateVars {
   nickname: string
+  scenicName: string
   nextVisitDate: string
   upcomingVisitOrderCount: number
   hasVisitToday: boolean
@@ -56,6 +60,7 @@ export function buildWelcomeTemplateVars(
 
   return {
     nickname: ctx.nickname ?? '',
+    scenicName: ctx.scenicName?.trim() || '景区',
     nextVisitDate,
     upcomingVisitOrderCount: upcoming.length,
     hasVisitToday: visitToday,
@@ -69,6 +74,7 @@ function replaceWelcomePlaceholders(
 ): string {
   return text
     .replace(/\{\{nickname\}\}/g, vars.nickname)
+    .replace(/\{\{scenicName\}\}/g, vars.scenicName)
     .replace(/\{\{nextVisitDate\}\}/g, vars.nextVisitDate)
     .replace(
       /\{\{upcomingVisitOrderCount\}\}/g,

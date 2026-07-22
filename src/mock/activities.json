@@ -5,12 +5,19 @@
     "category": "ride",
     "location": "漂流入口",
     "timeRange": "10:00-17:00",
-    "tags": ["亲子", "温和"],
+    "tags": [
+      "亲子",
+      "温和"
+    ],
     "queueStatus": "waiting",
     "waitMinutes": 25,
     "recommendedDuration": "约 20 分钟",
     "isHot": true,
-    "virtualQueue": { "enabled": true, "isFree": true }
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": true
+    },
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_002",
@@ -18,12 +25,19 @@
     "category": "ride",
     "location": "极限区",
     "timeRange": "09:30-20:30",
-    "tags": ["刺激"],
+    "tags": [
+      "刺激"
+    ],
     "queueStatus": "waiting",
     "waitMinutes": 40,
     "recommendedDuration": "约 15 分钟",
     "isHot": true,
-    "virtualQueue": { "enabled": true, "isFree": false, "queuePrice": 10 }
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": false,
+      "queuePrice": 10
+    },
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_003",
@@ -31,11 +45,17 @@
     "category": "show",
     "location": "中心湖",
     "timeRange": "19:00-20:30",
-    "tags": ["演出", "晚间"],
+    "tags": [
+      "演出",
+      "晚间"
+    ],
     "queueStatus": "none",
-    "showStartTimes": ["20:00"],
+    "showStartTimes": [
+      "20:00"
+    ],
     "recommendedDuration": "约 30 分钟",
-    "isHot": true
+    "isHot": true,
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_004",
@@ -43,10 +63,17 @@
     "category": "ride",
     "location": "东区",
     "timeRange": "10:00-18:00",
-    "tags": ["亲子", "互动"],
+    "tags": [
+      "亲子",
+      "互动"
+    ],
     "queueStatus": "none",
     "recommendedDuration": "约 45 分钟",
-    "virtualQueue": { "enabled": true, "isFree": true }
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": true
+    },
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_005",
@@ -54,8 +81,12 @@
     "category": "dining",
     "location": "美食广场",
     "timeRange": "11:00-20:00",
-    "tags": ["餐饮", "套餐"],
-    "queueStatus": "none"
+    "tags": [
+      "餐饮",
+      "套餐"
+    ],
+    "queueStatus": "none",
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_006",
@@ -63,8 +94,12 @@
     "category": "dining",
     "location": "中心湖畔",
     "timeRange": "11:30-21:00",
-    "tags": ["餐饮", "景观"],
-    "queueStatus": "none"
+    "tags": [
+      "餐饮",
+      "景观"
+    ],
+    "queueStatus": "none",
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_007",
@@ -72,8 +107,12 @@
     "category": "retail",
     "location": "主出入口",
     "timeRange": "09:00-21:00",
-    "tags": ["零售", "伴手礼"],
-    "queueStatus": "none"
+    "tags": [
+      "零售",
+      "伴手礼"
+    ],
+    "queueStatus": "none",
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_008",
@@ -81,8 +120,12 @@
     "category": "retail",
     "location": "欢乐大街",
     "timeRange": "10:00-20:00",
-    "tags": ["零售", "亲子"],
-    "queueStatus": "none"
+    "tags": [
+      "零售",
+      "亲子"
+    ],
+    "queueStatus": "none",
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_009",
@@ -90,11 +133,19 @@
     "category": "show",
     "location": "欢乐大街环线",
     "timeRange": "10:30-17:00",
-    "tags": ["演出", "巡游"],
+    "tags": [
+      "演出",
+      "巡游"
+    ],
     "queueStatus": "none",
-    "showStartTimes": ["11:00", "14:00", "16:00"],
+    "showStartTimes": [
+      "11:00",
+      "14:00",
+      "16:00"
+    ],
     "recommendedDuration": "约 25 分钟",
-    "isHot": true
+    "isHot": true,
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_010",
@@ -102,9 +153,13 @@
     "category": "ride",
     "location": "童话广场",
     "timeRange": "09:30-20:00",
-    "tags": ["亲子", "温和"],
+    "tags": [
+      "亲子",
+      "温和"
+    ],
     "queueStatus": "none",
-    "recommendedDuration": "约 10 分钟"
+    "recommendedDuration": "约 10 分钟",
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_011",
@@ -112,10 +167,14 @@
     "category": "ride",
     "location": "竞技乐园",
     "timeRange": "10:00-20:00",
-    "tags": ["刺激", "互动"],
+    "tags": [
+      "刺激",
+      "互动"
+    ],
     "queueStatus": "waiting",
     "waitMinutes": 15,
-    "recommendedDuration": "约 12 分钟"
+    "recommendedDuration": "约 12 分钟",
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_012",
@@ -123,12 +182,20 @@
     "category": "ride",
     "location": "水世界",
     "timeRange": "10:00-18:00",
-    "tags": ["刺激", "水上"],
+    "tags": [
+      "刺激",
+      "水上"
+    ],
     "queueStatus": "paused",
     "pausedQueueLength": 35,
     "recommendedDuration": "约 18 分钟",
     "isHot": true,
-    "virtualQueue": { "enabled": true, "isFree": false, "queuePrice": 15 }
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": false,
+      "queuePrice": 15
+    },
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_013",
@@ -136,11 +203,19 @@
     "category": "ride",
     "location": "科技馆",
     "timeRange": "10:00-19:00",
-    "tags": ["室内", "亲子"],
+    "tags": [
+      "室内",
+      "亲子"
+    ],
     "queueStatus": "waiting",
     "waitMinutes": 20,
     "recommendedDuration": "约 25 分钟",
-    "virtualQueue": { "enabled": true, "isFree": false, "queuePrice": 8 }
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": false,
+      "queuePrice": 8
+    },
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_014",
@@ -148,11 +223,18 @@
     "category": "ride",
     "location": "观景台",
     "timeRange": "10:00-21:00",
-    "tags": ["观光", "浪漫"],
+    "tags": [
+      "观光",
+      "浪漫"
+    ],
     "queueStatus": "none",
     "recommendedDuration": "约 20 分钟",
     "isHot": true,
-    "virtualQueue": { "enabled": true, "isFree": true }
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": true
+    },
+    "scenicId": "scenic_hlg"
   },
   {
     "activityId": "act_015",
@@ -160,8 +242,139 @@
     "category": "ride",
     "location": "亲子王国",
     "timeRange": "10:00-18:00",
-    "tags": ["亲子", "互动"],
+    "tags": [
+      "亲子",
+      "互动"
+    ],
     "queueStatus": "none",
-    "recommendedDuration": "约 40 分钟"
+    "recommendedDuration": "约 40 分钟",
+    "scenicId": "scenic_hlg"
+  },
+  {
+    "activityId": "act_hy_001",
+    "name": "海豚表演",
+    "category": "show",
+    "location": "海洋剧场",
+    "timeRange": "11:00-16:30",
+    "tags": [
+      "演出",
+      "亲子"
+    ],
+    "queueStatus": "none",
+    "showStartTimes": [
+      "11:00",
+      "14:00",
+      "16:00"
+    ],
+    "recommendedDuration": "约 40 分钟",
+    "isHot": true,
+    "quizId": "quiz_hy_dolphin",
+    "scenicId": "scenic_hy"
+  },
+  {
+    "activityId": "act_hy_002",
+    "name": "海底隧道",
+    "category": "ride",
+    "location": "探索馆",
+    "timeRange": "09:30-20:00",
+    "tags": [
+      "观光",
+      "亲子"
+    ],
+    "queueStatus": "waiting",
+    "waitMinutes": 15,
+    "recommendedDuration": "约 25 分钟",
+    "isHot": true,
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": true
+    },
+    "scenicId": "scenic_hy"
+  },
+  {
+    "activityId": "act_hy_003",
+    "name": "海鲜餐厅",
+    "category": "dining",
+    "location": "海景楼",
+    "timeRange": "11:00-20:30",
+    "tags": [
+      "餐饮",
+      "景观"
+    ],
+    "queueStatus": "none",
+    "scenicId": "scenic_hy"
+  },
+  {
+    "activityId": "act_sz_wt_001",
+    "name": "海湾过山车",
+    "category": "ride",
+    "location": "冒险区",
+    "timeRange": "10:00-20:30",
+    "tags": [
+      "刺激",
+      "热门"
+    ],
+    "queueStatus": "waiting",
+    "waitMinutes": 25,
+    "recommendedDuration": "约 5 分钟",
+    "isHot": true,
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": false,
+      "queuePrice": 39
+    },
+    "scenicId": "scenic_sz_eco"
+  },
+  {
+    "activityId": "act_sz_wt_002",
+    "name": "滨海灯光秀",
+    "category": "show",
+    "location": "海湾舞台",
+    "timeRange": "19:30-20:00",
+    "tags": [
+      "演出",
+      "夜场"
+    ],
+    "queueStatus": "none",
+    "showStartTimes": [
+      "19:30"
+    ],
+    "recommendedDuration": "约 30 分钟",
+    "isHot": true,
+    "scenicId": "scenic_sz_eco"
+  },
+  {
+    "activityId": "act_sz_eco_001",
+    "name": "湿地观鸟",
+    "category": "ride",
+    "location": "生态湿地",
+    "timeRange": "09:00-17:30",
+    "tags": [
+      "观光",
+      "亲子"
+    ],
+    "queueStatus": "none",
+    "recommendedDuration": "约 40 分钟",
+    "isHot": true,
+    "scenicId": "scenic_sz_eco"
+  },
+  {
+    "activityId": "act_sz_eco_002",
+    "name": "林间小火车",
+    "category": "ride",
+    "location": "绿廊站",
+    "timeRange": "09:30-18:00",
+    "tags": [
+      "亲子",
+      "观光"
+    ],
+    "queueStatus": "waiting",
+    "waitMinutes": 10,
+    "recommendedDuration": "约 15 分钟",
+    "virtualQueue": {
+      "enabled": true,
+      "isFree": true
+    },
+    "scenicId": "scenic_sz_eco"
   }
 ]

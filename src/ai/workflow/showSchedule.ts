@@ -13,6 +13,7 @@ import {
   showDayLabel,
   type ShowDayKind,
 } from '@/utils/showScheduleIntent'
+import { resolveShowQuizInvite } from '@/utils/quizInvite'
 import type {
   Activity,
   ChatMessageDraft,
@@ -79,9 +80,10 @@ function buildShowScheduleCard(
     recommended?: ShowSlot
     intro: string
     ref: Date
+    quizInvite?: SceneRecommendPayload['quizInvite']
   },
 ): ChatMessageDraft {
-  const { dayKind, slots, recommended, intro, ref } = options
+  const { dayKind, slots, recommended, intro, ref, quizInvite } = options
   const showActivities = activities.filter(
     (item) => item.category === 'show' && item.showStartTimes?.length,
   )
@@ -101,6 +103,7 @@ function buildShowScheduleCard(
         guideContext: 'in_park',
       }),
     ),
+    quizInvite,
   }
 
   return {
@@ -136,6 +139,7 @@ export async function runShowScheduleWorkflow(
   const slots = listTodayShowSlots(activities, ref)
   const recommended = findRecommendedShowSlot(slots, dayKind, ref)
   const intro = buildShowScheduleReply(slots, { dayKind, ref })
+  const quizInvite = await resolveShowQuizInvite(activities)
 
   if (!slots.length) {
     return {
@@ -156,6 +160,7 @@ export async function runShowScheduleWorkflow(
         recommended,
         intro,
         ref,
+        quizInvite,
       }),
     ],
   }

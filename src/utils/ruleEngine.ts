@@ -2,6 +2,8 @@ import type { RuleExpression } from '@/types/businessConfig'
 
 export interface RuleContext {
   personaId: string | null
+  /** 当前服务景区 */
+  scenicId: string | null
   memberId: string
   nickname: string
   memberLevel: string
