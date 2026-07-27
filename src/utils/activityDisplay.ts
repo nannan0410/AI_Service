@@ -49,6 +49,7 @@ export function activityToCardPayload(
     virtualQueue: activity.virtualQueue,
     guideContext: options?.guideContext,
     reason: options?.reason,
+    mapPoiId: activity.mapPoiId,
   }
 }
 
@@ -57,6 +58,8 @@ export function buildActivityRecommendReason(
   context?: {
     guideContext?: ActivityGuideContext
     hasChildren?: boolean
+    preferThrill?: boolean
+    preferSlow?: boolean
   },
 ): string {
   const inPark = context?.guideContext === 'in_park'
@@ -81,7 +84,15 @@ export function buildActivityRecommendReason(
   // 前期攻略热门提示由 formatHotProjectLine 展示，此处不重复
 
   if (context?.hasChildren && activity.tags.includes('亲子')) {
-    return '亲子优选'
+    return '因亲子标签推荐'
+  }
+
+  if (context?.preferThrill && activity.tags.includes('刺激')) {
+    return '因喜欢刺激偏好推荐'
+  }
+
+  if (context?.preferSlow && activity.tags.includes('温和')) {
+    return '因慢节奏偏好推荐'
   }
 
   if (activity.recommendedDuration) {
@@ -91,7 +102,7 @@ export function buildActivityRecommendReason(
   return '人气推荐'
 }
 
-/** 攻略推荐：在园按排队排序；前期优先热门 */
+/** 攻略推荐：在园按排队排序；前期优先热门；可吃画像标签 */
 export function pickRecommendActivities(
   list: Activity[],
   options?: {
@@ -99,31 +110,51 @@ export function pickRecommendActivities(
     tag?: string
     guideContext?: ActivityGuideContext
     hasChildren?: boolean
+    profileTagIds?: string[]
   },
 ): Activity[] {
   const limit = options?.limit ?? 4
   const inPark = options?.guideContext === 'in_park'
+  const tagIds = options?.profileTagIds ?? []
+  const family = tagIds.includes('family') || tagIds.includes('order_family')
+  const thrill = tagIds.includes('prefer_thrill')
+  const slow = tagIds.includes('prefer_slow')
 
   let pool = list.filter(
     (item) => item.category === 'ride' || item.category === 'show',
   )
 
-  if (options?.tag) {
-    const tagged = pool.filter((item) => item.tags.includes(options.tag!))
+  const preferTag =
+    options?.tag ||
+    (family || options?.hasChildren ? '亲子' : undefined)
+
+  if (preferTag) {
+    const tagged = pool.filter((item) => item.tags.includes(preferTag))
+    if (tagged.length) pool = tagged
+  } else if (thrill) {
+    const tagged = pool.filter((item) => item.tags.includes('刺激'))
+    if (tagged.length) pool = tagged
+  } else if (slow) {
+    const tagged = pool.filter((item) => item.tags.includes('温和'))
     if (tagged.length) pool = tagged
   }
 
   const score = (item: Activity): number => {
+    let base = 0
     if (inPark) {
-      if (item.queueStatus === 'paused') return 1000
-      if (item.queueStatus === 'waiting') return item.waitMinutes ?? 500
-      return 0
+      if (item.queueStatus === 'paused') base = 1000
+      else if (item.queueStatus === 'waiting') base = item.waitMinutes ?? 500
+      else base = 0
+    } else {
+      if (item.queueStatus === 'paused') base = 800
+      else if (item.isHot) base = 0
+      else if (item.queueStatus === 'waiting') base = 100 + (item.waitMinutes ?? 0)
+      else base = 200
     }
-    // 前期攻略：热门优先，暂停排队仍降权
-    if (item.queueStatus === 'paused') return 800
-    if (item.isHot) return 0
-    if (item.queueStatus === 'waiting') return 100 + (item.waitMinutes ?? 0)
-    return 200
+    if (family && item.tags.includes('亲子')) base -= 50
+    if (thrill && item.tags.includes('刺激')) base -= 40
+    if (slow && item.tags.includes('温和')) base -= 40
+    return base
   }
 
   pool.sort((a, b) => score(a) - score(b))

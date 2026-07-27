@@ -36,7 +36,6 @@ const chatBackgroundUrl = ref("");
 const assistantAvatarUrl = ref("");
 const memberDefaultAvatarUrl = ref("");
 const defaultImageUrl = ref("");
-const welcomeMessage = ref("");
 const motionImages = ref<Record<AssistantMotionId, string>>({
   idle: "",
   thinking: "",
@@ -49,12 +48,6 @@ const motionImages = ref<Record<AssistantMotionId, string>>({
 const bgPreview = computed(() => chatBackgroundUrl.value || undefined);
 const avatarPreview = computed(() => assistantAvatarUrl.value);
 const memberAvatarPreview = computed(() => memberDefaultAvatarUrl.value);
-const previewGreeting = computed(() =>
-  welcomeMessage.value.replace(
-    /\{\{\s*assistantNickname\s*\}\}/g,
-    assistantNickname.value
-  )
-);
 
 const previewStageStyle = computed(() => ({
   backgroundImage: bgPreview.value ? `url(${bgPreview.value})` : undefined,
@@ -116,7 +109,6 @@ function fillForm(cfg = assistantStore.uiConfig) {
   memberDefaultAvatarUrl.value =
     override?.memberDefaultAvatarUrl ?? cfg.memberDefaultAvatarUrl;
   defaultImageUrl.value = override?.defaultImageUrl ?? cfg.defaultImageUrl;
-  welcomeMessage.value = override?.greeting ?? cfg.greeting;
 
   const sourceMotions = override?.motions ?? cfg.motions;
   motionImages.value = motionItems.reduce((acc, item) => {
@@ -187,7 +179,6 @@ function buildPatch(): AdminUiPatch {
     assistantAvatarUrl: assistantAvatarUrl.value,
     memberDefaultAvatarUrl: memberDefaultAvatarUrl.value,
     defaultImageUrl: defaultImageUrl.value,
-    greeting: welcomeMessage.value,
     motions,
   };
 }
@@ -251,9 +242,6 @@ function goPreviewChat() {
             </div>
           </div>
         </header>
-        <div class="admin-ui__preview-body">
-          <div class="admin-ui__preview-bubble">{{ previewGreeting }}</div>
-        </div>
       </div>
     </section>
 
@@ -320,21 +308,6 @@ function goPreviewChat() {
             />
           </template>
         </van-field>
-      </div>
-    </section>
-
-    <section class="admin-ui__block">
-      <p class="admin-ui__block-title">欢迎语</p>
-      <div class="admin-ui__panel admin-ui__panel--card">
-        <van-field
-          v-model="welcomeMessage"
-          type="textarea"
-          rows="3"
-          autosize
-          maxlength="200"
-          show-word-limit
-          placeholder="输入欢迎语，可用 {{assistantNickname}} 代表助手昵称"
-        />
       </div>
     </section>
 
@@ -578,7 +551,7 @@ function goPreviewChat() {
 
 .admin-ui__preview-stage {
   position: relative;
-  min-height: 180px;
+  min-height: 0;
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
@@ -641,28 +614,6 @@ function goPreviewChat() {
   font-size: 12px;
   line-height: 1.2;
   color: #414a53;
-}
-
-.admin-ui__preview-body {
-  position: relative;
-  z-index: 1;
-  min-height: 106px;
-  padding: 16px 14px;
-  display: flex;
-  align-items: flex-start;
-}
-
-.admin-ui__preview-bubble {
-  max-width: 82%;
-  padding: 9px 12px;
-  background: #fff;
-  border-radius: 14px;
-  border-top-left-radius: 4px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #333;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  text-align: left;
 }
 
 .admin-ui__color-input {

@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { showToast } from "vant";
 import ChatCardShell from "./ChatCardShell.vue";
 import { downloadGuideCardImage } from "@/utils/saveGuideImage";
+import { fetchMapConfig } from "@/api/business";
+import { useScenicStore } from "@/store/scenicStore";
+import { hasMapGuideForScenic } from "@/utils/mapGuide";
+import { DEFAULT_SCENIC_ID } from "@/utils/scenicScope";
 import type { TravelGuidePayload } from "@/types";
 import {
   ACTIVITY_CATEGORY_LABELS,
@@ -18,8 +23,11 @@ function queueLine(item: TravelGuidePayload["activities"][number]) {
   });
 }
 
+const router = useRouter();
+const scenicStore = useScenicStore();
 const captureRef = ref<HTMLElement | null>(null);
 const saving = ref(false);
+const showOpenMap = ref(false);
 const embedded = computed(() => props.embedded === true);
 
 const scopeLabels = computed(() => {
@@ -35,6 +43,17 @@ const scopeLabels = computed(() => {
   return labels;
 });
 
+async function resolveMapAvailability() {
+  const scenicId = scenicStore.currentScenicId || DEFAULT_SCENIC_ID;
+  try {
+    const { data: res } = await fetchMapConfig(scenicId);
+    showOpenMap.value =
+      res.code === 200 && hasMapGuideForScenic(res.data ?? null);
+  } catch {
+    showOpenMap.value = false;
+  }
+}
+
 async function onSaveGuide() {
   const el = captureRef.value;
   if (!el || saving.value) return;
@@ -49,6 +68,23 @@ async function onSaveGuide() {
     saving.value = false;
   }
 }
+
+function onOpenMap() {
+  // Phase 2 A1：真跳转地图；多点高亮留给后续
+  const scenicId = scenicStore.currentScenicId || DEFAULT_SCENIC_ID;
+  void router.push({ path: "/map", query: { scenicId } });
+}
+
+watch(
+  () => scenicStore.currentScenicId,
+  () => {
+    void resolveMapAvailability();
+  },
+);
+
+onMounted(() => {
+  void resolveMapAvailability();
+});
 </script>
 
 <template>
@@ -119,19 +155,36 @@ async function onSaveGuide() {
       </ChatCardShell>
     </div>
 
-    <van-button
-      type="primary"
-      size="small"
-      round
-      plain
-      block
-      class="guide-card__save"
-      :loading="saving"
-      :disabled="saving"
-      @click="onSaveGuide"
+    <div
+      class="guide-card__actions"
+      :class="{ 'guide-card__actions--single': !showOpenMap }"
     >
-      保存攻略图片到本地
-    </van-button>
+      <van-button
+        type="primary"
+        size="small"
+        round
+        plain
+        class="guide-card__save"
+        :class="{ 'guide-card__save--full': !showOpenMap }"
+        :block="!showOpenMap"
+        :loading="saving"
+        :disabled="saving"
+        @click="onSaveGuide"
+      >
+        保存攻略图片到本地
+      </van-button>
+      <van-button
+        v-if="showOpenMap"
+        type="primary"
+        size="small"
+        round
+        plain
+        class="guide-card__map"
+        @click="onOpenMap"
+      >
+        打开地图
+      </van-button>
+    </div>
   </div>
 </template>
 
@@ -150,10 +203,6 @@ async function onSaveGuide() {
   background: #f7f8fa;
   box-shadow: none;
   padding: 10px;
-}
-
-.guide-card--embedded .guide-card__save {
-  margin-top: 10px;
 }
 
 .guide-card__capture {
@@ -182,28 +231,21 @@ async function onSaveGuide() {
 }
 
 .guide-card__section {
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #ebedf0;
-}
-
-.guide-card__section:last-of-type {
-  border-bottom: none;
-  margin-bottom: 0;
-  padding-bottom: 0;
+  margin-top: 10px;
 }
 
 .guide-card__section-title {
   margin: 0 0 4px;
   font-size: 13px;
+  font-weight: 600;
   color: #323233;
 }
 
 .guide-card__section-body {
   margin: 0;
   font-size: 12px;
-  line-height: 1.5;
   color: #646566;
+  line-height: 1.5;
   white-space: pre-wrap;
 }
 
@@ -217,14 +259,20 @@ async function onSaveGuide() {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 6px 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #ebedf0;
   font-size: 12px;
   color: #646566;
 }
 
+.guide-card__activities li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 .guide-card__activities strong {
-  font-size: 13px;
   color: #323233;
+  font-size: 13px;
 }
 
 .guide-card__act-type {
@@ -269,8 +317,33 @@ async function onSaveGuide() {
   font-size: 11px;
 }
 
-.guide-card__save {
+.guide-card__actions {
+  display: flex;
+  gap: 8px;
   margin-top: 8px;
+  width: 100%;
+}
+
+.guide-card__actions--single {
+  display: block;
+}
+
+.guide-card__save {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+  color: var(--chat-primary);
+  border-color: var(--chat-primary);
+}
+
+.guide-card__save--full {
+  width: 100%;
+}
+
+.guide-card__map {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 0 14px;
   color: var(--chat-primary);
   border-color: var(--chat-primary);
 }

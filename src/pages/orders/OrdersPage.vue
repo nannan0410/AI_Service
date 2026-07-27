@@ -2,7 +2,8 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { fetchOrders } from "@/api/business";
-import type { Order, OrderSource } from "@/types";
+import { listOrderTagsForOrder } from "@/utils/profileTags";
+import type { Order, OrderSource, ProfileTag } from "@/types";
 
 const route = useRoute();
 const activeTab = ref(0);
@@ -59,6 +60,10 @@ function quantityLabel(order: Order) {
   const { adult, child } = order.quantity;
   return child > 0 ? `${adult} 成人 ${child} 儿童` : `${adult} 张`;
 }
+
+function orderTags(order: Order): ProfileTag[] {
+  return listOrderTagsForOrder(order);
+}
 </script>
 
 <template>
@@ -110,6 +115,16 @@ function quantityLabel(order: Order) {
           {{ order.orderId }} · {{ quantityLabel(order) }}
           <template v-if="order.visitDate"> · {{ order.visitDate }} 出行</template>
         </p>
+
+        <div v-if="orderTags(order).length" class="order-item__tags">
+          <span
+            v-for="tag in orderTags(order)"
+            :key="tag.tagId"
+            class="order-item__tag"
+          >
+            {{ tag.name }}
+          </span>
+        </div>
 
         <div class="order-item__footer">
           <strong class="order-item__amount">¥{{ order.totalAmount }}</strong>
@@ -175,6 +190,21 @@ function quantityLabel(order: Order) {
   margin: 0 0 10px;
   font-size: 12px;
   color: #969799;
+}
+
+.order-item__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -4px 0 10px;
+}
+
+.order-item__tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #07c160;
+  background: rgba(7, 193, 96, 0.1);
 }
 
 .order-item__footer {

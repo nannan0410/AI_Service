@@ -1,6 +1,8 @@
 import { isParkingLocationIntent, isParkingPayIntent } from '@/utils/parkingPayIntent'
 import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
 import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
+import { shouldRunWeatherSuitabilityWorkflow } from '@/utils/weatherSuitabilityIntent'
+import { shouldRunProjectQueryWorkflow } from '@/utils/projectQueryIntent'
 
 /** 完整出行攻略（交通 + 入园 + 推荐项目）— 需明确出行/订单语境 */
 export function isFullTravelGuideIntent(message: string): boolean {
@@ -88,6 +90,7 @@ export function isRecommendTravelGuideIntent(message: string): boolean {
   if (isTrafficGuideIntent(message)) return false
   if (isEntryNoticeIntent(message)) return false
   if (isInParkRouteIntent(message)) return false
+  if (shouldRunWeatherSuitabilityWorkflow(message)) return false
   // 「演出项目推荐」等归 scenic_recommend，避免被「项目推荐」误抢
   if (shouldRunShowScheduleWorkflow(message)) return false
 
@@ -129,6 +132,10 @@ export function shouldRunTravelGuideWorkflow(message: string): boolean {
   if (shouldRunQueueRecommendWorkflow(message)) return false
   // 演出/场次专项查询优先，避免「演出项目推荐」落入订单攻略
   if (shouldRunShowScheduleWorkflow(message)) return false
+  // 「今天适合游玩吗 / 天气人流」走天气 Workflow，不进攻略
+  if (shouldRunWeatherSuitabilityWorkflow(message)) return false
+  // 项目位置 / 附近好玩走 project_query
+  if (shouldRunProjectQueryWorkflow(message)) return false
   return (
     isFullTravelGuideIntent(message) ||
     isTrafficGuideIntent(message) ||
@@ -149,6 +156,7 @@ export function shouldRunTravelGuideWorkflow(message: string): boolean {
 export function isTravelGuidePreferredOverTicket(message: string): boolean {
   if (shouldRunQueueRecommendWorkflow(message)) return false
   if (shouldRunShowScheduleWorkflow(message)) return false
+  if (shouldRunWeatherSuitabilityWorkflow(message)) return false
   return (
     isEntryNoticeIntent(message) ||
     isRecommendTravelGuideIntent(message) ||

@@ -11,7 +11,6 @@ export type AdminUiPatch = Partial<
     | 'assistantCharacterUrl'
     | 'dialogTitle'
     | 'defaultImageUrl'
-    | 'greeting'
     | 'assistantName'
     | 'assistantNickname'
     | 'primaryColor'

@@ -7,7 +7,6 @@ import ticketProducts from '../src/mock/products/tickets.json'
 import couponProducts from '../src/mock/products/coupon_products.json'
 import retailProducts from '../src/mock/products/retail.json'
 import contentBlocks from '../src/mock/content/blocks.json'
-import tags from '../src/mock/tags.json'
 import quiz from '../src/mock/quiz.json'
 import assistantSkills from '../src/mock/assistant/skills.json'
 import fieldCatalog from '../src/mock/assistant/field_catalog.json'
@@ -98,7 +97,6 @@ export default [
             primaryColor: uiConfig.primaryColor,
             primaryColorLight: uiConfig.primaryColorLight,
             primaryColorDark: uiConfig.primaryColorDark,
-            greeting: uiConfig.greeting,
           },
         },
       }
@@ -208,24 +206,6 @@ export default [
         list = list.filter((b) => b.type === query.type)
       }
       return { code: 200, data: list }
-    },
-  },
-  {
-    url: '/api/tags',
-    method: 'get',
-    response: () => ({ code: 200, data: tags }),
-  },
-  {
-    url: '/api/member/tags',
-    method: 'get',
-    response: ({ headers }: { headers: Record<string, unknown> }) => {
-      const personaId = getPersonaFromHeaders(headers)
-      if (!personaId) return { code: 401, message: '未登录', data: null }
-      const ctx = buildRuleContext(personaId, {
-        scenicId: getScenicIdFromHeaders(headers),
-      })
-      const userTags = tags.filter((t) => ctx.tags.includes(t.tagId))
-      return { code: 200, data: userTags }
     },
   },
   {

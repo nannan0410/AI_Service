@@ -24,10 +24,12 @@ import {
   runProactiveMarketingWorkflow,
   runMemberOfferWorkflow,
   runStarIntroWorkflow,
+  runWeatherSuitabilityWorkflow,
   shouldRunNewGuestCouponWorkflow,
   shouldRunParkingPayWorkflow,
   shouldRunShowScheduleWorkflow,
   shouldRunStarIntroWorkflow,
+  shouldRunWeatherSuitabilityWorkflow,
   shouldRunInvoiceWorkflow,
   shouldRunReviewWorkflow,
   shouldRunCheckinWorkflow,
@@ -35,6 +37,10 @@ import {
   shouldRunProactiveMarketingWorkflow,
   shouldRunMemberOfferWorkflow,
   shouldRunOrderQueryWorkflow,
+  shouldRunProjectQueryWorkflow,
+  runProjectQueryWorkflow,
+  shouldRunMapGuideWorkflow,
+  runMapGuideWorkflow,
 } from "@/ai/workflow";
 import { isLikelyGeneralMessage } from "@/ai/nlu/isLikelyGeneralMessage";
 import {
@@ -50,6 +56,8 @@ import {
   shouldRunQueueRecommendWorkflowFromRoute,
   shouldRunProactiveMarketingWorkflowFromRoute,
   shouldRunMemberOfferWorkflowFromRoute,
+  shouldRunProjectQueryWorkflowFromRoute,
+  shouldRunMapGuideWorkflowFromRoute,
 } from "@/ai/nlu/skillWorkflowGate";
 import { shouldInterruptPurchaseSession } from "@/utils/ticketPurchaseIntent";
 import { createOrderDraft, fetchCoupons, fetchMemberInfo, fetchOrders, submitCheckin, submitReview } from "@/api/business";
@@ -1005,6 +1013,15 @@ async function onSend() {
     const useMemberOfferWorkflow =
       shouldRunMemberOfferWorkflow(text) ||
       shouldRunMemberOfferWorkflowFromRoute(skillRoute, text);
+    const useWeatherSuitabilityWorkflow =
+      shouldRunWeatherSuitabilityWorkflow(text);
+    const useProjectQueryWorkflow =
+      shouldRunProjectQueryWorkflow(text) ||
+      shouldRunProjectQueryWorkflowFromRoute(skillRoute, text);
+    const useMapGuideWorkflow =
+      !useProjectQueryWorkflow &&
+      (shouldRunMapGuideWorkflow(text) ||
+        shouldRunMapGuideWorkflowFromRoute(skillRoute, text));
 
     // 明确其它业务意图时结束购票会话，避免续跑劫持
     if (
@@ -1034,6 +1051,12 @@ async function onSend() {
         ? await runStarIntroWorkflow(text, workflowCallbacks)
       : useShowScheduleWorkflow
         ? await runShowScheduleWorkflow(text, workflowCallbacks)
+      : useProjectQueryWorkflow
+        ? await runProjectQueryWorkflow(text, workflowCallbacks)
+      : useMapGuideWorkflow
+        ? await runMapGuideWorkflow(text, workflowCallbacks)
+      : useWeatherSuitabilityWorkflow
+        ? await runWeatherSuitabilityWorkflow(text, workflowCallbacks)
       : useTravelGuideWorkflow
         ? await runTravelGuideWorkflow(text, personaId, workflowCallbacks)
       : useTicketWorkflow

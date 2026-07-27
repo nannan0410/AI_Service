@@ -24,8 +24,8 @@ const assistantNickname = computed(() => assistantStore.assistantNickname);
 
 const personaOptions: Array<{ id: PersonaId; name: string; desc: string }> = [
   { id: "demo_new", name: "新用户", desc: "零订单、无车牌" },
-  { id: "demo_mid", name: "中级会员", desc: "有未游玩订单" },
-  { id: "demo_vip", name: "高级会员", desc: "有可开票/已完成订单" },
+  { id: "demo_mid", name: "中级会员", desc: "根据未游玩订单制定攻略" },
+  { id: "demo_vip", name: "高级会员", desc: "当前在园、有已完成订单" },
 ];
 
 async function onSelectPersona(personaId: PersonaId) {

@@ -1,9 +1,7 @@
 import type { PersonaId } from '../src/types/index'
 import type { RuleExpression } from '../src/types/businessConfig'
-import type { TagCatalogItem } from '../src/types/businessConfig'
 import { evaluateRule, evaluateRules, type RuleContext } from '../src/utils/ruleEngine'
 import { hasNewGuestCoupon, canClaimNewGuestCoupon } from '../src/utils/newGuestCoupon'
-import fieldCatalog from '../src/mock/assistant/field_catalog.json'
 import { getSnapshot, parsePersonaFromAuthHeader } from './_utils'
 import {
   getUpcomingVisitOrders,
@@ -11,21 +9,9 @@ import {
   pickNearestUpcomingVisitOrder,
 } from '../src/utils/upcomingVisitOrder'
 import { filterByBusinessScenicId, filterCouponsByScenic } from '../src/utils/scenicScope'
+import { resolveProfileRuleTagIds } from '../src/utils/profileTags'
 
-function resolveTagsForPersona(personaId: PersonaId): string[] {
-  return fieldCatalog.tags
-    .filter((tag: TagCatalogItem) => tag.demoPersonas?.includes(personaId))
-    .map((tag) => tag.tagId)
-}
-
-function headerScenicId(headers: Record<string, unknown>): string | null {
-  const raw =
-    (headers['x-scenic-id'] as string | undefined) ||
-    (headers['X-Scenic-Id'] as string | undefined)
-  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
-}
-
-/** Mock 侧规则上下文（不依赖 src 中带 @/ 别名的模块，避免 vite-plugin-mock 打包失败） */
+/** Mock 侧规则上下文（profileTags 使用相对路径，避免 vite-plugin-mock 打包失败） */
 export function buildRuleContext(
   personaId: PersonaId,
   options?: { scenicId?: string | null },
@@ -69,7 +55,7 @@ export function buildRuleContext(
     nickname: snapshot.memberInfo.nickname,
     memberLevel: snapshot.memberInfo.level,
     inPark: snapshot.visitorState.inPark,
-    tags: resolveTagsForPersona(personaId),
+    tags: resolveProfileRuleTagIds(personaId),
     hasPendingVisitOrder,
     nextVisitDate,
     upcomingVisitOrderCount,
@@ -91,7 +77,10 @@ export function getPersonaFromHeaders(headers: Record<string, unknown>): Persona
 }
 
 export function getScenicIdFromHeaders(headers: Record<string, unknown>): string | null {
-  return headerScenicId(headers)
+  const raw =
+    (headers['x-scenic-id'] as string | undefined) ||
+    (headers['X-Scenic-Id'] as string | undefined)
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : null
 }
 
 export { evaluateRule, evaluateRules, type RuleContext }

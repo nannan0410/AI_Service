@@ -100,7 +100,7 @@
     "name": "园区推荐",
     "description": "查询今日/明日演出场次、推荐游玩项目",
     "enabled": true,
-    "triggerKeywords": ["演出", "明天有演出", "今日演出", "下一场", "灯光秀", "花车", "巡游", "场次", "表演"],
+    "triggerKeywords": ["演出", "明天有演出", "今日演出", "下一场", "灯光秀", "花车", "巡游", "场次", "表演", "海豚表演", "海豚"],
     "tools": ["getScenicActivities"],
     "promptAddon": "用户询问今天/明天有没有演出、下一场几点开始时，调用 getScenicActivities(category=show) 并按 showStartTimes 展示场次；明日可标注当日最早一场作推荐；不要编造场次。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "point" }
@@ -172,6 +172,42 @@
     ],
     "tools": ["getMemberInfo", "getProductCatalog", "getCoupons"],
     "promptAddon": "用户要按会员等级/标签做门票组合推荐时：结合 getMemberInfo、getUserTags、getProductCatalog、getCoupons，给出等级折扣+可用券+标签匹配票品；不要代替购票槽位追问，也不要代替纯查券。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "point", "onFail": "shake" }
+  },
+  {
+    "skillId": "project_query",
+    "name": "项目查询",
+    "description": "查询园区项目位置、附近好玩、项目介绍与排队",
+    "enabled": true,
+    "triggerKeywords": [
+      "在哪",
+      "在哪儿",
+      "附近好玩",
+      "附近有什么",
+      "过山车在哪",
+      "项目介绍",
+      "有什么项目",
+      "适合小孩的项目"
+    ],
+    "tools": ["getScenicActivities"],
+    "promptAddon": "用户问某个项目在哪、附近好玩、适合小孩的项目时：调用 getScenicActivities，用项目卡回答；有地图配置时引导查看位置。不要生成全日攻略长文，不要打开纯地图总览（那是 map_guide）。",
+    "linkedMotions": { "onStart": "thinking", "onSuccess": "point", "onFail": "shake" }
+  },
+  {
+    "skillId": "map_guide",
+    "name": "导览地图",
+    "description": "打开园区导览地图、查看点位",
+    "enabled": true,
+    "triggerKeywords": [
+      "打开地图",
+      "查看地图",
+      "园区地图",
+      "导览地图",
+      "在地图上看",
+      "查看位置"
+    ],
+    "tools": ["getScenicActivities"],
+    "promptAddon": "用户要打开地图、查看导览图时：引导打开地图页。不问项目推荐排序；具体项目在哪优先走 project_query。",
     "linkedMotions": { "onStart": "thinking", "onSuccess": "point", "onFail": "shake" }
   }
 ]

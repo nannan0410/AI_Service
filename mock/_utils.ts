@@ -35,6 +35,7 @@ import {
   buildActivityRecommendReason,
   pickRecommendActivities,
 } from '../src/utils/activityDisplay'
+import { resolveProfileRuleTagIds } from '../src/utils/profileTags'
 import type { Activity } from '../src/types/index'
 import {
   NEW_GUEST_COUPON_PRODUCT_ID,
@@ -491,7 +492,10 @@ export function generateTravelGuide(
   const hasChildren =
     snapshot.visitorState.preferences?.hasChildren === true ||
     (order?.quantity.child ?? 0) > 0
-  const activityTag = hasChildren ? '亲子' : undefined
+  const profileTagIds = resolveProfileRuleTagIds(personaId)
+  const familyLike =
+    profileTagIds.includes('family') || profileTagIds.includes('order_family')
+  const activityTag = hasChildren || familyLike ? '亲子' : undefined
   const guideContext = scope === 'in_park' ? 'in_park' : 'pre_visit'
 
   const scopedActivities = filterByBusinessScenicId(activities as Activity[], scenicId)
@@ -499,13 +503,19 @@ export function generateTravelGuide(
     limit: 4,
     tag: activityTag,
     guideContext,
-    hasChildren,
+    hasChildren: hasChildren || familyLike,
+    profileTagIds,
   })
 
   const activityCards = picked.map((item) =>
     activityToCardPayload(item, {
       guideContext,
-      reason: buildActivityRecommendReason(item, { guideContext, hasChildren }),
+      reason: buildActivityRecommendReason(item, {
+        guideContext,
+        hasChildren: hasChildren || familyLike,
+        preferThrill: profileTagIds.includes('prefer_thrill'),
+        preferSlow: profileTagIds.includes('prefer_slow'),
+      }),
     }),
   )
 

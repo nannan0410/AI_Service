@@ -2,24 +2,42 @@
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { showConfirmDialog } from "vant";
-import { fetchMemberInfo } from "@/api/business";
+import { fetchMemberInfo, fetchMemberProfileTags } from "@/api/business";
 import { useAuthStore } from "@/store/authStore";
 import { useAssistantStore } from "@/store/assistantStore";
-import type { MemberInfo } from "@/types";
+import { flattenProfileTags } from "@/utils/profileTags";
+import type { MemberInfo, ProfileTag, UserProfileTags } from "@/types";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const assistantStore = useAssistantStore();
 const member = ref<MemberInfo | null>(null);
+const profileTags = ref<UserProfileTags | null>(null);
 
 const primaryColor = computed(() => assistantStore.primaryColor);
 
+const categoryLabel: Record<ProfileTag["category"], string> = {
+  fact: "事实",
+  order: "订单",
+  consume: "消费",
+  ai: "AI 预置",
+};
+
+const displayTags = computed(() => {
+  if (!profileTags.value) return [] as ProfileTag[];
+  return flattenProfileTags(profileTags.value);
+});
+
 onMounted(async () => {
-  const [{ data: res }] = await Promise.all([
-    fetchMemberInfo(),
-    assistantStore.loadConfig(),
-  ]);
+  await assistantStore.loadConfig();
+  const { data: res } = await fetchMemberInfo();
   if (res.code === 200) member.value = res.data;
+  try {
+    const { data: tagRes } = await fetchMemberProfileTags();
+    if (tagRes.code === 200 && tagRes.data) profileTags.value = tagRes.data;
+  } catch {
+    /* 未登录或接口失败时不展示标签 */
+  }
 });
 
 async function onLogout() {
@@ -57,6 +75,21 @@ async function onLogout() {
         label="助手 UI、Skill、快捷服务与游游推荐"
       />
     </van-cell-group>
+
+    <van-cell-group v-if="displayTags.length" inset class="profile profile__tags">
+      <van-cell title="画像标签" label="只读 · 事实 / 订单 / AI 预置" />
+      <div class="profile__tag-list">
+        <span
+          v-for="tag in displayTags"
+          :key="tag.tagId"
+          class="profile__tag"
+          :class="`profile__tag--${tag.category}`"
+        >
+          {{ categoryLabel[tag.category] }} · {{ tag.name }}
+        </span>
+      </div>
+    </van-cell-group>
+
     <div class="actions">
       <van-button block plain class="profile__logout-btn" @click="onLogout">
         退出登录
@@ -81,6 +114,45 @@ async function onLogout() {
 
 .profile {
   margin-top: 12px;
+}
+
+.profile__tags {
+  margin-top: 12px;
+}
+
+.profile__tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 16px 14px;
+}
+
+.profile__tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: #323233;
+  background: #f2f3f5;
+}
+
+.profile__tag--fact {
+  color: #1989fa;
+  background: rgba(25, 137, 250, 0.1);
+}
+
+.profile__tag--order {
+  color: #07c160;
+  background: rgba(7, 193, 96, 0.1);
+}
+
+.profile__tag--ai {
+  color: #7232dd;
+  background: rgba(114, 50, 221, 0.1);
+}
+
+.profile__tag--consume {
+  color: #ed6a0c;
+  background: rgba(237, 106, 12, 0.1);
 }
 
 .profile__config-cell {

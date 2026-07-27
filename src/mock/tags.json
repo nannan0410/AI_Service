@@ -1,5 +1,82 @@
 [
-  { "tagId": "new_guest", "name": "新客", "description": "首次来访用户" },
-  { "tagId": "family", "name": "亲子", "description": "携带儿童或偏好亲子项目" },
-  { "tagId": "high_value", "name": "高价值", "description": "高等级会员或高消费用户" }
+  {
+    "tagId": "new_guest",
+    "name": "新客",
+    "description": "首次来访用户",
+    "category": "fact",
+    "defaultConfidence": 1,
+    "legacyAlias": null
+  },
+  {
+    "tagId": "member_gold",
+    "name": "黄金会员",
+    "description": "会员等级为黄金会员",
+    "category": "fact",
+    "defaultConfidence": 1
+  },
+  {
+    "tagId": "high_value",
+    "name": "高价值",
+    "description": "高等级会员或高消费用户（兼容旧规则）",
+    "category": "fact",
+    "defaultConfidence": 1
+  },
+  {
+    "tagId": "visit_repeat",
+    "name": "多次入园",
+    "description": "已完成订单数 ≥ 2",
+    "category": "fact",
+    "defaultConfidence": 1
+  },
+  {
+    "tagId": "family",
+    "name": "亲子",
+    "description": "兼容旧规则引擎 / member_offer；与 order_family 双写",
+    "category": "order",
+    "defaultConfidence": 1,
+    "legacyAlias": "order_family"
+  },
+  {
+    "tagId": "order_family",
+    "name": "亲子订单",
+    "description": "订单含儿童或家庭票种",
+    "category": "order",
+    "defaultConfidence": 1,
+    "dualWriteAs": ["family"]
+  },
+  {
+    "tagId": "order_couple",
+    "name": "情侣出游",
+    "description": "2 成人 0 儿童且非团队规模",
+    "category": "order",
+    "defaultConfidence": 1
+  },
+  {
+    "tagId": "order_group",
+    "name": "团队游客",
+    "description": "单笔成人+儿童 ≥ 5",
+    "category": "order",
+    "defaultConfidence": 1
+  },
+  {
+    "tagId": "prefer_thrill",
+    "name": "喜欢刺激",
+    "description": "偏好刺激类项目（预置推断）",
+    "category": "ai",
+    "defaultConfidence": 0.72
+  },
+  {
+    "tagId": "prefer_photo",
+    "name": "偏好拍照",
+    "description": "偏好打卡/萌宠等拍照场景（预置推断）",
+    "category": "ai",
+    "defaultConfidence": 0.65
+  },
+  {
+    "tagId": "prefer_slow",
+    "name": "慢节奏",
+    "description": "偏好温和慢游（预置推断）",
+    "category": "ai",
+    "defaultConfidence": 0.7
+  }
 ]

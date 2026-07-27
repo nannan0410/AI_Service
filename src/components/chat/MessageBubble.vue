@@ -14,6 +14,7 @@ import type {
   TicketCardPayload,
   TicketFallbackPayload,
   PageGuideCardPayload,
+  MapActionCardPayload,
   ReviewCardPayload,
   ReviewSubmitDraft,
   TravelGuidePayload,
@@ -34,6 +35,7 @@ import GuideCard from "@/components/chat/cards/GuideCard.vue";
 import VisitorPicker from "@/components/chat/cards/VisitorPicker.vue";
 import QuizCard from "@/components/chat/cards/QuizCard.vue";
 import StarIntroCard from "@/components/chat/cards/StarIntroCard.vue";
+import MapActionCard from "@/components/chat/cards/MapActionCard.vue";
 import { isCouponRecommendPayload } from "@/utils/couponRecommend";
 import { ACTIVITY_CATEGORY_LABELS } from "@/utils/activityDisplay";
 
@@ -151,6 +153,23 @@ function asGuide(payload: unknown): TravelGuidePayload {
 
 function asPageGuide(payload: unknown): PageGuideCardPayload {
   return payload as PageGuideCardPayload;
+}
+
+function asMapAction(payload: unknown): MapActionCardPayload {
+  return payload as MapActionCardPayload;
+}
+
+function onMapActionOpen(path: string) {
+  openPage(path);
+}
+
+function onActivityMapAction(item: ActivityCardPayload) {
+  const path = item.mapActions?.[0]?.path;
+  if (!path) {
+    showToast("暂无法打开地图");
+    return;
+  }
+  openPage(path);
 }
 
 function asReview(payload: unknown): ReviewCardPayload {
@@ -279,6 +298,18 @@ const cardTypes = new Set([
     </div>
 
     <div
+      v-else-if="message.type === 'map_action'"
+      class="bubble bubble--assistant bubble-card-box"
+    >
+      <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
+      <MapActionCard
+        :payload="asMapAction(message.payload)"
+        embedded
+        @open="onMapActionOpen"
+      />
+    </div>
+
+    <div
       v-else-if="message.type === 'review'"
       class="bubble bubble--assistant bubble-card-box"
     >
@@ -341,8 +372,21 @@ const cardTypes = new Set([
       <ContentCard :payload="asContent(message.payload)" />
     </div>
 
-    <div v-else-if="message.type === 'activity'" class="bubble bubble--assistant bubble-card">
-      <ActivityCard :payload="asActivity(message.payload)" />
+    <div v-else-if="message.type === 'activity'" class="bubble bubble--assistant bubble-card-box">
+      <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
+      <ActivityCard :payload="asActivity(message.payload)" embedded />
+      <van-button
+        v-if="asActivity(message.payload).mapActions?.length"
+        size="small"
+        type="primary"
+        plain
+        round
+        block
+        class="bubble-card-box__action"
+        @click="onActivityMapAction(asActivity(message.payload))"
+      >
+        {{ asActivity(message.payload).mapActions![0].label }}
+      </van-button>
     </div>
 
     <div
@@ -374,7 +418,19 @@ const cardTypes = new Set([
       >
         <ActivityCard :payload="item" :tag="activityTagLabel(item)" embedded />
         <van-button
-          v-if="asSceneRecommend(message.payload).scene === 'queue' && queueActionLabel(item)"
+          v-if="item.mapActions?.length"
+          size="small"
+          type="primary"
+          plain
+          round
+          block
+          class="bubble-card-box__action"
+          @click="onActivityMapAction(item)"
+        >
+          {{ item.mapActions[0].label }}
+        </van-button>
+        <van-button
+          v-else-if="asSceneRecommend(message.payload).scene === 'queue' && queueActionLabel(item)"
           size="small"
           type="primary"
           plain

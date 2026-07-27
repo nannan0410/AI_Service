@@ -27,8 +27,16 @@ export function formatScenicCrowdLine(level: CrowdLevel = 'normal'): string {
   return CROWD_COPY[level]
 }
 
-/** 随机一档客流状态（进入欢迎页时调用） */
+/** 随机一档客流状态（进入欢迎页 / 对话查询时调用） */
 export function getRandomScenicCrowd(): ScenicCrowdStatus {
   const level = pickRandomCrowdLevel()
   return { level, text: formatScenicCrowdLine(level) }
+}
+
+/** 对话回复用：👥 前缀 + 口语文案 */
+export function formatScenicCrowdChatLine(level?: CrowdLevel): string {
+  const status = level
+    ? { level, text: formatScenicCrowdLine(level) }
+    : getRandomScenicCrowd()
+  return `👥 人流：${status.text}`
 }

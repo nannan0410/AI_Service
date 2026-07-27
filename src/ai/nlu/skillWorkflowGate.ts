@@ -18,6 +18,8 @@ import {
   isTravelGuidePreferredOverTicket,
   shouldRunTravelGuideWorkflow,
 } from '@/utils/travelGuideIntent'
+import { shouldRunProjectQueryWorkflow } from '@/utils/projectQueryIntent'
+import { shouldRunMapGuideWorkflow } from '@/utils/mapGuideIntent'
 import type { SkillRouteResult } from './resolveSkillRoute'
 
 /** P0-2 增强：高置信度 LLM 语义路由是否可进入 Workflow */
@@ -61,6 +63,8 @@ export function shouldRunTravelGuideWorkflowFromRoute(
   // 演出专项 / 明星介绍 不进攻略
   if (shouldRunShowScheduleWorkflow(message)) return false
   if (shouldRunStarIntroWorkflow(message)) return false
+  if (shouldRunProjectQueryWorkflow(message)) return false
+  if (shouldRunMapGuideWorkflow(message)) return false
   // 门票 FAQ 等可能被关键词误标为购票，仍按攻略走
   if (isTravelGuidePreferredOverTicket(message)) return true
   if (route.skill?.skillId !== 'travel_guide') return false
@@ -158,5 +162,27 @@ export function shouldRunMemberOfferWorkflowFromRoute(
   return (
     shouldRunMemberOfferWorkflow(message) ||
     isLlmWorkflowEntry(route, 'member_offer')
+  )
+}
+
+export function shouldRunProjectQueryWorkflowFromRoute(
+  route: SkillRouteResult,
+  message: string,
+): boolean {
+  if (route.skill?.skillId !== 'project_query') return false
+  return (
+    shouldRunProjectQueryWorkflow(message) ||
+    isLlmWorkflowEntry(route, 'project_query')
+  )
+}
+
+export function shouldRunMapGuideWorkflowFromRoute(
+  route: SkillRouteResult,
+  message: string,
+): boolean {
+  if (shouldRunProjectQueryWorkflow(message)) return false
+  if (route.skill?.skillId !== 'map_guide') return false
+  return (
+    shouldRunMapGuideWorkflow(message) || isLlmWorkflowEntry(route, 'map_guide')
   )
 }

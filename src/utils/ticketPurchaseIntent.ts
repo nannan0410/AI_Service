@@ -10,6 +10,7 @@ import { shouldRunShowScheduleWorkflow } from '@/utils/showScheduleIntent'
 import { shouldRunStarIntroWorkflow } from '@/utils/starIntent'
 import { shouldRunCheckinWorkflow } from '@/utils/checkinIntent'
 import { shouldRunQueueRecommendWorkflow } from '@/utils/queueRecommendIntent'
+import { shouldRunWeatherSuitabilityWorkflow } from '@/utils/weatherSuitabilityIntent'
 
 export { isTravelGuidePreferredOverTicket } from '@/utils/travelGuideIntent'
 
@@ -67,6 +68,7 @@ export function shouldInterruptPurchaseSession(message: string): boolean {
     shouldRunReviewWorkflow(text) ||
     shouldRunCheckinWorkflow(text) ||
     shouldRunQueueRecommendWorkflow(text) ||
+    shouldRunWeatherSuitabilityWorkflow(text) ||
     shouldRunNewGuestCouponWorkflow(text)
   )
 }

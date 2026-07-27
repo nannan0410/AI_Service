@@ -65,6 +65,7 @@ export type MessageType =
   | 'ticket_confirm'
   | 'ticket_fallback'
   | 'page_guide'
+  | 'map_action'
   | 'review'
   | 'guide'
   | 'star_intro'
@@ -267,6 +268,14 @@ export interface Activity {
   quizId?: string
   /** 所属景区；缺省按默认景区处理 */
   scenicId?: string
+  /** 关联地图 POI（平面坐标点） */
+  mapPoiId?: string
+  /** 项目简介（地图详情等） */
+  description?: string
+  /** 适合人群 */
+  suitablePeople?: string[]
+  /** 刺激程度 1–5 */
+  excitementLevel?: number
 }
 
 export interface VirtualQueueOrder {
@@ -410,6 +419,13 @@ export interface ActivityCardPayload {
     label: string
     path: string
   }
+  /** 关联地图 POI */
+  mapPoiId?: string
+  /** 地图动作 CTA（查看位置等） */
+  mapActions?: Array<{
+    label: string
+    path: string
+  }>
 }
 
 /** 餐饮/零售/演出/虚拟排队场景推荐：合并为一条消息 */
@@ -557,6 +573,157 @@ export interface PageGuideCardPayload {
   actionDone?: boolean
 }
 
+/** 地图平面坐标 POI（相对底图，非 GPS） */
+export type MapPoiType = 'ride' | 'show' | 'dining' | 'gate' | 'facility' | 'node'
+
+export interface MapPoi {
+  poiId: string
+  scenicId: string
+  activityId?: string
+  name: string
+  mapX: number
+  mapY: number
+  area?: string
+  poiType: MapPoiType
+  icon?: string
+}
+
+/** 景区导览地图配置（形态 A） */
+export interface MapConfig {
+  scenicId: string
+  mapImageUrl: string
+  coordinateSpace: 'percent' | 'pixel'
+  enabled?: boolean
+  mapWidth?: number
+  mapHeight?: number
+}
+
+/**
+ * 固定游园线契约占位（Phase 3 Demo 不返回真实节点序列）
+ * 落地可接导览中台线路配置。
+ */
+export interface MapRoutePlaceholder {
+  scenicId: string
+  routeId: string
+  name: string
+  /** Demo 固定 false */
+  demoImplemented: boolean
+  note: string
+  nodeCount?: number
+}
+
+/**
+ * 线路规划契约占位（Phase 3 Demo 不算子路径）
+ */
+export interface MapPlanPlaceholder {
+  scenicId: string
+  from?: string
+  to?: string
+  /** Demo 固定 false */
+  supported: boolean
+  message: string
+  pathNodeIds?: string[]
+}
+
+/** 对话内地图动作卡（查看位置 / 打开地图） */
+export interface MapActionCardPayload {
+  action: 'view_poi' | 'open_map'
+  title: string
+  subtitle?: string
+  poiId?: string
+  activityId?: string
+  activityName?: string
+  deepLink: string
+  buttonLabel: string
+  tag?: string
+}
+
+/** 游客当前会话上下文（与长期画像分离） */
+export interface SessionContext {
+  scenicId: string | null
+  visitStatus: 'off_park' | 'in_park'
+  location: {
+    label: string
+    mapPoiId?: string
+    area?: string
+  }
+  time: string
+  intent?: string
+  activeSkillId?: string
+  currentOrder?: {
+    orderId: string
+    status: string
+    visitDate?: string
+  }
+}
+
+/** 画像标签分类 */
+export type ProfileTagCategory = 'fact' | 'order' | 'consume' | 'ai'
+
+export type ProfileTagSource =
+  | 'member'
+  | 'order'
+  | 'consume'
+  | 'behavior'
+  | 'ai_preset'
+  | 'catalog'
+
+export interface ProfileTag {
+  tagId: string
+  name: string
+  category: ProfileTagCategory
+  source: ProfileTagSource
+  createdAt: string
+  confidence: number
+  evidence?: string
+}
+
+export interface UserProfileTags {
+  userId: string
+  personaId?: PersonaId
+  memberTags: ProfileTag[]
+  orderTags: ProfileTag[]
+  consumeTags: ProfileTag[]
+  aiTags: ProfileTag[]
+  /** 规则引擎兼容：含双写后的 tagId 列表 */
+  ruleTagIds: string[]
+}
+
+export interface TagRuleDef {
+  ruleId: string
+  tagId: string
+  name: string
+  description: string
+  when: string
+  dualWriteAs?: string[]
+  exampleHitOrderIds?: Record<string, string[]>
+}
+
+export interface TagCatalogEntry {
+  tagId: string
+  name: string
+  description?: string
+  category: ProfileTagCategory
+  defaultConfidence?: number
+  dualWriteAs?: string[]
+  legacyAlias?: string | null
+}
+
+export interface PersonaTagPreview {
+  personaId: PersonaId
+  nickname: string
+  memberLevel: string
+  inPark: boolean
+  currentLocation?: string
+  profile: UserProfileTags
+  orderRuleHits: Array<{
+    ruleId: string
+    tagId: string
+    orderId: string
+    ticketName: string
+  }>
+}
+
 export interface ReviewOrderOption {
   orderId: string
   ticketName: string
@@ -616,7 +783,6 @@ export interface AssistantMotionConfig {
 export interface AssistantAvatarConfig {
   avatarUrl: string
   name: string
-  greeting: string
   themeColor?: string
 }
 
@@ -633,8 +799,6 @@ export interface AssistantUiConfig {
   assistantNickname: string
   /** 助手默认图，用于欢迎页全身形象图 */
   defaultImageUrl: string
-  /** 欢迎语，用于聊天欢迎气泡等 */
-  greeting: string
   /** 主色：对话框按钮、强调色、用户气泡等 */
   primaryColor: string
   primaryColorLight?: string
@@ -668,7 +832,6 @@ export interface WelcomePageData extends WelcomeTemplate {
     | 'primaryColor'
     | 'primaryColorLight'
     | 'primaryColorDark'
-    | 'greeting'
   >
 }
 

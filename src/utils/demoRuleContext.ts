@@ -9,18 +9,16 @@ import {
 } from '@/utils/newGuestCoupon'
 import { filterInvoiceableOrders } from '@/utils/invoiceableOrders'
 import { filterReviewableOrders } from '@/utils/reviewableOrders'
-import defaultFieldCatalog from '@/mock/assistant/field_catalog.json'
 import demoNew from '@/mock/users/demo_new.json'
 import demoMid from '@/mock/users/demo_mid.json'
 import demoVip from '@/mock/users/demo_vip.json'
-import type { FieldCatalog, TagCatalogItem } from '@/types/businessConfig'
-
 import {
   getUpcomingVisitOrders,
   hasVisitToday,
   pickNearestUpcomingVisitOrder,
 } from '@/utils/upcomingVisitOrder'
 import { filterByBusinessScenicId, filterCouponsByScenic } from '@/utils/scenicScope'
+import { resolveProfileRuleTagIds } from '@/utils/profileTags'
 
 const snapshots: Record<PersonaId, UserSnapshot> = {
   demo_new: demoNew as UserSnapshot,
@@ -38,10 +36,7 @@ function ensureDemoNewRegistrationFresh(snapshot: UserSnapshot): void {
 ensureDemoNewRegistrationFresh(snapshots.demo_new)
 
 export function resolveTagsForPersona(personaId: PersonaId): string[] {
-  const catalog = defaultFieldCatalog as FieldCatalog
-  return catalog.tags
-    .filter((tag: TagCatalogItem) => tag.demoPersonas?.includes(personaId))
-    .map((tag) => tag.tagId)
+  return resolveProfileRuleTagIds(personaId)
 }
 
 /** 聊天页实时态（Mock 内存快照）覆盖静态 JSON，避免清空券后规则仍读旧数据 */

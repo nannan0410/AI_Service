@@ -1,0 +1,28 @@
+{
+  "demo_new": {
+    "aiTags": []
+  },
+  "demo_mid": {
+    "aiTags": [
+      {
+        "tagId": "prefer_photo",
+        "confidence": 0.65,
+        "evidence": "预置：偏好亲子互动与打卡场景"
+      }
+    ]
+  },
+  "demo_vip": {
+    "aiTags": [
+      {
+        "tagId": "prefer_thrill",
+        "confidence": 0.72,
+        "evidence": "预置：历史多次咨询刺激项目"
+      },
+      {
+        "tagId": "prefer_photo",
+        "confidence": 0.6,
+        "evidence": "预置：在园打卡活跃"
+      }
+    ]
+  }
+}

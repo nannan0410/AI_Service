@@ -1,0 +1,8 @@
+[
+  {
+    "scenicId": "scenic_hlg",
+    "mapImageUrl": "/map/scenic_hlg_placeholder.svg",
+    "coordinateSpace": "percent",
+    "enabled": true
+  }
+]

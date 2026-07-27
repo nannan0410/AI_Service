@@ -23,7 +23,7 @@
     │
     ├─① Workflow 层（代码正则，最高优先级；ChatPage 执行顺序摘要）
     │     新客领券 / 停车 / 虚拟排队 / 明星介绍 / 演出场次
-    │     游玩攻略（travel_guide）
+    │     天气人流适合度 / 游玩攻略（travel_guide）
     │     购票会话 / 会员权益选品（member_offer，优先于泛查券）
     │     主动营销（餐饮零售） / 发票 / 打卡 / 点评 / 订单…
     │
@@ -35,7 +35,7 @@
 ```
 
 **优先级**：Workflow 正则 > Skill 关键词 > LLM / 离线兜底。  
-**分流要点**：命中 `shouldRunShowScheduleWorkflow` 时**不**走 `travel_guide`；`member_offer` 优先于 `proactive_marketing` 泛查券。
+**分流要点**：命中 `shouldRunShowScheduleWorkflow` / `shouldRunWeatherSuitabilityWorkflow` 时**不**走宽泛 `travel_guide`；`member_offer` 优先于 `proactive_marketing` 泛查券。
 
 **说明**：UI 上的「理解用户意图」步骤（`aiExecutionStore`）是展示用；命中 Workflow 时会立刻 `markIntentDone()`，**并不调用 LLM 做意图分类**。
 
@@ -54,6 +54,7 @@
 | **购票·营销券** | 规则 | `purchaseMarketing.ts` | ❌ | **保持规则** |
 | **会员权益选品** | Skill + 选品正则 | `memberOffer.ts` + `memberOfferRecommend.ts` | ❌ | **保持规则**；等级折扣+券+标签 |
 | **游玩攻略** | Skill + 攻略正则 + **LLM 子意图** | `travelGuideIntent.ts` + `nlu/classifyTravelGuideIntent.ts` | ⚡ 混合 | 已实现 P0-3 |
+| **天气/人流适合度** | 代码正则 | `weatherSuitability.ts` + `scenicWeather` / `scenicCrowd` | ❌ | Mock；人流三档随机 |
 | **订单查询** | Skill + 订单正则 | `orderQuery.ts` | ❌ | **可保持规则** |
 | **发票服务** | Skill + 发票正则 | `invoiceService.ts` | ❌ | **保持规则**；引导假页 |
 | **停车缴费** | Skill + 停车正则 | `parkingPay.ts` | ❌ | **保持规则**；引导假页 |
@@ -105,6 +106,15 @@
 | 过程面板 | 走 LLM 时显示「识别攻略类型」 |
 | 文件 | `src/utils/travelGuideIntent.ts`、`src/ai/nlu/resolveTravelGuideIntent.ts`、`src/ai/workflow/travelGuide.ts` |
 
+### 3.3.1 天气 / 人流适合度
+
+| 项 | 说明 |
+|----|------|
+| 入口 | `shouldRunWeatherSuitabilityWorkflow`；Skill 挂 `travel_guide`；**优先于**宽泛攻略 |
+| 示例 | 「今天适合游玩吗」「天气和人流怎么样」；游游推荐 `new_weather` |
+| 行为 | 当日天气 Mock + **随机**人流三档（闲/正常/偏挤）+ 综合建议文本 |
+| 文件 | `weatherSuitabilityIntent.ts`、`weatherSuitability.ts`、`scenicWeather.ts`、`scenicCrowd.ts` |
+
 ### 3.4 订单查询
 
 | 项 | 说明 |
@@ -145,7 +155,7 @@
 | 项 | 说明 |
 |----|------|
 | 入口 | Skill=`scenic_recommend` + `shouldRunShowScheduleWorkflow`；**优先于** `travel_guide` |
-| 行为 | `getScenicActivities` → **单条** `scene_recommend`；`dayKind`：today / tomorrow / day_after / general（「演出推荐」「有哪些演出项目」等） |
+| 行为 | `getScenicActivities` → **单条** `scene_recommend`；`dayKind`：today / tomorrow / day_after / general（「演出推荐」「有哪些演出项目」等）；**点名**演出名/简称（如「海豚表演」「海豚」）→ 仅该项目场次 |
 | 文件 | `src/utils/showScheduleIntent.ts`、`src/utils/showSchedule.ts`、`src/ai/workflow/showSchedule.ts` |
 
 ### 3.9 主动营销（餐饮 / 零售）
@@ -472,6 +482,7 @@ npx vite-node scripts/test-travel-guide-intent-route.mts
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-23 | 「今天适合游玩吗」：天气 Mock + 随机人流三档 Workflow，优先于宽泛攻略 / 通用 LLM |
 | 2026-07-22 | 答题挂靠演出/明星；新增 `member_offer`；演出优先于攻略；点名项目简称模糊匹配；餐饮/零售非在园不推券 |
 | 2026-07-22 | 虚拟排队 `queue_recommend` Workflow；欢迎 Hero 当日天气本地 Mock |
 | 2026-07-21 | 服务点评「帮我写评价」：LLM / 离线模板草稿（非 Workflow；不自动提交） |

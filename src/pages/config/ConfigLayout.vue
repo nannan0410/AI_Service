@@ -5,12 +5,21 @@ import { useRoute, useRouter } from "vue-router";
 const route = useRoute();
 const router = useRouter();
 
-const activeTab = computed(() =>
-  route.path.includes("/business") ? "business" : "ui"
-);
+const activeTab = computed(() => {
+  if (route.path.includes("/business")) return "business";
+  if (route.path.includes("/data")) return "data";
+  return "ui";
+});
+
+const isDataTab = computed(() => activeTab.value === "data");
 
 function onTabChange(name: string | number) {
-  router.replace(name === "business" ? "/config/business" : "/config/ui");
+  const map: Record<string, string> = {
+    ui: "/config/ui",
+    business: "/config/business",
+    data: "/config/data",
+  };
+  router.replace(map[String(name)] ?? "/config/ui");
 }
 
 function openChatH5() {
@@ -19,7 +28,7 @@ function openChatH5() {
 </script>
 
 <template>
-  <div class="config-layout">
+  <div class="config-layout" :class="{ 'config-layout--wide': isDataTab }">
     <van-nav-bar
       title="后台配置"
       left-arrow
@@ -38,6 +47,7 @@ function openChatH5() {
     <van-tabs :active="activeTab" shrink class="config-layout__tabs" @change="onTabChange">
       <van-tab title="助手 UI" name="ui" />
       <van-tab title="业务场景" name="business" />
+      <van-tab title="数据与接口" name="data" />
     </van-tabs>
 
     <router-view />
@@ -53,9 +63,13 @@ function openChatH5() {
   background: #f5f6f8;
 }
 
+.config-layout--wide {
+  max-width: min(960px, 100%);
+}
+
 .config-layout__nav:deep(.van-nav-bar) {
   width: 100%;
-  max-width: 430px;
+  max-width: inherit;
 }
 
 .config-layout__h5-btn {

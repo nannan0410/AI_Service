@@ -31,21 +31,23 @@ ${catalog}
 1. 只根据用户当前这句话分类，不要臆造需求。
 2. 查订单、票在哪、订票记录 → order_query
 3. 买票、票种、人数、下单、套票 → ticket_purchase
-4. 交通、怎么去、攻略、入园准备、游玩路线、停车位置 → travel_guide
-5. 停车费、交车费、停车缴费、绑定车牌 → parking_pay（不是问停车场在哪）
-6. 今日演出、演出推荐、下一场几点、灯光秀、花车巡游 → scenic_recommend
-7. 点名游乐项目（过山车、漂流、取号、快速排队）→ queue_recommend
-8. 开发票、开票、报销、发票 → invoice_service
-9. 点评、评价、服务怎么样、写评价、满意度 → review_service
-10. 打卡、签到、景点打卡、园区打卡 → checkin_service
-11. 虚拟排队、免费取号、快速排队、排队少的项目 → queue_recommend
-12. 有什么券、优惠活动、推荐优惠 → proactive_marketing（不含新客领券；不含会员等级选品）
-13. 会员专属套餐、按会员等级推荐、适合我的门票组合、会员怎么买最划算 → member_offer
-14. 不确定或仅寒暄 → general
-15. confidence 为 0~1，表示把握程度。
+4. 交通、怎么去、攻略、入园准备、游玩路线、停车位置；今天适合游玩吗、天气/人流怎么样 → travel_guide
+5. 某个项目在哪、附近好玩、适合小孩的项目、过山车介绍 → project_query
+6. 打开地图、查看地图、导览地图、在地图上看 → map_guide
+7. 停车费、交车费、停车缴费、绑定车牌 → parking_pay（不是问停车场在哪）
+8. 今日演出、演出推荐、下一场几点、灯光秀、花车巡游、海豚表演等点名演出 → scenic_recommend
+9. 点名游乐项目取号、快速排队 → queue_recommend
+10. 开发票、开票、报销、发票 → invoice_service
+11. 点评、评价、服务怎么样、写评价、满意度 → review_service
+12. 打卡、签到、景点打卡、园区打卡 → checkin_service
+13. 虚拟排队、免费取号、快速排队、排队少的项目 → queue_recommend
+14. 有什么券、优惠活动、推荐优惠 → proactive_marketing（不含新客领券；不含会员等级选品）
+15. 会员专属套餐、按会员等级推荐、适合我的门票组合、会员怎么买最划算 → member_offer
+16. 不确定或仅寒暄 → general
+17. confidence 为 0~1，表示把握程度。
 
 仅输出 JSON：
-{"skillId":"ticket_purchase|travel_guide|order_query|parking_pay|scenic_recommend|queue_recommend|invoice_service|review_service|checkin_service|proactive_marketing|member_offer|general","confidence":number}`
+{"skillId":"ticket_purchase|travel_guide|order_query|parking_pay|scenic_recommend|queue_recommend|invoice_service|review_service|checkin_service|proactive_marketing|member_offer|project_query|map_guide|general","confidence":number}`
 }
 
 function parseClassification(content: string): SkillClassification | null {

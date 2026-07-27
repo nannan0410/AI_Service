@@ -207,14 +207,50 @@ export function fetchTicketProducts(channel?: string) {
   })
 }
 
+/** 券产品目录（非用户持有券） */
+export function fetchCouponProducts() {
+  return request.get<ApiResponse<Record<string, unknown>[]>>('/api/products/coupons')
+}
+
+export function fetchRetailProducts() {
+  return request.get<ApiResponse<Record<string, unknown>[]>>('/api/products/retail')
+}
+
 export function fetchContentBlocks(type?: string) {
   return request.get<ApiResponse<ContentBlock[]>>('/api/content/blocks', {
     params: type ? { type } : undefined,
   })
 }
 
+export function fetchTagCatalog() {
+  return request.get<ApiResponse<UserTag[]>>('/api/tags')
+}
+
 export function fetchUserTags() {
   return request.get<ApiResponse<UserTag[]>>('/api/member/tags')
+}
+
+export function fetchMemberProfileTags() {
+  return request.get<ApiResponse<import('@/types').UserProfileTags>>(
+    '/api/member/profile-tags',
+  )
+}
+
+export function fetchAdminTagCatalog() {
+  return request.get<ApiResponse<import('@/types').TagCatalogEntry[]>>(
+    '/api/admin/tag-catalog',
+  )
+}
+
+export function fetchAdminTagRules() {
+  return request.get<ApiResponse<import('@/types').TagRuleDef[]>>('/api/admin/tag-rules')
+}
+
+export function fetchPersonaTagPreview(personaId: string) {
+  return request.get<ApiResponse<import('@/types').PersonaTagPreview>>(
+    '/api/admin/persona-preview',
+    { params: { personaId } },
+  )
 }
 
 export function fetchTravelGuide(scope?: 'full' | 'in_park' | 'recommend') {
@@ -225,6 +261,44 @@ export function fetchTravelGuide(scope?: 'full' | 'in_park' | 'recommend') {
 
 export function fetchAssistantSkills() {
   return request.get<ApiResponse<AssistantSkillConfig[]>>('/api/assistant/skills')
+}
+
+export function fetchMapConfig(scenicId?: string) {
+  return request.get<ApiResponse<import('@/types').MapConfig | null>>('/api/map/config', {
+    params: scenicId ? { scenicId } : undefined,
+  })
+}
+
+export function fetchMapPois(scenicId?: string) {
+  return request.get<ApiResponse<import('@/types').MapPoi[]>>('/api/map/pois', {
+    params: scenicId ? { scenicId } : undefined,
+  })
+}
+
+/** Phase 3 契约占位：固定游园线（Demo 无真实节点） */
+export function fetchMapRoutes(scenicId?: string) {
+  return request.get<ApiResponse<import('@/types').MapRoutePlaceholder[]>>(
+    '/api/map/routes',
+    { params: scenicId ? { scenicId } : undefined },
+  )
+}
+
+/** Phase 3 契约占位：线路规划试算（Demo supported=false） */
+export function fetchMapPlan(params?: {
+  scenicId?: string
+  from?: string
+  to?: string
+}) {
+  return request.get<ApiResponse<import('@/types').MapPlanPlaceholder>>(
+    '/api/map/plan',
+    {
+      params: {
+        ...(params?.scenicId ? { scenicId: params.scenicId } : {}),
+        ...(params?.from ? { from: params.from } : {}),
+        ...(params?.to ? { to: params.to } : {}),
+      },
+    },
+  )
 }
 
 export function fetchFieldCatalog() {

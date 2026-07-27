@@ -1,14 +1,49 @@
-/** 今日 / 明日 / 演出推荐等 → 演出场次 Workflow */
+import activities from '@/mock/activities.json'
+import type { Activity } from '@/types'
+import { matchActivityByName } from '@/utils/activityNameMatch'
+
+/** 纯泛词，避免单独「表演」误匹配「海豚表演」 */
+const GENERIC_SHOW_QUERY = /^(演出|表演|秀|场次|项目|推荐)$/
+
+export function listShowActivities(): Activity[] {
+  return (activities as Activity[])
+    .filter((item) => item.category === 'show' && (item.showStartTimes?.length ?? 0) > 0)
+    .slice()
+    .sort((a, b) => b.name.length - a.name.length)
+}
+
+/**
+ * 点名演出项目（支持简称，如「海豚」→「海豚表演」）
+ * @param scenicId 传入时仅在该景区候选中匹配
+ */
+export function matchShowActivityByName(
+  message: string,
+  options?: {
+    candidates?: Activity[]
+    scenicId?: string | null
+  },
+): Activity | null {
+  const text = message.trim()
+  if (!text || GENERIC_SHOW_QUERY.test(text)) return null
+  const pool =
+    options?.candidates?.filter(
+      (item) => item.category === 'show' && (item.showStartTimes?.length ?? 0) > 0,
+    ) ?? listShowActivities()
+  return matchActivityByName(text, pool, options?.scenicId)
+}
+
+/** 今日 / 明日 / 演出推荐 / 点名演出项目 → 演出场次 Workflow */
 export function shouldRunShowScheduleWorkflow(message: string): boolean {
   const text = message.trim()
   if (!text) return false
+  if (matchShowActivityByName(text)) return true
   return (
     /下一场.{0,8}(演出|表演|秀)/.test(text) ||
     /(今天|今日|明天|后天).{0,16}(演出|表演)/.test(text) ||
     /演出.{0,8}(安排|时间|场次|几点|开始|吗|推荐|项目)/.test(text) ||
     /(推荐|介绍).{0,8}(演出|表演|秀)/.test(text) ||
     /(有没有|有哪些|有什么|啥).{0,8}(演出|表演)/.test(text) ||
-    /(灯光秀|花车|巡游|水上秀).{0,8}(几点|开始|时间|吗|推荐)/.test(text) ||
+    /(灯光秀|花车|巡游|水上秀|海豚).{0,8}(几点|开始|时间|吗|推荐)/.test(text) ||
     /^(演出|表演)推荐$/.test(text) ||
     /^今天有哪些演出/.test(text)
   )
@@ -29,6 +64,10 @@ export function resolveShowDayKind(message: string): ShowDayKind {
     /(有哪些|有什么|看看).{0,8}(演出|表演)/.test(text) ||
     /^(演出|表演)$/.test(text)
   ) {
+    return 'general'
+  }
+  // 点名具体演出（如「海豚表演」）且未说日期 → 按项目推荐，展示该项目场次
+  if (matchShowActivityByName(text)) {
     return 'general'
   }
   // 「下一场」「有没有演出」等默认按今日

@@ -1,0 +1,30 @@
+[
+  {
+    "ruleId": "rule_order_family",
+    "tagId": "order_family",
+    "name": "亲子订单",
+    "description": "若订单儿童数 ≥ 1，或票种为家庭套票/年卡，则打亲子订单标签（并双写 family）",
+    "when": "quantity.child >= 1 OR ticketType in (family_bundle, family_annual)",
+    "dualWriteAs": ["family"],
+    "exampleHitOrderIds": {
+      "demo_mid": ["说明：待出行家庭套票命中"],
+      "demo_vip": ["说明：家庭套票/亲子构成命中"]
+    }
+  },
+  {
+    "ruleId": "rule_order_couple",
+    "tagId": "order_couple",
+    "name": "情侣出游",
+    "description": "若单笔 2 成人 0 儿童，且合计人数 < 5，且非家庭票种，则打情侣出游",
+    "when": "adult==2 AND child==0 AND (adult+child)<5 AND ticketType not in (family_bundle, family_annual)",
+    "exampleHitOrderIds": {}
+  },
+  {
+    "ruleId": "rule_order_group",
+    "tagId": "order_group",
+    "name": "团队游客",
+    "description": "若单笔成人+儿童 ≥ 5，则打团队游客",
+    "when": "adult + child >= 5",
+    "exampleHitOrderIds": {}
+  }
+]

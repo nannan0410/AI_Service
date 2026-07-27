@@ -17,6 +17,9 @@ import {
   isTravelGuidePreferredOverTicket,
   shouldRunTravelGuideWorkflow,
 } from '@/utils/travelGuideIntent'
+import { shouldRunWeatherSuitabilityWorkflow } from '@/utils/weatherSuitabilityIntent'
+import { shouldRunProjectQueryWorkflow } from '@/utils/projectQueryIntent'
+import { shouldRunMapGuideWorkflow } from '@/utils/mapGuideIntent'
 import type { AssistantSkillConfig } from '@/types'
 
 /**
@@ -33,6 +36,10 @@ export function resolveSkillByWorkflowIntent(
   }
   // 入园 FAQ / 游玩推荐等优先于购票（避免「门票怎么用」误进选票）
   if (isTravelGuidePreferredOverTicket(message)) {
+    return getSkillById(skills, 'travel_guide') ?? null
+  }
+  // 天气/人流适合度：挂 travel_guide Skill，执行走独立 Workflow
+  if (shouldRunWeatherSuitabilityWorkflow(message)) {
     return getSkillById(skills, 'travel_guide') ?? null
   }
   if (isTicketPurchaseIntent(message)) {
@@ -58,6 +65,13 @@ export function resolveSkillByWorkflowIntent(
   if (shouldRunShowScheduleWorkflow(message)) {
     return getSkillById(skills, 'scenic_recommend') ?? null
   }
+  // 项目查询优先于宽泛攻略与纯打开地图
+  if (shouldRunProjectQueryWorkflow(message)) {
+    return getSkillById(skills, 'project_query') ?? null
+  }
+  if (shouldRunMapGuideWorkflow(message)) {
+    return getSkillById(skills, 'map_guide') ?? null
+  }
   if (shouldRunTravelGuideWorkflow(message)) {
     return getSkillById(skills, 'travel_guide') ?? null
   }
@@ -81,11 +95,14 @@ export function shouldSkipLlmSkillRouting(message: string): boolean {
   if (shouldRunNewGuestCouponWorkflow(message)) return true
   if (shouldRunParkingPayWorkflow(message)) return true
   if (isTravelGuidePreferredOverTicket(message)) return true
+  if (shouldRunWeatherSuitabilityWorkflow(message)) return true
   if (isTicketPurchaseIntent(message)) return true
   if (shouldRunMemberOfferWorkflow(message)) return true
   if (shouldRunProactiveMarketingWorkflow(message)) return true
   if (shouldRunStarIntroWorkflow(message)) return true
   if (shouldRunShowScheduleWorkflow(message)) return true
+  if (shouldRunProjectQueryWorkflow(message)) return true
+  if (shouldRunMapGuideWorkflow(message)) return true
   if (shouldRunTravelGuideWorkflow(message)) return true
   if (shouldRunOrderQueryWorkflow(message)) return true
   if (shouldRunInvoiceWorkflow(message)) return true

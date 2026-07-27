@@ -1,0 +1,161 @@
+[
+  {
+    "poiId": "poi_hlg_001",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_001",
+    "name": "亲子漂流",
+    "mapX": 28,
+    "mapY": 42,
+    "area": "漂流入口",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_002",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_002",
+    "name": "极限过山车",
+    "mapX": 72,
+    "mapY": 28,
+    "area": "极限区",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_003",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_003",
+    "name": "水上灯光秀",
+    "mapX": 50,
+    "mapY": 52,
+    "area": "中心湖",
+    "poiType": "show"
+  },
+  {
+    "poiId": "poi_hlg_004",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_004",
+    "name": "萌宠乐园",
+    "mapX": 78,
+    "mapY": 62,
+    "area": "东区",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_005",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_005",
+    "name": "景区餐厅套餐",
+    "mapX": 42,
+    "mapY": 68,
+    "area": "美食广场",
+    "poiType": "dining"
+  },
+  {
+    "poiId": "poi_hlg_006",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_006",
+    "name": "湖畔西餐厅",
+    "mapX": 55,
+    "mapY": 58,
+    "area": "中心湖畔",
+    "poiType": "dining"
+  },
+  {
+    "poiId": "poi_hlg_007",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_007",
+    "name": "景区伴手礼店",
+    "mapX": 18,
+    "mapY": 82,
+    "area": "主出入口",
+    "poiType": "facility"
+  },
+  {
+    "poiId": "poi_hlg_008",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_008",
+    "name": "主题玩具屋",
+    "mapX": 22,
+    "mapY": 72,
+    "area": "主出入口",
+    "poiType": "facility"
+  },
+  {
+    "poiId": "poi_hlg_009",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_009",
+    "name": "花车巡游",
+    "mapX": 48,
+    "mapY": 38,
+    "area": "中心大道",
+    "poiType": "show"
+  },
+  {
+    "poiId": "poi_hlg_010",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_010",
+    "name": "旋转木马",
+    "mapX": 35,
+    "mapY": 55,
+    "area": "亲子区",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_011",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_011",
+    "name": "碰碰车",
+    "mapX": 38,
+    "mapY": 48,
+    "area": "亲子区",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_012",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_012",
+    "name": "激流勇进",
+    "mapX": 65,
+    "mapY": 40,
+    "area": "极限区",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_013",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_013",
+    "name": "4D动感影院",
+    "mapX": 60,
+    "mapY": 70,
+    "area": "娱乐馆",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_014",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_014",
+    "name": "摩天轮",
+    "mapX": 82,
+    "mapY": 48,
+    "area": "东区",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_015",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_015",
+    "name": "儿童城堡",
+    "mapX": 30,
+    "mapY": 60,
+    "area": "亲子区",
+    "poiType": "ride"
+  },
+  {
+    "poiId": "poi_hlg_gate",
+    "scenicId": "scenic_hlg",
+    "name": "主入口",
+    "mapX": 12,
+    "mapY": 88,
+    "area": "主出入口",
+    "poiType": "gate"
+  }
+]

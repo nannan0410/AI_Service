@@ -8,12 +8,14 @@ import {
   type ShowSlot,
 } from '@/utils/showSchedule'
 import {
+  matchShowActivityByName,
   resolveShowDayKind,
   shouldRunShowScheduleWorkflow,
   showDayLabel,
   type ShowDayKind,
 } from '@/utils/showScheduleIntent'
 import { resolveShowQuizInvite } from '@/utils/quizInvite'
+import { useScenicStore } from '@/store/scenicStore'
 import type {
   Activity,
   ChatMessageDraft,
@@ -118,8 +120,12 @@ export async function runShowScheduleWorkflow(
   message: string,
   callbacks?: ToolExecutionCallbacks,
 ): Promise<LlmChatResult> {
+  const scenicStore = useScenicStore()
   const dayKind = resolveShowDayKind(message)
   const day = showDayLabel(dayKind)
+  const namedShow = matchShowActivityByName(message, {
+    scenicId: scenicStore.currentScenicId,
+  })
 
   callbacks?.onToolStart?.('getScenicActivities', `查询${day}演出`)
   let activities: Activity[] = []
@@ -135,15 +141,36 @@ export async function runShowScheduleWorkflow(
     }
   }
 
+  // 点名具体演出时只展示该项目（再按当前景区 API 结果校准一次）
+  const focused =
+    namedShow &&
+    (matchShowActivityByName(message, {
+      candidates: activities,
+      scenicId: scenicStore.currentScenicId,
+    }) ??
+      activities.find((item) => item.activityId === namedShow.activityId))
+  if (focused) {
+    activities = [focused]
+  }
+
   const ref = new Date()
   const slots = listTodayShowSlots(activities, ref)
   const recommended = findRecommendedShowSlot(slots, dayKind, ref)
-  const intro = buildShowScheduleReply(slots, { dayKind, ref })
+  let intro = buildShowScheduleReply(slots, { dayKind, ref })
+  if (focused && slots.length) {
+    const times = focused.showStartTimes?.join('、') ?? ''
+    intro =
+      dayKind === 'general'
+        ? `已为您找到「${focused.name}」（${focused.location}），场次 ${times}。建议提前 10 分钟到场。`
+        : intro
+  }
   const quizInvite = await resolveShowQuizInvite(activities)
 
   if (!slots.length) {
     return {
-      content: intro,
+      content: focused
+        ? `当前景区未查到「${focused.name}」的演出场次，可换个说法问问「今天有哪些演出」。`
+        : intro,
       skillId: 'scenic_recommend',
       toolCallsUsed: ['getScenicActivities'],
     }

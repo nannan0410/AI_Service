@@ -17,7 +17,8 @@
       "enabled": true,
       "isFree": true
     },
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_001"
   },
   {
     "activityId": "act_002",
@@ -37,7 +38,8 @@
       "isFree": false,
       "queuePrice": 10
     },
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_002"
   },
   {
     "activityId": "act_003",
@@ -55,7 +57,8 @@
     ],
     "recommendedDuration": "约 30 分钟",
     "isHot": true,
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_003"
   },
   {
     "activityId": "act_004",
@@ -73,7 +76,8 @@
       "enabled": true,
       "isFree": true
     },
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_004"
   },
   {
     "activityId": "act_005",
@@ -86,7 +90,8 @@
       "套餐"
     ],
     "queueStatus": "none",
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_005"
   },
   {
     "activityId": "act_006",
@@ -99,7 +104,8 @@
       "景观"
     ],
     "queueStatus": "none",
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_006"
   },
   {
     "activityId": "act_007",
@@ -112,7 +118,8 @@
       "伴手礼"
     ],
     "queueStatus": "none",
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_007"
   },
   {
     "activityId": "act_008",
@@ -125,7 +132,8 @@
       "亲子"
     ],
     "queueStatus": "none",
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_008"
   },
   {
     "activityId": "act_009",
@@ -145,7 +153,8 @@
     ],
     "recommendedDuration": "约 25 分钟",
     "isHot": true,
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_009"
   },
   {
     "activityId": "act_010",
@@ -159,7 +168,8 @@
     ],
     "queueStatus": "none",
     "recommendedDuration": "约 10 分钟",
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_010"
   },
   {
     "activityId": "act_011",
@@ -174,7 +184,8 @@
     "queueStatus": "waiting",
     "waitMinutes": 15,
     "recommendedDuration": "约 12 分钟",
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_011"
   },
   {
     "activityId": "act_012",
@@ -195,7 +206,8 @@
       "isFree": false,
       "queuePrice": 15
     },
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_012"
   },
   {
     "activityId": "act_013",
@@ -215,7 +227,8 @@
       "isFree": false,
       "queuePrice": 8
     },
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_013"
   },
   {
     "activityId": "act_014",
@@ -234,7 +247,8 @@
       "enabled": true,
       "isFree": true
     },
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_014"
   },
   {
     "activityId": "act_015",
@@ -248,7 +262,8 @@
     ],
     "queueStatus": "none",
     "recommendedDuration": "约 40 分钟",
-    "scenicId": "scenic_hlg"
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_015"
   },
   {
     "activityId": "act_hy_001",

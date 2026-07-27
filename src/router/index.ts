@@ -89,6 +89,12 @@ const router = createRouter({
       meta: { title: '园区活动' },
     },
     {
+      path: '/map',
+      name: 'map',
+      component: () => import('@/pages/map/MapPage.vue'),
+      meta: { title: '园区地图' },
+    },
+    {
       path: '/receipt',
       name: 'receipt',
       component: () => import('@/pages/receipt/ReceiptPage.vue'),
@@ -124,10 +130,17 @@ const router = createRouter({
           component: () => import('@/pages/admin/AdminBusinessPage.vue'),
           meta: { public: true, title: '业务场景配置' },
         },
+        {
+          path: 'data',
+          name: 'config-data',
+          component: () => import('@/pages/admin/AdminDataPage.vue'),
+          meta: { public: true, title: '数据与接口' },
+        },
       ],
     },
     { path: '/admin/ui', redirect: '/config/ui' },
     { path: '/admin/business', redirect: '/config/business' },
+    { path: '/admin/data', redirect: '/config/data' },
     {
       path: '/profile',
       name: 'profile',
