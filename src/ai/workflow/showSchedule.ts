@@ -1,4 +1,4 @@
-import { fetchActivities } from '@/api/business'
+import { fetchActivities, fetchMapConfig, fetchMapPois } from '@/api/business'
 import { activityToCardPayload } from '@/utils/activityDisplay'
 import {
   buildShowScheduleReply,
@@ -15,7 +15,17 @@ import {
   type ShowDayKind,
 } from '@/utils/showScheduleIntent'
 import { resolveShowQuizInvite } from '@/utils/quizInvite'
+import {
+  enrichInParkActivityCard,
+  loadCheckinContext,
+} from '@/utils/enrichInParkActivityCard'
+import {
+  buildMapDeepLink,
+  findPoiByActivityId,
+  hasMapGuideForScenic,
+} from '@/utils/mapGuide'
 import { useScenicStore } from '@/store/scenicStore'
+import { DEFAULT_SCENIC_ID } from '@/utils/scenicScope'
 import type {
   Activity,
   ChatMessageDraft,
@@ -74,7 +84,7 @@ function buildShowActivityReason(
   return `${showDayLabel(dayKind)}场次 ${allTimes}`
 }
 
-function buildShowScheduleCard(
+async function buildShowScheduleCard(
   activities: Activity[],
   options: {
     dayKind: ShowDayKind
@@ -83,28 +93,78 @@ function buildShowScheduleCard(
     intro: string
     ref: Date
     quizInvite?: SceneRecommendPayload['quizInvite']
+    inPark: boolean
+    spotsByActivityId: Map<string, import('@/types').CheckinSpot>
   },
-): ChatMessageDraft {
-  const { dayKind, slots, recommended, intro, ref, quizInvite } = options
+): Promise<ChatMessageDraft> {
+  const { dayKind, slots, recommended, intro, ref, quizInvite, inPark, spotsByActivityId } =
+    options
   const showActivities = activities.filter(
     (item) => item.category === 'show' && item.showStartTimes?.length,
   )
+
+  const scenicStore = useScenicStore()
+  const scenicId = scenicStore.currentScenicId || DEFAULT_SCENIC_ID
+  const mapPathByActivity = new Map<string, string>()
+  if (inPark) {
+    try {
+      const [{ data: configRes }, { data: poisRes }] = await Promise.all([
+        fetchMapConfig(scenicId),
+        fetchMapPois(scenicId),
+      ])
+      const config = configRes.code === 200 ? configRes.data : null
+      const pois = poisRes.code === 200 ? poisRes.data ?? [] : []
+      if (hasMapGuideForScenic(config)) {
+        for (const activity of showActivities) {
+          const poi =
+            findPoiByActivityId(pois, activity.activityId) ||
+            (activity.mapPoiId
+              ? pois.find((p) => p.poiId === activity.mapPoiId)
+              : undefined)
+          if (poi) {
+            mapPathByActivity.set(
+              activity.activityId,
+              buildMapDeepLink({ scenicId, poiId: poi.poiId }),
+            )
+          }
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 
   const payload: SceneRecommendPayload = {
     scene: 'show',
     dayKind,
     hasRemainingSlots: dayKind === 'today' ? recommended != null : true,
-    activities: showActivities.map((activity) =>
-      activityToCardPayload(activity, {
+    activities: showActivities.map((activity) => {
+      const card = activityToCardPayload(activity, {
         reason: buildShowActivityReason(activity, {
           dayKind,
           recommended,
           slots,
           ref,
         }),
-        guideContext: 'in_park',
-      }),
-    ),
+        guideContext: inPark ? 'in_park' : 'pre_visit',
+      })
+      const mapPath = mapPathByActivity.get(activity.activityId)
+      if (mapPath) {
+        card.mapActions = [{ label: '地图查看', path: mapPath }]
+      }
+      const remaining =
+        dayKind === 'today'
+          ? remainingTimesForActivity(activity.activityId, slots, ref)
+          : []
+      return enrichInParkActivityCard(card, {
+        inPark,
+        spotsByActivityId,
+        remainingShowTimes: remaining,
+        mapPath,
+        activity,
+        now: ref,
+      })
+    }),
     quizInvite,
   }
 
@@ -165,6 +225,7 @@ export async function runShowScheduleWorkflow(
         : intro
   }
   const quizInvite = await resolveShowQuizInvite(activities)
+  const checkinCtx = await loadCheckinContext()
 
   if (!slots.length) {
     return {
@@ -181,13 +242,15 @@ export async function runShowScheduleWorkflow(
     skillId: 'scenic_recommend',
     toolCallsUsed: ['getScenicActivities'],
     cards: [
-      buildShowScheduleCard(activities, {
+      await buildShowScheduleCard(activities, {
         dayKind,
         slots,
         recommended,
         intro,
         ref,
         quizInvite,
+        inPark: checkinCtx.inPark,
+        spotsByActivityId: checkinCtx.spotsByActivityId,
       }),
     ],
   }

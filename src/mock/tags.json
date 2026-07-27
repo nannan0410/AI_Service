@@ -61,21 +61,21 @@
   {
     "tagId": "prefer_thrill",
     "name": "喜欢刺激",
-    "description": "偏好刺激类项目（预置推断）",
+    "description": "偏好刺激类项目（对话「刺激」或 Persona 预置；正式版 LLM 可归并「惊险」等）",
     "category": "ai",
     "defaultConfidence": 0.72
   },
   {
     "tagId": "prefer_photo",
     "name": "偏好拍照",
-    "description": "偏好打卡/萌宠等拍照场景（预置推断）",
+    "description": "偏好打卡/出片场景（对话「拍照/出片」或 Persona 预置）",
     "category": "ai",
     "defaultConfidence": 0.65
   },
   {
     "tagId": "prefer_slow",
     "name": "慢节奏",
-    "description": "偏好温和慢游（预置推断）",
+    "description": "偏好温和慢游（对话「休闲」或 Persona 预置）",
     "category": "ai",
     "defaultConfidence": 0.7
   }

@@ -11,7 +11,7 @@ export type ProactiveMarketingScene =
 export function isDiningRecommendIntent(message: string): boolean {
   const text = message.trim()
   if (!text) return false
-  return /美食|餐饮|好吃|餐厅|午饭|晚饭|午餐|晚餐|吃什么|觅食|小吃|套餐|点餐|吃饭/.test(
+  return /美食|餐饮|好吃|餐厅|午饭|晚饭|午餐|晚餐|吃什么|觅食|小吃|套餐|点餐|吃饭|中餐|西餐|饿了|冰淇淋|甜品/.test(
     text,
   )
 }

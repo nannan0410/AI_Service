@@ -50,6 +50,16 @@
     "poiType": "dining"
   },
   {
+    "poiId": "poi_hlg_016",
+    "scenicId": "scenic_hlg",
+    "activityId": "act_016",
+    "name": "冰淇淋小站",
+    "mapX": 40,
+    "mapY": 70,
+    "area": "美食广场",
+    "poiType": "dining"
+  },
+  {
     "poiId": "poi_hlg_006",
     "scenicId": "scenic_hlg",
     "activityId": "act_006",

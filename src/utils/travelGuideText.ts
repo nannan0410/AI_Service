@@ -16,7 +16,7 @@ export function buildInParkRouteReply(
     guide.visitorCount && guide.visitorCount > 0
       ? `（同行 ${guide.visitorCount} 人）`
       : ''
-  return `根据您在园状态与当前热度${countLabel}，为您推荐今日游玩路线与项目，详见下方卡片（不含交通与入园提醒）。`
+  return `根据您在园状态与当前排队热度${countLabel}，为您整理今日游玩攻略：线路安排 + 游玩建议，详见下方卡片。`
 }
 
 /** 游玩攻略 / 项目推荐 — 不含交通与入园 */

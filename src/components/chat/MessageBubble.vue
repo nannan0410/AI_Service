@@ -172,6 +172,30 @@ function onActivityMapAction(item: ActivityCardPayload) {
   openPage(path);
 }
 
+function onInParkCardAction(item: ActivityCardPayload, key: string) {
+  const action = item.inParkActions?.find((a) => a.key === key);
+  if (!action) return;
+  if (action.key === "checkin") {
+    showToast("跳转到打卡页");
+    return;
+  }
+  if (action.key === "reserve") {
+    showToast("跳转到项目详情页面并进行预约");
+    return;
+  }
+  if (action.key === "map" || action.key === "queue") {
+    if (!action.path) {
+      showToast(action.key === "map" ? "暂无法打开地图" : "暂无法取号");
+      return;
+    }
+    openPage(action.path);
+  }
+}
+
+function onStarDetailIntro() {
+  showToast("跳转到知识图片详情页");
+}
+
 function asReview(payload: unknown): ReviewCardPayload {
   return payload as ReviewCardPayload;
 }
@@ -375,8 +399,25 @@ const cardTypes = new Set([
     <div v-else-if="message.type === 'activity'" class="bubble bubble--assistant bubble-card-box">
       <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
       <ActivityCard :payload="asActivity(message.payload)" embedded />
+      <div
+        v-if="asActivity(message.payload).inParkActions?.length"
+        class="bubble-card-box__actions-row"
+      >
+        <van-button
+          v-for="action in asActivity(message.payload).inParkActions"
+          :key="action.key"
+          size="small"
+          type="primary"
+          plain
+          round
+          class="bubble-card-box__action-inline"
+          @click="onInParkCardAction(asActivity(message.payload), action.key)"
+        >
+          {{ action.label }}
+        </van-button>
+      </div>
       <van-button
-        v-if="asActivity(message.payload).mapActions?.length"
+        v-else-if="asActivity(message.payload).mapActions?.length"
         size="small"
         type="primary"
         plain
@@ -417,8 +458,25 @@ const cardTypes = new Set([
         class="bubble-card-box__scene-item"
       >
         <ActivityCard :payload="item" :tag="activityTagLabel(item)" embedded />
+        <div
+          v-if="item.inParkActions?.length"
+          class="bubble-card-box__actions-row"
+        >
+          <van-button
+            v-for="action in item.inParkActions"
+            :key="action.key"
+            size="small"
+            type="primary"
+            plain
+            round
+            class="bubble-card-box__action-inline"
+            @click="onInParkCardAction(item, action.key)"
+          >
+            {{ action.label }}
+          </van-button>
+        </div>
         <van-button
-          v-if="item.mapActions?.length"
+          v-else-if="item.mapActions?.length"
           size="small"
           type="primary"
           plain
@@ -442,7 +500,11 @@ const cardTypes = new Set([
           {{ queueActionLabel(item) }}
         </van-button>
         <van-button
-          v-else-if="asSceneRecommend(message.payload).scene !== 'show' && asSceneRecommend(message.payload).scene !== 'queue'"
+          v-else-if="
+            asSceneRecommend(message.payload).scene !== 'show' &&
+            asSceneRecommend(message.payload).scene !== 'queue' &&
+            asSceneRecommend(message.payload).scene !== 'nearby'
+          "
           size="small"
           type="primary"
           plain
@@ -477,21 +539,40 @@ const cardTypes = new Set([
     >
       <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
       <StarIntroCard :payload="asStarIntro(message.payload)" />
-      <template v-if="asStarIntro(message.payload).quizInvite">
-        <p class="bubble-card-box__quiz-hint">
-          {{ asStarIntro(message.payload).quizInvite!.hint }}
-        </p>
+      <div
+        class="bubble-card-box__actions-row"
+        :class="{
+          'bubble-card-box__actions-row--single': !asStarIntro(message.payload).quizInvite,
+        }"
+      >
         <van-button
           size="small"
           type="primary"
+          plain
           round
-          block
-          class="bubble-card-box__action"
+          class="bubble-card-box__action-inline"
+          :class="{ 'bubble-card-box__action-inline--full': !asStarIntro(message.payload).quizInvite }"
+          @click="onStarDetailIntro"
+        >
+          详细介绍
+        </van-button>
+        <van-button
+          v-if="asStarIntro(message.payload).quizInvite"
+          size="small"
+          type="primary"
+          round
+          class="bubble-card-box__action-inline"
           @click="onQuizInvite(asStarIntro(message.payload).quizInvite!.quizId)"
         >
           {{ asStarIntro(message.payload).quizInvite!.buttonLabel }}
         </van-button>
-      </template>
+      </div>
+      <p
+        v-if="asStarIntro(message.payload).quizInvite"
+        class="bubble-card-box__quiz-hint"
+      >
+        {{ asStarIntro(message.payload).quizInvite!.hint }}
+      </p>
     </div>
 
     <div v-else-if="message.type === 'quiz'" class="bubble bubble--assistant bubble-card-box">
@@ -685,6 +766,28 @@ const cardTypes = new Set([
 
 .bubble-card-box__action {
   margin-top: 2px;
+}
+
+.bubble-card-box__actions-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin-top: 2px;
+  width: 100%;
+}
+
+.bubble-card-box__action-inline {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+
+.bubble-card-box__action-inline--full {
+  flex: 1 1 100%;
+}
+
+.bubble-card-box__actions-row--single .bubble-card-box__action-inline {
+  width: 100%;
 }
 
 .bubble-card-box__quiz-hint {

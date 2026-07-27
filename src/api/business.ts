@@ -236,6 +236,24 @@ export function fetchMemberProfileTags() {
   )
 }
 
+export function postAiChatTag(body: {
+  tagId: string
+  evidence?: string
+  confidence?: number
+}) {
+  return request.post<
+    ApiResponse<{
+      tags: Array<{
+        tagId: string
+        confidence: number
+        evidence: string
+        updatedAt: string
+      }>
+      profile: import('@/types').UserProfileTags
+    }>
+  >('/api/member/ai-chat-tags', body)
+}
+
 export function fetchAdminTagCatalog() {
   return request.get<ApiResponse<import('@/types').TagCatalogEntry[]>>(
     '/api/admin/tag-catalog',

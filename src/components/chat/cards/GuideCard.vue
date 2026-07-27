@@ -30,18 +30,24 @@ const saving = ref(false);
 const showOpenMap = ref(false);
 const embedded = computed(() => props.embedded === true);
 
+const isInParkGuide = computed(() => props.payload.scope === "in_park");
+
 const scopeLabels = computed(() => {
   const scope = props.payload.scope ?? "recommend";
   const labels: string[] = [];
   if (scope === "full") {
     labels.push("含交通", "含入园", "推荐项目");
   } else if (scope === "in_park") {
-    labels.push("园内路线", "推荐项目");
+    labels.push("游玩线路", "游玩建议");
   } else {
     labels.push("推荐项目");
   }
   return labels;
 });
+
+const activitiesSectionTitle = computed(() =>
+  isInParkGuide.value ? "线路途经" : "推荐项目",
+);
 
 async function resolveMapAvailability() {
   const scenicId = scenicStore.currentScenicId || DEFAULT_SCENIC_ID;
@@ -117,15 +123,32 @@ onMounted(() => {
         </section>
 
         <section v-if="payload.dayPlan" class="guide-card__section">
-          <h4 class="guide-card__section-title">📋 {{ payload.dayPlan.title }}</h4>
+          <h4 class="guide-card__section-title">
+            {{ isInParkGuide ? "🗺" : "📋" }} {{ payload.dayPlan.title }}
+          </h4>
           <p class="guide-card__section-body">{{ payload.dayPlan.body }}</p>
         </section>
 
-        <section v-if="payload.activities.length" class="guide-card__section">
-          <h4 class="guide-card__section-title">🎡 推荐项目</h4>
+        <section v-if="payload.tips" class="guide-card__section">
+          <h4 class="guide-card__section-title">💡 {{ payload.tips.title }}</h4>
+          <p class="guide-card__section-body">{{ payload.tips.body }}</p>
+        </section>
+
+        <section
+          v-if="payload.activities.length"
+          class="guide-card__section"
+          :class="{ 'guide-card__section--compact': isInParkGuide }"
+        >
+          <h4 class="guide-card__section-title">
+            🎡 {{ activitiesSectionTitle }}
+          </h4>
           <ul class="guide-card__activities">
-            <li v-for="item in payload.activities" :key="item.activityId">
+            <li
+              v-for="(item, index) in payload.activities"
+              :key="item.activityId"
+            >
               <strong>
+                <template v-if="isInParkGuide">{{ index + 1 }}. </template>
                 {{ item.name }}
                 <span v-if="item.isHot" class="guide-card__act-hot">热门</span>
               </strong>
@@ -142,13 +165,19 @@ onMounted(() => {
               <span v-if="queueLine(item)" class="guide-card__act-queue">
                 {{ queueLine(item) }}
               </span>
-              <span v-if="formatHotProjectLine(item)" class="guide-card__act-hot-tip">
+              <span
+                v-if="!isInParkGuide && formatHotProjectLine(item)"
+                class="guide-card__act-hot-tip"
+              >
                 {{ formatHotProjectLine(item) }}
               </span>
-              <span v-if="item.recommendedDuration" class="guide-card__act-dur">
+              <span
+                v-if="!isInParkGuide && item.recommendedDuration"
+                class="guide-card__act-dur"
+              >
                 建议 {{ item.recommendedDuration }}
               </span>
-              <em v-if="item.reason">{{ item.reason }}</em>
+              <em v-if="!isInParkGuide && item.reason">{{ item.reason }}</em>
             </li>
           </ul>
         </section>
@@ -232,6 +261,14 @@ onMounted(() => {
 
 .guide-card__section {
   margin-top: 10px;
+}
+
+.guide-card__section--compact .guide-card__activities li {
+  padding: 6px 0;
+}
+
+.guide-card__section--compact .guide-card__activities strong {
+  font-size: 12px;
 }
 
 .guide-card__section-title {

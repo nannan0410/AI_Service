@@ -19,6 +19,7 @@ import {
   fetchTicketProducts,
   fetchVirtualQueueCatalog,
 } from "@/api/business";
+import { fetchStars } from "@/api/quiz";
 import ScenicPickerSheet from "@/components/scenic/ScenicPickerSheet.vue";
 import { useAuthStore } from "@/store/authStore";
 import { useScenicStore } from "@/store/scenicStore";
@@ -196,6 +197,7 @@ async function loadModules() {
         { key: "category", label: "分类" },
         { key: "location", label: "位置" },
         { key: "mapPoiId", label: "mapPoiId" },
+        { key: "quizId", label: "quizId" },
         { key: "tags", label: "标签" },
         { key: "queueStatus", label: "排队状态" },
         { key: "waitMinutes", label: "等待(分)" },
@@ -213,11 +215,48 @@ async function loadModules() {
         category: a.category,
         location: a.location,
         mapPoiId: a.mapPoiId,
+        quizId: a.quizId || "—",
         tags: stringifyList(a.tags),
         queueStatus: a.queueStatus,
         waitMinutes: a.waitMinutes,
         isHot: a.isHot,
         scenicId: a.scenicId,
+      }));
+    },
+  );
+
+  await loadOne(
+    {
+      id: "scenic_stars",
+      title: "海洋明星",
+      contract: "GET /api/stars · Header X-Scenic-Id",
+      landingNote: "落地：明星介绍 + quizId 答题绑定；演示景区主要为 scenic_hy",
+      scenicScoped: true,
+      columns: [
+        { key: "starId", label: "starId" },
+        { key: "name", label: "名称" },
+        { key: "species", label: "物种" },
+        { key: "quizId", label: "quizId" },
+        { key: "location", label: "位置" },
+        { key: "aliases", label: "别名" },
+        { key: "scenicId", label: "scenicId" },
+      ],
+    },
+    async () => {
+      const res = await fetchStars();
+      const list = res.data?.data ?? [];
+      const scenicId = filterScenicId.value;
+      const scoped = scenicId
+        ? list.filter((s) => s.scenicId === scenicId)
+        : list;
+      return scoped.map((s) => ({
+        starId: s.starId,
+        name: s.name,
+        species: s.species,
+        quizId: s.quizId,
+        location: s.location,
+        aliases: stringifyList(s.aliases),
+        scenicId: s.scenicId,
       }));
     },
   );

@@ -1,3 +1,4 @@
+import { listAiChatTags } from './aiChatTagRuntime'
 import type {
   Order,
   PersonaId,
@@ -189,7 +190,8 @@ function buildOrderTags(snapshot: UserSnapshot): {
 
 function buildAiTags(personaId: PersonaId): ProfileTag[] {
   const preset = aiPresets[personaId]?.aiTags ?? []
-  const tags: ProfileTag[] = []
+  const byId = new Map<string, ProfileTag>()
+
   for (const item of preset) {
     const t = makeTag(item.tagId, {
       category: 'ai',
@@ -197,9 +199,24 @@ function buildAiTags(personaId: PersonaId): ProfileTag[] {
       confidence: item.confidence,
       evidence: item.evidence,
     })
-    if (t) tags.push(t)
+    if (t) byId.set(t.tagId, t)
   }
-  return tags
+
+  // 对话写回覆盖同 id 预置；刺激↔休闲互斥已在 upsert 处理
+  for (const item of listAiChatTags(personaId)) {
+    const t = makeTag(item.tagId, {
+      category: 'ai',
+      source: 'ai_chat',
+      confidence: item.confidence,
+      evidence: item.evidence,
+    })
+    if (!t) continue
+    if (item.tagId === 'prefer_thrill') byId.delete('prefer_slow')
+    if (item.tagId === 'prefer_slow') byId.delete('prefer_thrill')
+    byId.set(t.tagId, t)
+  }
+
+  return [...byId.values()]
 }
 
 export function getTagCatalog(): TagCatalogEntry[] {
@@ -285,4 +302,8 @@ export function hasThrillPreference(tagIds: string[]): boolean {
 
 export function hasSlowPreference(tagIds: string[]): boolean {
   return tagIds.includes('prefer_slow')
+}
+
+export function hasPhotoPreference(tagIds: string[]): boolean {
+  return tagIds.includes('prefer_photo')
 }

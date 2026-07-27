@@ -7,6 +7,14 @@ import {
   shouldRunQueueRecommendWorkflow,
 } from '@/utils/queueRecommendIntent'
 import { activityToCardPayload } from '@/utils/activityDisplay'
+import {
+  buildQueueActionLabel,
+  buildQueueActionPath,
+} from '@/utils/activityCardActions'
+import {
+  enrichInParkActivityCard,
+  loadCheckinContext,
+} from '@/utils/enrichInParkActivityCard'
 import type {
   Activity,
   ActivityCardPayload,
@@ -17,47 +25,32 @@ import type {
 
 export { shouldRunQueueRecommendWorkflow }
 
-const TAKE_PATH = '/queue/take'
-const PAY_PATH = '/queue/pay'
-
-function freeActionLabel(): string {
-  return '立即取号排队'
-}
-
-function paidActionLabel(price?: number): string {
-  const yuan = price ?? 10
-  return `¥${yuan}元快速排队`
-}
-
 function withQueueAction(activity: Activity): ActivityCardPayload {
   const card = activityToCardPayload(activity, { guideContext: 'in_park' })
-  const vq = activity.virtualQueue
-  if (!vq?.enabled) return card
-  if (vq.isFree) {
-    return {
-      ...card,
-      queueAction: {
-        label: freeActionLabel(),
-        path: `${TAKE_PATH}?activityId=${encodeURIComponent(activity.activityId)}`,
-      },
-    }
-  }
+  const label = buildQueueActionLabel(activity.virtualQueue)
+  const path = buildQueueActionPath(activity.activityId, activity.virtualQueue)
+  if (!label || !path) return card
   return {
     ...card,
-    queueAction: {
-      label: paidActionLabel(vq.queuePrice),
-      path: `${PAY_PATH}?activityId=${encodeURIComponent(activity.activityId)}`,
-    },
+    queueAction: { label, path },
   }
 }
 
-function buildQueueCard(
+async function buildQueueCard(
   content: string,
   activities: Activity[],
-): LlmChatResult {
+): Promise<LlmChatResult> {
+  const checkinCtx = await loadCheckinContext()
   const payload: SceneRecommendPayload = {
     scene: 'queue',
-    activities: activities.map(withQueueAction),
+    activities: activities.map((activity) => {
+      const card = withQueueAction(activity)
+      return enrichInParkActivityCard(card, {
+        inPark: checkinCtx.inPark,
+        spotsByActivityId: checkinCtx.spotsByActivityId,
+        activity,
+      })
+    }),
   }
   return {
     content: '',
@@ -74,10 +67,10 @@ function buildQueueCard(
   }
 }
 
-function buildNamedActivityResult(
+async function buildNamedActivityResult(
   activity: Activity,
   inPark: boolean,
-): LlmChatResult {
+): Promise<LlmChatResult> {
   if (!inPark) {
     return {
       content: `已为您找到「${activity.name}」。入园后可使用虚拟排队取号。`,
@@ -136,7 +129,7 @@ export async function runQueueRecommendWorkflow(
           toolCallsUsed: ['getScenicActivities'],
         }
       }
-      return buildNamedActivityResult(activity, inPark)
+      return await buildNamedActivityResult(activity, inPark)
     }
 
     if (!inPark) {
@@ -163,7 +156,7 @@ export async function runQueueRecommendWorkflow(
         }
       }
       const price = paid.virtualQueue?.queuePrice ?? 10
-      return buildQueueCard(
+      return await buildQueueCard(
         `为您推荐付费快速排队：${paid.name}（约排队 ${paid.waitMinutes ?? '-'} 分钟，¥${price} 可快速入队）。`,
         [paid],
       )
@@ -185,7 +178,7 @@ export async function runQueueRecommendWorkflow(
       }
     }
     const names = picked.map((item) => item.name).join('、')
-    return buildQueueCard(
+    return await buildQueueCard(
       `为您推荐 ${picked.length} 个免费虚拟排队项目：${names}。每个项目可单独取号。`,
       picked,
     )

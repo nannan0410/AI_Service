@@ -20,7 +20,7 @@ const categoryLabel: Record<ProfileTag["category"], string> = {
   fact: "事实",
   order: "订单",
   consume: "消费",
-  ai: "AI 预置",
+  ai: "AI",
 };
 
 const displayTags = computed(() => {
@@ -77,7 +77,7 @@ async function onLogout() {
     </van-cell-group>
 
     <van-cell-group v-if="displayTags.length" inset class="profile profile__tags">
-      <van-cell title="画像标签" label="只读 · 事实 / 订单 / AI 预置" />
+      <van-cell title="画像标签" label="只读 · 事实 / 订单 / AI（含对话写回）" />
       <div class="profile__tag-list">
         <span
           v-for="tag in displayTags"
@@ -85,7 +85,10 @@ async function onLogout() {
           class="profile__tag"
           :class="`profile__tag--${tag.category}`"
         >
-          {{ categoryLabel[tag.category] }} · {{ tag.name }}
+          {{ categoryLabel[tag.category] }} · {{ tag.name
+          }}<template v-if="tag.source === 'ai_chat' && tag.evidence"
+            >（{{ tag.evidence }}）</template
+          >
         </span>
       </div>
     </van-cell-group>

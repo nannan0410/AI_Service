@@ -60,7 +60,13 @@ import {
   shouldRunMapGuideWorkflowFromRoute,
 } from "@/ai/nlu/skillWorkflowGate";
 import { shouldInterruptPurchaseSession } from "@/utils/ticketPurchaseIntent";
-import { createOrderDraft, fetchCoupons, fetchMemberInfo, fetchOrders, submitCheckin, submitReview } from "@/api/business";
+import { createOrderDraft, fetchCoupons, fetchMemberInfo, fetchOrders, postAiChatTag, submitCheckin, submitReview } from "@/api/business";
+import {
+  buildAiChatTagConfirmText,
+  isAiChatPreferencePrimary,
+  matchAiChatPreference,
+} from "@/utils/aiChatTagIntent";
+import { upsertAiChatTag } from "@/utils/aiChatTagRuntime";
 import { startQuiz, submitQuizAnswer } from "@/api/quiz";
 import { buildCouponCardPayload, buildMergedCouponMessage } from "@/utils/couponRecommend";
 import { qualifiesReviewReward } from "@/utils/reviewForm";
@@ -972,6 +978,31 @@ async function onSend() {
 
   try {
     const personaId = (authStore.personaId || "demo_new") as PersonaId;
+
+    // 演示版 AI 智能标签：固定词「刺激 / 拍照|出片 / 休闲」写回封闭目录
+    const aiPrefMatch = matchAiChatPreference(text);
+    if (aiPrefMatch) {
+      const evidence = `对话：${aiPrefMatch.keyword}`;
+      try {
+        await postAiChatTag({
+          tagId: aiPrefMatch.tagId,
+          evidence,
+          confidence: 0.75,
+        });
+      } catch {
+        /* mock 不可用时仍写本地，保证同页推荐可读 */
+      }
+      upsertAiChatTag(personaId, aiPrefMatch.tagId, evidence, 0.75);
+
+      if (isAiChatPreferencePrimary(text)) {
+        aiStore.beginCompose();
+        chatStore.addAssistantMessage(buildAiChatTagConfirmText(aiPrefMatch));
+        aiStore.finish(true);
+        assistantStore.setMotion("nod");
+        return;
+      }
+    }
+
     const useNewGuestCouponWorkflow = shouldRunNewGuestCouponWorkflow(text);
     const useTicketWorkflow = shouldRunTicketWorkflowFromRoute(
       skillRoute,
@@ -1051,6 +1082,8 @@ async function onSend() {
         ? await runStarIntroWorkflow(text, workflowCallbacks)
       : useShowScheduleWorkflow
         ? await runShowScheduleWorkflow(text, workflowCallbacks)
+      : useProactiveMarketingWorkflow
+        ? await runProactiveMarketingWorkflow(text, workflowCallbacks)
       : useProjectQueryWorkflow
         ? await runProjectQueryWorkflow(text, workflowCallbacks)
       : useMapGuideWorkflow
@@ -1085,8 +1118,6 @@ async function onSend() {
               workflowCallbacks,
             );
           })()
-      : useProactiveMarketingWorkflow
-        ? await runProactiveMarketingWorkflow(text, workflowCallbacks)
       : useInvoiceWorkflow
         ? await runInvoiceServiceWorkflow(text, workflowCallbacks)
       : useCheckinWorkflow

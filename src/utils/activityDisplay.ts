@@ -60,6 +60,7 @@ export function buildActivityRecommendReason(
     hasChildren?: boolean
     preferThrill?: boolean
     preferSlow?: boolean
+    preferPhoto?: boolean
   },
 ): string {
   const inPark = context?.guideContext === 'in_park'
@@ -95,6 +96,15 @@ export function buildActivityRecommendReason(
     return '因慢节奏偏好推荐'
   }
 
+  if (
+    context?.preferPhoto &&
+    (activity.name.includes('萌宠') ||
+      activity.category === 'show' ||
+      activity.tags.includes('亲子'))
+  ) {
+    return '因偏好拍照/出片推荐'
+  }
+
   if (activity.recommendedDuration) {
     return `建议游玩 ${activity.recommendedDuration}`
   }
@@ -119,6 +129,7 @@ export function pickRecommendActivities(
   const family = tagIds.includes('family') || tagIds.includes('order_family')
   const thrill = tagIds.includes('prefer_thrill')
   const slow = tagIds.includes('prefer_slow')
+  const photo = tagIds.includes('prefer_photo')
 
   let pool = list.filter(
     (item) => item.category === 'ride' || item.category === 'show',
@@ -128,6 +139,11 @@ export function pickRecommendActivities(
     options?.tag ||
     (family || options?.hasChildren ? '亲子' : undefined)
 
+  const isPhotoSpot = (item: Activity) =>
+    item.name.includes('萌宠') ||
+    item.category === 'show' ||
+    item.tags.includes('亲子')
+
   if (preferTag) {
     const tagged = pool.filter((item) => item.tags.includes(preferTag))
     if (tagged.length) pool = tagged
@@ -136,6 +152,9 @@ export function pickRecommendActivities(
     if (tagged.length) pool = tagged
   } else if (slow) {
     const tagged = pool.filter((item) => item.tags.includes('温和'))
+    if (tagged.length) pool = tagged
+  } else if (photo) {
+    const tagged = pool.filter(isPhotoSpot)
     if (tagged.length) pool = tagged
   }
 
@@ -154,6 +173,7 @@ export function pickRecommendActivities(
     if (family && item.tags.includes('亲子')) base -= 50
     if (thrill && item.tags.includes('刺激')) base -= 40
     if (slow && item.tags.includes('温和')) base -= 40
+    if (photo && isPhotoSpot(item)) base -= 35
     return base
   }
 

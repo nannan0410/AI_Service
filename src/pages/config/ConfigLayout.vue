@@ -6,12 +6,15 @@ const route = useRoute();
 const router = useRouter();
 
 const activeTab = computed(() => {
-  if (route.path.includes("/business")) return "business";
+  if (route.path.includes("/business") || route.path.includes("/route-check"))
+    return "business";
   if (route.path.includes("/data")) return "data";
   return "ui";
 });
 
-const isDataTab = computed(() => activeTab.value === "data");
+const isWideTab = computed(
+  () => activeTab.value === "data" || route.path.includes("/route-check"),
+);
 
 function onTabChange(name: string | number) {
   const map: Record<string, string> = {
@@ -28,14 +31,18 @@ function openChatH5() {
 </script>
 
 <template>
-  <div class="config-layout" :class="{ 'config-layout--wide': isDataTab }">
+  <div class="config-layout" :class="{ 'config-layout--wide': isWideTab }">
     <van-nav-bar
-      title="后台配置"
+      :title="route.path.includes('/route-check') ? '路由冲突检查' : '后台配置'"
       left-arrow
       fixed
       placeholder
       class="config-layout__nav"
-      @click-left="router.push('/profile')"
+      @click-left="
+        route.path.includes('/route-check')
+          ? router.push('/config/business')
+          : router.push('/profile')
+      "
     >
       <template #right>
         <button type="button" class="config-layout__h5-btn" @click="openChatH5">

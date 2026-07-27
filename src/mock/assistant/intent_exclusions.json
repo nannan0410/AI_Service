@@ -1,0 +1,47 @@
+[
+  {
+    "ruleId": "excl_dining_over_project",
+    "name": "餐饮/零售优先于项目查询",
+    "when": "命中美食|餐饮|伴手礼|零售等营销意图",
+    "excludeSkillId": "project_query",
+    "preferSkillId": "proactive_marketing",
+    "note": "避免「附近有什么推荐的美食」被「附近…推荐」抢成游乐项目",
+    "sampleUtterances": ["附近有什么推荐的美食", "景区里有什么美食"]
+  },
+  {
+    "ruleId": "excl_project_kids_over_ticket",
+    "name": "适合小孩的项目 ≠ 购票",
+    "when": "适合(小孩|孩子|儿童).{0,6}(项目|玩)",
+    "excludeSkillId": "ticket_purchase",
+    "preferSkillId": "project_query",
+    "note": "购票冷启动不认单独「小孩」；项目查询认「适合小孩…项目」短语",
+    "sampleUtterances": ["适合小孩玩的项目", "有哪些适合儿童的项目"]
+  },
+  {
+    "ruleId": "excl_show_over_travel",
+    "name": "演出场次优先于宽泛攻略",
+    "when": "演出/场次/点名表演",
+    "excludeSkillId": "travel_guide",
+    "preferSkillId": "scenic_recommend",
+    "note": "避免「演出项目推荐」落入订单攻略",
+    "sampleUtterances": ["今天有什么演出", "海豚表演几点"]
+  },
+  {
+    "ruleId": "excl_guide_faq_over_ticket",
+    "name": "入园 FAQ 优先于购票",
+    "when": "门票怎么用 / 几点入园等",
+    "excludeSkillId": "ticket_purchase",
+    "preferSkillId": "travel_guide",
+    "note": "isTravelGuidePreferredOverTicket",
+    "sampleUtterances": ["门票怎么用", "几点可以入园"]
+  },
+  {
+    "ruleId": "excl_queue_over_inpark_route",
+    "name": "虚拟排队优先于园内路线攻略",
+    "when": "虚拟排队 / 排队少的项目",
+    "excludeSkillId": "travel_guide",
+    "preferSkillId": "queue_recommend",
+    "note": "ChatPage：queue_recommend 先于 travel_guide 宽泛路线",
+    "sampleUtterances": ["虚拟排队", "排队少的项目"]
+  }
+]

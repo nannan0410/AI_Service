@@ -37,6 +37,8 @@
 **优先级**：Workflow 正则 > Skill 关键词 > LLM / 离线兜底。  
 **分流要点**：命中 `shouldRunShowScheduleWorkflow` / `shouldRunWeatherSuitabilityWorkflow` 时**不**走宽泛 `travel_guide`；`member_offer` 优先于 `proactive_marketing` 泛查券。
 
+**排他与冲突（演示）**：代码层互斥的只读说明见 `intent_exclusions.json`；后台「业务场景 → 路由排他规则」仅展示，冲突检查页 `/config/route-check` 看触发词重叠是否被排他覆盖（不改路由）。
+
 **说明**：UI 上的「理解用户意图」步骤（`aiExecutionStore`）是展示用；命中 Workflow 时会立刻 `markIntentDone()`，**并不调用 LLM 做意图分类**。
 
 ---
@@ -102,7 +104,7 @@
 | 子意图（正则） | `isTrafficGuideIntent` / `isEntryNoticeIntent` / `isInParkRouteIntent` / `isFullTravelGuideIntent` |
 | 子意图（P0-3） | 泛化说法（如「出行指南」）→ `resolveTravelGuideIntentRoute` → LLM 细分（含 `in_park`） |
 | **完整攻略** | 游游推荐「出行前要准备什么？」→ `scope=full` 单卡（交通+入园+热门） |
-| **园内路线** | 「今日推荐路线」（在园+待出行）等；仅返回 **日程建议 + 推荐项目**，不含交通/入园 |
+| **园内路线** | 「今日推荐路线」（在园+待出行）等；返回 **游玩线路 + 游玩建议 + 线路途经** 攻略卡，不含交通/入园 |
 | 过程面板 | 走 LLM 时显示「识别攻略类型」 |
 | 文件 | `src/utils/travelGuideIntent.ts`、`src/ai/nlu/resolveTravelGuideIntent.ts`、`src/ai/workflow/travelGuide.ts` |
 
@@ -164,7 +166,10 @@
 |----|------|
 | 入口 | 餐饮/美食、伴手礼等正则 → `runProactiveMarketingWorkflow` |
 | 推券 | **仅在园**发场景券；非在园只推荐店铺/项目，不发券 |
+| 菜系 | 问「中餐/西餐/小吃」按 activity `tags` 过滤（`diningCuisine.ts`） |
 | 文件 | `src/ai/workflow/proactiveMarketing.ts` |
+
+**附近项目场景关怀**（`project_query`）：在园且入园≥4 小时（今日核销 `completedAt`，或演示默认今日 10:00）时，推荐前附歇脚/冰淇淋温馨提示（`nearbyCareTip.ts`）；结果合并为 **单条** `scene_recommend(scene=nearby)`，含相对当前位置距离标注，关怀时置顶「冰淇淋小站」。
 
 ### 3.10 会员权益选品
 
@@ -458,7 +463,7 @@ npx vite-node scripts/test-skill-workflow-gate.mts
 2. **泛化说法**（如「出行指南」「在园里怎么安排」仅命中宽泛关键词）→ LLM 分类 `traffic` / `entry_notice` / `in_park` / `full`
 3. **无 Key / LLM 失败** → 回退正则默认（多为 `full`）
 
-**园内路线（`in_park`）**：对齐 `welcome_templates.json` demo_vip「现在先玩哪里？」→ prompt「我现在在园区内，请根据当前位置和排队情况推荐今日路线。」；`generateTravelGuide(scope=in_park)` 仅拼装 **攻略正文（dayPlan）+ 推荐项目**，GuideCard **不展示**交通指南与入园提醒。
+**园内路线（`in_park`）**：对齐「今日推荐路线」prompt；`generateTravelGuide(scope=in_park)` 拼装 **游玩线路（按排队排序）+ 游玩建议（tips）+ 线路途经**，GuideCard **不展示**交通指南与入园提醒，项目列表弱化为途经明细。
 
 过程面板：走 LLM 时显示 **「识别攻略类型」**。
 

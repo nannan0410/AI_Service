@@ -136,11 +136,18 @@ const router = createRouter({
           component: () => import('@/pages/admin/AdminDataPage.vue'),
           meta: { public: true, title: '数据与接口' },
         },
+        {
+          path: 'route-check',
+          name: 'config-route-check',
+          component: () => import('@/pages/admin/AdminRouteConflictPage.vue'),
+          meta: { public: true, title: '路由冲突检查' },
+        },
       ],
     },
     { path: '/admin/ui', redirect: '/config/ui' },
     { path: '/admin/business', redirect: '/config/business' },
     { path: '/admin/data', redirect: '/config/data' },
+    { path: '/admin/route-check', redirect: '/config/route-check' },
     {
       path: '/profile',
       name: 'profile',

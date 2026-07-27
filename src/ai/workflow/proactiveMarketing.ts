@@ -1,4 +1,4 @@
-import { fetchActivities, fetchCheckinSpots, fetchCoupons, fetchMemberInfo, issueCoupon } from '@/api/business'
+import { fetchActivities, fetchCoupons, fetchMapConfig, fetchMapPois, fetchMemberInfo, issueCoupon } from '@/api/business'
 import {
   isNonTicketOrderIntent,
   resolveProactiveMarketingScene,
@@ -12,7 +12,22 @@ import {
   resolveClaimableCouponPreviews,
 } from '@/utils/couponRecommend'
 import { activityToCardPayload } from '@/utils/activityDisplay'
-import { useAuthStore } from '@/store/authStore'
+import {
+  enrichInParkActivityCard,
+  loadCheckinContext,
+} from '@/utils/enrichInParkActivityCard'
+import {
+  buildMapDeepLink,
+  findPoiByActivityId,
+  hasMapGuideForScenic,
+} from '@/utils/mapGuide'
+import {
+  cuisinePreferenceLabel,
+  filterDiningByCuisine,
+  resolveDiningCuisinePreference,
+} from '@/utils/diningCuisine'
+import { useScenicStore } from '@/store/scenicStore'
+import { DEFAULT_SCENIC_ID } from '@/utils/scenicScope'
 import type {
   Activity,
   ChatMessageDraft,
@@ -53,16 +68,6 @@ async function loadMemberCtx() {
   }
 }
 
-/** 是否在园（餐饮/零售推券门槛） */
-async function resolveInPark(): Promise<boolean> {
-  try {
-    const { data: res } = await fetchCheckinSpots()
-    return res.code === 200 && res.data.inPark === true
-  } catch {
-    return false
-  }
-}
-
 async function ensureSceneCoupon(
   productId: string,
   coupons: Coupon[],
@@ -90,25 +95,72 @@ async function ensureSceneCoupon(
   }
 }
 
-function buildSceneRecommendCard(
+async function buildSceneRecommendCard(
   scene: 'dining' | 'retail',
   intro: string,
   coupon: Coupon | undefined,
   activities: Activity[],
   reason: string,
   inPark: boolean,
-): ChatMessageDraft {
+  spotsByActivityId: Map<string, import('@/types').CheckinSpot>,
+): Promise<ChatMessageDraft> {
+  let scenicId = DEFAULT_SCENIC_ID
+  try {
+    scenicId = useScenicStore().currentScenicId || DEFAULT_SCENIC_ID
+  } catch {
+    /* ignore */
+  }
+
+  let mapPathByActivity = new Map<string, string>()
+  if (inPark) {
+    try {
+      const [{ data: configRes }, { data: poisRes }] = await Promise.all([
+        fetchMapConfig(scenicId),
+        fetchMapPois(scenicId),
+      ])
+      const config = configRes.code === 200 ? configRes.data : null
+      const pois = poisRes.code === 200 ? poisRes.data ?? [] : []
+      if (hasMapGuideForScenic(config)) {
+        for (const activity of activities.slice(0, 3)) {
+          const poi =
+            findPoiByActivityId(pois, activity.activityId) ||
+            (activity.mapPoiId
+              ? pois.find((p) => p.poiId === activity.mapPoiId)
+              : undefined)
+          if (poi) {
+            mapPathByActivity.set(
+              activity.activityId,
+              buildMapDeepLink({ scenicId, poiId: poi.poiId }),
+            )
+          }
+        }
+      }
+    } catch {
+      /* ignore map */
+    }
+  }
+
   const payload: SceneRecommendPayload = {
     scene,
     coupon: coupon
       ? buildCouponCardPayload(coupon, 'view', false)
       : undefined,
-    activities: activities.slice(0, 3).map((activity) =>
-      activityToCardPayload(activity, {
+    activities: activities.slice(0, 3).map((activity) => {
+      const card = activityToCardPayload(activity, {
         reason,
         guideContext: inPark ? 'in_park' : 'pre_visit',
-      }),
-    ),
+      })
+      const mapPath = mapPathByActivity.get(activity.activityId)
+      if (mapPath) {
+        card.mapActions = [{ label: '地图查看', path: mapPath }]
+      }
+      return enrichInParkActivityCard(card, {
+        inPark,
+        spotsByActivityId,
+        mapPath,
+        activity,
+      })
+    }),
   }
 
   return {
@@ -124,6 +176,7 @@ async function runDiningOrRetailScene(
     ProactiveMarketingScene,
     'dining' | 'retail' | 'order_intent_dining' | 'order_intent_retail'
   >,
+  message: string,
   callbacks?: ToolExecutionCallbacks,
 ): Promise<LlmChatResult> {
   const isDining = scene === 'dining' || scene === 'order_intent_dining'
@@ -131,7 +184,9 @@ async function runDiningOrRetailScene(
   const productId = isDining ? DINING_COUPON_PRODUCT_ID : RETAIL_COUPON_PRODUCT_ID
   const label = isDining ? '餐饮' : '零售'
   const isOrder = scene.startsWith('order_intent')
-  const inPark = await resolveInPark()
+  const checkinCtx = await loadCheckinContext()
+  const inPark = checkinCtx.inPark
+  const cuisinePref = isDining ? resolveDiningCuisinePreference(message) : null
 
   callbacks?.onToolStart?.('getScenicActivities', `查询${label}推荐`)
   let activities: Activity[] = []
@@ -141,6 +196,15 @@ async function runDiningOrRetailScene(
     if (res.code === 200) activities = res.data
   } catch {
     callbacks?.onToolDone?.('getScenicActivities', false)
+  }
+
+  let cuisineNote = ''
+  if (isDining && cuisinePref) {
+    const filtered = filterDiningByCuisine(activities, cuisinePref)
+    activities = filtered.list
+    if (filtered.filtered && filtered.label) {
+      cuisineNote = `已按「${filtered.label}」为您筛选，`
+    }
   }
 
   /** 仅在园才推送/展示餐饮·零售场景券；园外只做项目推荐 */
@@ -163,14 +227,14 @@ async function runDiningOrRetailScene(
 
   const intro = !inPark
     ? activities.length
-      ? `为您推荐以下${label}（入园后可领取专属优惠券）：`
+      ? `${cuisineNote}为您推荐以下${label}（入园后可领取专属优惠券）：`
       : `暂时没有更多${label}推荐，入园后可为您推送专属优惠。`
     : isOrder
       ? activities.length
-        ? `看您有购买意向，已推荐${activities.length}处${label}，并送上优惠券：`
+        ? `${cuisineNote}看您有购买意向，已推荐${activities.length}处${label}，并送上优惠券：`
         : `看您有购买意向，先送上${label}优惠券方便下单：`
       : activities.length
-        ? `为您推荐以下${label}，并附上可用优惠：`
+        ? `${cuisineNote}为您推荐以下${label}，并附上可用优惠：`
         : `暂时没有更多${label}推荐，先送上优惠券供您使用：`
 
   if (!coupon && !activities.length) {
@@ -188,13 +252,18 @@ async function runDiningOrRetailScene(
     skillId: 'proactive_marketing',
     toolCallsUsed,
     cards: [
-      buildSceneRecommendCard(
+      await buildSceneRecommendCard(
         isDining ? 'dining' : 'retail',
         intro,
         coupon,
         activities,
-        isDining ? '园内热门餐饮' : '园内热门零售',
+        isDining
+          ? cuisinePref
+            ? `园内${cuisinePreferenceLabel(cuisinePref)}推荐`
+            : '园内热门餐饮'
+          : '园内热门零售',
         inPark,
+        checkinCtx.spotsByActivityId,
       ),
     ],
   }
@@ -207,7 +276,7 @@ export async function runProactiveMarketingWorkflow(
   const scene = resolveProactiveMarketingScene(message) ?? 'coupon_query'
 
   if (scene !== 'coupon_query') {
-    return runDiningOrRetailScene(scene, callbacks)
+    return runDiningOrRetailScene(scene, message, callbacks)
   }
 
   callbacks?.onToolStart?.('getCoupons', '查询可用优惠')

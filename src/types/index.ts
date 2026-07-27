@@ -397,6 +397,14 @@ export interface CouponRecommendPayload {
   action: 'view'
 }
 
+export type ActivityCardActionKey = 'queue' | 'checkin' | 'reserve' | 'map'
+
+export interface ActivityCardAction {
+  key: ActivityCardActionKey
+  label: string
+  path?: string
+}
+
 export interface ActivityCardPayload {
   activityId: string
   name: string
@@ -426,11 +434,16 @@ export interface ActivityCardPayload {
     label: string
     path: string
   }>
+  /**
+   * 在园状态项目卡操作行（打卡 / 预约 / 地图 / 排队）
+   * 有值时优先于零散的 mapActions / queueAction 单按钮展示
+   */
+  inParkActions?: ActivityCardAction[]
 }
 
-/** 餐饮/零售/演出/虚拟排队场景推荐：合并为一条消息 */
+/** 餐饮/零售/演出/虚拟排队/附近项目：合并为一条消息 */
 export interface SceneRecommendPayload {
-  scene: 'dining' | 'retail' | 'show' | 'queue'
+  scene: 'dining' | 'retail' | 'show' | 'queue' | 'nearby'
   /** 演出查询日（仅 scene=show） */
   dayKind?: 'today' | 'tomorrow' | 'day_after' | 'general'
   /** 当日是否仍有未开演场次（仅 scene=show 且 dayKind=today） */
@@ -666,6 +679,7 @@ export type ProfileTagSource =
   | 'consume'
   | 'behavior'
   | 'ai_preset'
+  | 'ai_chat'
   | 'catalog'
 
 export interface ProfileTag {
@@ -765,7 +779,10 @@ export interface TravelGuidePayload {
   visitorCount?: number
   traffic?: TravelGuideSection
   entryNotice?: TravelGuideSection
+  /** 游玩线路 / 日程建议正文 */
   dayPlan?: TravelGuideSection
+  /** 游玩建议（园内路线攻略用，与线路正文分开展示） */
+  tips?: TravelGuideSection
   activities: ActivityCardPayload[]
   guideImageUrl?: string
 }

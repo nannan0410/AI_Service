@@ -2,7 +2,7 @@ import { fetchQuizInvite } from '@/api/quiz'
 import { useAuthStore } from '@/store/authStore'
 import type { Activity, QuizInvitePayload } from '@/types'
 
-/** 演出结果中挑选可挂答题邀请的项目（演示：海豚表演） */
+/** 演出结果中挑选可挂答题邀请的项目（有 quizId 的演出即可） */
 export async function resolveShowQuizInvite(
   activities: Activity[],
 ): Promise<QuizInvitePayload | undefined> {
@@ -10,7 +10,7 @@ export async function resolveShowQuizInvite(
   if (!auth.personaId) return undefined
 
   const withQuiz = activities.find(
-    (item) => item.category === 'show' && item.quizId && item.name.includes('海豚'),
+    (item) => item.category === 'show' && Boolean(item.quizId),
   )
   if (!withQuiz?.quizId) return undefined
 

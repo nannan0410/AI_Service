@@ -1,3 +1,4 @@
+import { clearAiChatTags } from '../src/utils/aiChatTagRuntime'
 import type {
   CheckinSpot,
   CheckinSpotView,
@@ -471,6 +472,63 @@ export function getOrderDraft(personaId: PersonaId, draftId: string): OrderDraft
   return draft ? cloneSnapshot(draft) : null
 }
 
+/** 园内攻略：按当前排队大致排成时段线路 + 游玩建议（演示） */
+function buildInParkGuideSections(
+  picked: Activity[],
+  options?: {
+    hasChildren?: boolean
+    preferThrill?: boolean
+    preferSlow?: boolean
+    preferPhoto?: boolean
+  },
+): { dayPlan: TravelGuideResult['dayPlan']; tips: TravelGuideResult['tips'] } {
+  const ordered = [...picked].sort((a, b) => {
+    const wa = a.waitMinutes ?? 99
+    const wb = b.waitMinutes ?? 99
+    return wa - wb
+  })
+  const slots = ['上午', '午后', '傍晚', '收尾'] as const
+  const routeLines = ordered.map((item, index) => {
+    const slot = slots[index] ?? `站点${index + 1}`
+    const wait =
+      typeof item.waitMinutes === 'number' ? `（约候 ${item.waitMinutes} 分钟）` : ''
+    return `${slot}：${item.name}${wait}`
+  })
+  const chain =
+    ordered.length > 0
+      ? `推荐顺序：${ordered.map((item) => item.name).join(' → ')}`
+      : ''
+
+  const tipLines: string[] = [
+    '优先走排队较短的项目，热门项目可先取虚拟号再去玩。',
+    '两段项目之间预留步行与用餐时间，避免扎堆热门场次。',
+  ]
+  if (options?.hasChildren) {
+    tipLines.push('亲子同行：刺激项目可错开，中间穿插萌宠/轻娱乐更轻松。')
+  }
+  if (options?.preferThrill) {
+    tipLines.push('喜欢刺激：可把高人气项目排在靠前时段，减少午后人流峰值。')
+  }
+  if (options?.preferSlow) {
+    tipLines.push('偏好慢游：不必赶完全程，重点体验 2–3 个项目即可。')
+  }
+  if (options?.preferPhoto) {
+    tipLines.push('想出片：优先安排萌宠/演艺与光线好的点位，预留打卡时间。')
+  }
+  tipLines.push('可点下方「打开地图」对照今日线路位置。')
+
+  return {
+    dayPlan: {
+      title: '今日游玩线路',
+      body: [chain, ...routeLines].filter(Boolean).join('\n'),
+    },
+    tips: {
+      title: '游玩建议',
+      body: tipLines.map((line) => `· ${line}`).join('\n'),
+    },
+  }
+}
+
 export function generateTravelGuide(
   personaId: PersonaId,
   options?: { scope?: 'full' | 'in_park' | 'recommend'; scenicId?: string | null },
@@ -507,7 +565,22 @@ export function generateTravelGuide(
     profileTagIds,
   })
 
-  const activityCards = picked.map((item) =>
+  const inParkSections =
+    scope === 'in_park'
+      ? buildInParkGuideSections(picked, {
+          hasChildren: hasChildren || familyLike,
+          preferThrill: profileTagIds.includes('prefer_thrill'),
+          preferSlow: profileTagIds.includes('prefer_slow'),
+          preferPhoto: profileTagIds.includes('prefer_photo'),
+        })
+      : null
+
+  const orderedForCards =
+    scope === 'in_park'
+      ? [...picked].sort((a, b) => (a.waitMinutes ?? 99) - (b.waitMinutes ?? 99))
+      : picked
+
+  const activityCards = orderedForCards.map((item) =>
     activityToCardPayload(item, {
       guideContext,
       reason: buildActivityRecommendReason(item, {
@@ -515,6 +588,7 @@ export function generateTravelGuide(
         hasChildren: hasChildren || familyLike,
         preferThrill: profileTagIds.includes('prefer_thrill'),
         preferSlow: profileTagIds.includes('prefer_slow'),
+        preferPhoto: profileTagIds.includes('prefer_photo'),
       }),
     }),
   )
@@ -525,7 +599,7 @@ export function generateTravelGuide(
 
   const title =
     scope === 'in_park'
-      ? '今日园内路线推荐'
+      ? '今日园内游玩攻略'
       : scope === 'recommend'
         ? order
           ? `${order.ticketName} 游玩推荐`
@@ -541,9 +615,12 @@ export function generateTravelGuide(
     visitDate: scope === 'in_park' ? undefined : order?.visitDate,
     ticketName: scope === 'in_park' ? undefined : order?.ticketName,
     visitorCount,
-    dayPlan: guideBlock
-      ? { title: guideBlock.title, body: guideBlock.body }
-      : undefined,
+    dayPlan: inParkSections
+      ? inParkSections.dayPlan
+      : guideBlock
+        ? { title: guideBlock.title, body: guideBlock.body }
+        : undefined,
+    tips: inParkSections?.tips,
     activities: activityCards,
     guideImageUrl: '/assistant/chat-bg.svg',
   }
@@ -1008,13 +1085,15 @@ export function ensureTodayPaidOrder(
   }
 }
 
-/** upsert 当日已核销订单（completed + visitDate=今天） */
+/** upsert 当日已核销订单（completed + visitDate=今天；核销时间固定今日 10:00 便于演示「逛久了」） */
 export function ensureTodayCompletedOrder(
   personaId: PersonaId,
   scenicId?: string | null,
 ): DemoOpsResult {
   const today = todayIsoDate()
-  const now = new Date().toISOString()
+  const now = new Date()
+  const entryAt = new Date(now)
+  entryAt.setHours(10, 0, 0, 0)
   const resolvedScenicId = resolveBusinessScenicId(scenicId)
   const order: Order = {
     orderId: `${DEMO_TODAY_COMPLETED_ORDER_ID}__${resolvedScenicId}`,
@@ -1025,10 +1104,10 @@ export function ensureTodayCompletedOrder(
     status: 'completed',
     source: 'self',
     visitDate: today,
-    completedAt: now,
+    completedAt: entryAt.toISOString(),
     invoiceStatus: 'none',
     reviewStatus: 'none',
-    createdAt: now,
+    createdAt: now.toISOString(),
     scenicId: resolvedScenicId,
   }
   const saved = upsertDemoOrder(personaId, order)
@@ -1037,7 +1116,7 @@ export function ensureTodayCompletedOrder(
     action: 'ensure_today_completed_order',
     personaId,
     order: saved,
-    message: `已设置当日已核销订单（${today} / ${resolvedScenicId}）`,
+    message: `已设置当日已核销订单（${today} 10:00 入园 / ${resolvedScenicId}）`,
   }
 }
 
@@ -1122,6 +1201,7 @@ export function resetAllDemoSnapshots(): void {
   refreshDemoNewRegistrationDate(runtime.snapshots.demo_new)
   runtime.orderDrafts.clear()
   runtime.quizSessions.clear()
+  clearAiChatTags()
   for (const key of Object.keys(runtime.plateOverrides) as PersonaId[]) {
     delete runtime.plateOverrides[key]
   }

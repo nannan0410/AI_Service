@@ -44,6 +44,7 @@ import {
   normalizeSkillsTriggerKeywords,
   validateSkillTriggerKeywords,
 } from "@/utils/skillKeywordValidation";
+import { listIntentExclusionRules } from "@/utils/intentExclusionCatalog";
 
 const router = useRouter();
 const assistantStore = useAssistantStore();
@@ -92,6 +93,18 @@ const activeTab = ref<"skill" | "entry">("skill");
 const skillSectionOpen = ref<string[]>([]);
 const entrySectionOpen = ref<string[]>([]);
 const workingSkills = ref<AssistantSkillConfig[]>([]);
+/** 路由排他规则（只读展示，不可编辑） */
+const exclusionRules = listIntentExclusionRules();
+
+function skillNameById(skillId: string) {
+  return (
+    workingSkills.value.find((s) => s.skillId === skillId)?.name ?? skillId
+  );
+}
+
+function openRouteConflictCheck() {
+  router.push("/config/route-check");
+}
 const workingEntries = ref<RecommendEntryConfig[]>([]);
 const workingWelcomeTemplates = ref<WelcomeTemplateConfig[]>([]);
 const workingQuestions = ref<WelcomeQuestionConfig[]>([]);
@@ -1191,6 +1204,29 @@ function goPreviewChat() {
                 :key="view.cardType"
                 :title="view.label"
                 :label="`${view.cardType} · 最多 ${view.maxItems ?? '-'} 条`"
+              />
+            </div>
+          </van-collapse-item>
+
+          <van-collapse-item
+            name="exclusions"
+            :title="`路由排他规则（只读 · ${exclusionRules.length}）`"
+          >
+            <p class="admin-business__hint admin-business__hint--block">
+              对应代码层 Workflow 互斥说明，演示版仅展示，不可在此设置。
+            </p>
+            <div class="admin-ui__panel admin-ui__panel--card">
+              <van-cell
+                v-for="rule in exclusionRules"
+                :key="rule.ruleId"
+                :title="rule.name"
+                :label="`当「${rule.when}」→ 优先 ${skillNameById(rule.preferSkillId)}，排除 ${skillNameById(rule.excludeSkillId)}`"
+              />
+              <van-cell
+                title="打开路由冲突检查"
+                label="查看触发词重叠与排他覆盖情况"
+                is-link
+                @click="openRouteConflictCheck"
               />
             </div>
           </van-collapse-item>

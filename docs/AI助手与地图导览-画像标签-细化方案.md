@@ -36,8 +36,22 @@
 | P2-A1 | GuideCard「打开地图」 | **真跳转 `/map`**，**不高亮**攻略项目（避免演示挖坑） |
 | P2-B1 | 标签兼容 | **`family` ↔ `order_family` 双写映射**，不打断 `member_offer` / 规则引擎 |
 | P2-B2 | 订单规则 | 三套：`order_family` / `order_couple` / `order_group` |
-| P2-B3 | AI 推断 | **目录 + Persona 预置**，不做对话回写 |
+| P2-B3 | AI 推断 | **目录 + Persona 预置 + 对话写回（演示）**：固定词「刺激 / 拍照|出片 / 休闲」→ `prefer_*`；正式版 LLM 归并同目录 |
 | P2-B4 | travel_guide 选项目 | **吃标签**（亲子等影响挑选与 reason） |
+
+### 交互补强（2026-07-27 追加）
+
+| # | 议题 | 结论 |
+|---|------|------|
+| UX-1 | 美食 / 附近抢词 | 餐饮·零售意图优先 `proactive_marketing`，不进 `project_query` |
+| UX-2 | 在园项目卡操作 | 演出：打卡·预约·地图；餐饮/零售：打卡·地图；游乐：排队·打卡·地图（同行） |
+| UX-3 | 海洋明星卡 | 「详细介绍」+ 有答题时右侧答题；无答题通栏；详细介绍 toast 知识图详情 |
+| UX-4 | 演出答题 | 有 `quizId` 的演出即可挂邀请（不限海豚名） |
+| UX-5 | 数据 Tab | 园区项目露出 `quizId`；新增「海洋明星」模块 |
+| UX-6 | 今日推荐路线 | 勿被 `project_query`「位置」误抢；须单条 GuideCard 攻略 |
+| UX-7 | 场景关怀 | 在园≥4h 问附近项目 → 歇脚/冰淇淋温馨提示（核销时间或演示默认 10:00） |
+| UX-8 | 菜系过滤 | 问中餐/西餐/小吃 → 餐饮推荐按 tags 过滤 |
+| UX-9 | 附近项目合并 | 单条 `scene_recommend(nearby)`；关怀置顶冰淇淋；相对距离文案 |
 
 > **对原方案 Phase 3 的修正**：原「固定游园线指引」演示降级——产品确认不做真实导航演示；能力②文档保留为真实落地说明，Demo 侧最多按钮提示。
 
@@ -457,9 +471,9 @@ Workflow 正则（含新 project_query / map_guide 意图）
 
 | tagId | 名称 | 规则 | confidence |
 |-------|------|------|------------|
-| `prefer_thrill` | 喜欢刺激 | 近期对话/点击多次刺激类项目 | 0.6–0.8 |
-| `prefer_photo` | 偏好拍照 | 打卡/萌宠相关 | 0.6–0.8 |
-| `prefer_slow` | 慢节奏 | `avoidThrilling` 或温和项目为主 | 0.7 |
+| `prefer_thrill` | 喜欢刺激 | 对话关键词「刺激」（演示）；正式版 LLM 归并「惊险」等 | 0.6–0.8 |
+| `prefer_photo` | 偏好拍照 | 对话关键词「拍照/出片」（演示） | 0.6–0.8 |
+| `prefer_slow` | 慢节奏 | 对话关键词「休闲」（演示） | 0.7 |
 
 **兼容**：现有规则引擎用的 `family` / `high_value` 可与新 id 映射（`family` ↔ `order_family` 或保留双写一版），避免一次打断 `member_offer`。
 
@@ -696,6 +710,10 @@ flowchart LR
 - [x] 标签扩展 Phase 2：双写映射 + 三套订单规则 + AI 目录预置 + travel_guide 吃标签  
 - [x] `family` 与 `order_family` 兼容策略：**双写映射**  
 - [x] Phase 3：「导航过去」仅 toast；数据 Tab 线路契约占位；无真实画线/规划  
+- [x] 美食路由：餐饮意图优先营销，不被「附近推荐」抢成游乐项目  
+- [x] 在园项目卡同行操作（排队/打卡/预约/地图）；明星卡详细介绍 + 答题  
+- [x] 数据 Tab：`quizId` + 海洋明星；演出答题按 `quizId` 匹配  
+- [x] 对话写入 AI 刺激标签：**演示版已做**固定词「刺激 / 拍照|出片 / 休闲」→ 封闭目录写回；正式版改为 LLM 映射同一目录  
 
 ---
 
@@ -756,7 +774,8 @@ flowchart LR
 | 模块 Title | 主要契约 | 展示要点 |
 |------------|----------|----------|
 | **景区与城市** | 景区/城市列表 API（现有或补统一 GET） | scenicId、名称、是否启用、底图字段（有则显示） |
-| **园区项目** | `GET /api/activities` | activityId、名称、区域、排队、`mapPoiId`（有则显示） |
+| **园区项目** | `GET /api/activities` | activityId、名称、区域、排队、`mapPoiId`、`quizId`（有则显示） |
+| **海洋明星** | `GET /api/stars` | starId、名称、物种、`quizId`、别名；按景区过滤 |
 | **票商品** | `GET /api/products/tickets` 等 | 票种、标签、价格、scenicId |
 | **券商品** | `GET /api/products/coupons` | 券产品、用途 |
 | **内容块** | `GET /api/content/blocks` | traffic / entry / guide 等 |

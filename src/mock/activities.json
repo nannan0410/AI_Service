@@ -87,7 +87,8 @@
     "timeRange": "11:00-20:00",
     "tags": [
       "餐饮",
-      "套餐"
+      "套餐",
+      "中餐"
     ],
     "queueStatus": "none",
     "scenicId": "scenic_hlg",
@@ -101,11 +102,27 @@
     "timeRange": "11:30-21:00",
     "tags": [
       "餐饮",
-      "景观"
+      "景观",
+      "西餐"
     ],
     "queueStatus": "none",
     "scenicId": "scenic_hlg",
     "mapPoiId": "poi_hlg_006"
+  },
+  {
+    "activityId": "act_016",
+    "name": "冰淇淋小站",
+    "category": "dining",
+    "location": "美食广场",
+    "timeRange": "10:00-20:00",
+    "tags": [
+      "餐饮",
+      "小吃",
+      "甜品"
+    ],
+    "queueStatus": "none",
+    "scenicId": "scenic_hlg",
+    "mapPoiId": "poi_hlg_016"
   },
   {
     "activityId": "act_007",
@@ -314,7 +331,9 @@
     "timeRange": "11:00-20:30",
     "tags": [
       "餐饮",
-      "景观"
+      "景观",
+      "中餐",
+      "海鲜"
     ],
     "queueStatus": "none",
     "scenicId": "scenic_hy"
