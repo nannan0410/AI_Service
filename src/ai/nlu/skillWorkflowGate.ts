@@ -26,7 +26,7 @@ import type { SkillRouteResult } from './resolveSkillRoute'
 export function isSkillWorkflowEnhancementEnabled(): boolean {
   const flag = import.meta.env.VITE_ENABLE_SKILL_WORKFLOW_NLU
   if (flag === 'false' || flag === '0') return false
-  return llmConfig.nlu.skillRoutingWorkflowEnhancement !== false
+  return Boolean(llmConfig.nlu.skillRoutingWorkflowEnhancement)
 }
 
 export function getSkillWorkflowConfidenceThreshold(): number {

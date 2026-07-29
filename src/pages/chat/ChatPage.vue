@@ -79,6 +79,7 @@ import WelcomeQuickServices from "@/components/welcome/WelcomeQuickServices.vue"
 import WelcomeAiStatus from "@/components/welcome/WelcomeAiStatus.vue";
 import ScenicPickerSheet from "@/components/scenic/ScenicPickerSheet.vue";
 import { MAX_QUICK_SERVICES } from "@/utils/welcomeLayout";
+import { withBaseUrl } from "@/utils/publicUrl";
 import { useScenicStore } from "@/store/scenicStore";
 import { useConversationStore } from "@/store/conversationStore";
 import {
@@ -1198,7 +1199,7 @@ async function onSend() {
           aria-label="清除聊天记录"
           @click="onConfirmClearChat"
         >
-          <img src="/restore.svg" alt="" class="chat-page__restore-icon" />
+          <img :src="withBaseUrl('/restore.svg')" alt="" class="chat-page__restore-icon" />
         </button>
       </div>
 

@@ -40,7 +40,7 @@ async function onSelectPersona(personaId: PersonaId) {
   } catch (e) {
     const msg =
       e instanceof Error && e.message.includes("404")
-        ? "登录接口不可用，请确认使用 npm run dev 且端口 5172 未被旧进程占用"
+        ? "登录接口不可用，请重新打包部署最新演示版（已内置离线登录）"
         : e instanceof Error
           ? e.message
           : "登录失败";

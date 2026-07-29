@@ -26,6 +26,7 @@ import {
   filterDiningByCuisine,
   resolveDiningCuisinePreference,
 } from '@/utils/diningCuisine'
+import { useAuthStore } from '@/store/authStore'
 import { useScenicStore } from '@/store/scenicStore'
 import { DEFAULT_SCENIC_ID } from '@/utils/scenicScope'
 import type {

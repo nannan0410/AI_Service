@@ -111,7 +111,7 @@ function parseJsonContent(content: string): LlmPurchaseSlots | null {
 function isPurchaseNluEnabled(): boolean {
   const flag = import.meta.env.VITE_ENABLE_PURCHASE_NLU
   if (flag === 'false' || flag === '0') return false
-  return llmConfig.nlu.purchaseSlots !== false
+  return Boolean(llmConfig.nlu.purchaseSlots)
 }
 
 /** 使用 LLM 从用户消息提取购票槽位；无 Key / 失败时返回 null */

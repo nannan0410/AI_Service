@@ -89,7 +89,10 @@ function cloneRuleList(rules: RecommendEntryConfig['rules'] | undefined): Recomm
     if (rule.op === 'contains') {
       return { op: 'contains', field: rule.field, value: rule.value }
     }
-    return { op: 'eq', field: rule.field, value: rule.value }
+    if (rule.op === 'eq') {
+      return { op: 'eq', field: rule.field, value: rule.value }
+    }
+    return { op: 'eq', field: '', value: null }
   })
 }
 

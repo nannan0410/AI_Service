@@ -4,10 +4,14 @@ import defaultScenicList from '@/mock/scenic/list.json'
 import defaultCities from '@/mock/scenic/cities.json'
 import { getUserStorage, setUserStorage, removeUserStorage, STORAGE_SUFFIX } from '@/utils/storage'
 import { DEFAULT_CITY_ID, resolveLocatedCityId } from '@/utils/scenicCity'
+import { withBaseUrl } from '@/utils/publicUrl'
 import type { CityProfile, ScenicProfile } from '@/types'
 
 function cloneList(list: ScenicProfile[]): ScenicProfile[] {
-  return list.map((item) => ({ ...item }))
+  return list.map((item) => ({
+    ...item,
+    coverUrl: withBaseUrl(item.coverUrl),
+  }))
 }
 
 function cloneCities(list: CityProfile[]): CityProfile[] {

@@ -36,24 +36,49 @@ npm run dev
 | 中级会员 | 有待出行订单；**不在园**见「帮我规划路线」，**在园**见「今日推荐路线」/停车/打卡；海洋公园有一笔可开票已完成单 |
 | 高级会员 | 含自营 + OTA/TA 订单；演示订单只读查询、开票、虚拟排队、打卡 |
 
-### 常用入口
+### 常用入口（Hash 路由，地址栏带 `#`）
 
 | 页面 | 路径 |
 |------|------|
-| 登录 | `/login` |
-| 聊天 | `/chat` |
-| 后台配置 | `/config`（含助手 UI、业务场景；旧 `/admin/*` 自动跳转） |
-| 批量开发票 | `/invoice/batch` |
-| 我的 | `/profile` |
+| 登录 | `/#/login` |
+| 聊天 | `/#/chat` |
+| 后台配置 | `/#/config`（含助手 UI、业务场景；旧 `/#/admin/*` 自动跳转） |
+| 批量开发票 | `/#/invoice/batch` |
+| 我的 | `/#/profile` |
 
 ## 脚本
 
 | 命令 | 说明 |
 |------|------|
 | `npm run dev` | 开发服务器（5172 + Mock） |
-| `npm run build` | 类型检查 + 生产构建 |
+| `npm run build` | 类型检查 + 生产构建（默认 base=`/ai-assistant/`） |
 | `npm run typecheck` | 仅 TypeScript 类型检查 |
-| `npm run preview` | 预览构建产物（5172） |
+| `npm run preview` | 预览构建产物（访问 `/ai-assistant/`） |
+
+## 部署到公司服务器（子目录）
+
+生产地址示例：`https://qa.ithongli.com/ai-assistant/#/login`（**Hash 路由**，刷新不会 404）
+
+1. **重新打包**（产物在 `dist/`，资源路径已带 `/ai-assistant/` 前缀；生产包内置演示 Mock，登录与业务接口可离线演示）
+   ```bash
+   npm run build
+   ```
+2. **上传**：把 `dist/` **里面的内容**放到服务器的 `/ai-assistant/` 目录（需能访问到 `index.html` 与 `assets/`）。
+3. **Nginx** 静态托管即可（Hash 模式下路由在 `#` 之后，一般无需 SPA `try_files`）：
+   ```nginx
+   location /ai-assistant/ {
+     alias /path/to/ai-assistant/;   # 指向上传的 dist 内容
+     try_files $uri $uri/ /ai-assistant/index.html;
+   }
+   ```
+4. 浏览器强刷或清缓存后再访问：`https://qa.ithongli.com/ai-assistant/#/login`  
+   选演示账号即可登录（无需本机 `npm run dev`）。
+
+若部署在网站根路径而不是子目录，打包时覆盖 base：
+```bash
+# Windows PowerShell
+$env:VITE_BASE_PATH="/"; npm run build
+```
 
 ## 阶段二能力（Tool Calling + 游前购票）
 
@@ -154,6 +179,14 @@ docs/
 ├── 汇报串讲词-演示版.md
 └── mini-program-routes.md
 ```
+
+## 已知问题与改进
+
+| 项 | 说明 |
+|----|------|
+| 子目录部署 | 生产 `base` 默认为 `/ai-assistant/`；路由为 Hash 模式（如 `/#/login`），刷新深链一般不依赖 SPA 回退 |
+| 生产 Mock | 静态托管时通过 `mockProdServer` 在浏览器内拦截 `/api`（演示专用）；对接真实后端后应关闭 |
+| 局域网预览 | `npm run preview` 后请打开带 base 的地址，如 `http://localhost:5172/ai-assistant/` |
 
 ## 方案文档
 

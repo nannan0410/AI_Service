@@ -1,6 +1,5 @@
 import { fetchOrders } from '@/api/business'
 import { buildOrderQueryCards, type ToolCallRecord } from '@/ai/tools/formatters'
-import { shouldRunOrderQueryWorkflow } from '@/utils/orderQueryIntent'
 import type { LlmChatResult, Order, ToolExecutionCallbacks } from '@/types'
 
 export { shouldRunOrderQueryWorkflow } from '@/utils/orderQueryIntent'

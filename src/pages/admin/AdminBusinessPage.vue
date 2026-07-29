@@ -603,7 +603,7 @@ function parseRuleIntoForm(rules: RuleExpression[] | undefined): {
   let ruleField = "personaId";
   let ruleValue: string | boolean = "demo_new";
   /** 无规则 = 始终展示：编辑器勾选全部演示账号，避免误显示成「仅新客」 */
-  let rulePersonaValues = [...allPersonaIds];
+  let rulePersonaValues: string[] = [...allPersonaIds];
   let andRuleEnabled = false;
   let andRuleField = "hasVisitToday";
   let andRuleValue = false;

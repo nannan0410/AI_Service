@@ -7,10 +7,10 @@ import { createDemoAuthResult, getDemoUserInfo, parsePersonaFromToken } from '@/
 import type { PersonaId, UserInfo } from '@/types'
 
 function shouldUseLocalDemoLogin(error: unknown): boolean {
-  if (!import.meta.env.DEV) return false
+  // 演示部署无后端时走本地登录；开发态 Mock 未就绪时同样兜底
   if (!axios.isAxiosError(error)) return true
   const status = error.response?.status
-  return !status || status === 404
+  return !status || status === 404 || status >= 500
 }
 
 export const useAuthStore = defineStore('auth', () => {

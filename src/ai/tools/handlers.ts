@@ -90,7 +90,7 @@ export async function handleGetScenicActivities(args: {
   tag?: string
 }): Promise<ToolExecutionResult> {
   try {
-    const data = await unwrapApi(fetchActivities(args.tag))
+    const data = await unwrapApi(fetchActivities(args.tag ? { tag: args.tag } : undefined))
     return { success: true, data }
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : '查询园区项目失败' }

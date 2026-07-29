@@ -9,7 +9,11 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, mode }) => ({
+  // 公司 QA/生产挂在 /ai-assistant/；本地开发仍用根路径。可用 VITE_BASE_PATH 覆盖。
+  base:
+    process.env.VITE_BASE_PATH ||
+    (mode === 'production' ? '/ai-assistant/' : '/'),
   plugins: [
     vue(),
     Components({

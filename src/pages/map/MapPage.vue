@@ -7,6 +7,7 @@ import { useScenicStore } from "@/store/scenicStore";
 import { findPoiById, hasMapGuideForScenic } from "@/utils/mapGuide";
 import { QUEUE_STATUS_LABELS } from "@/utils/activityDisplay";
 import { DEFAULT_SCENIC_ID } from "@/utils/scenicScope";
+import { withBaseUrl } from "@/utils/publicUrl";
 import type { Activity, MapConfig, MapPoi } from "@/types";
 
 const route = useRoute();
@@ -35,11 +36,12 @@ const scenicName = computed(() => {
 const mapImageUrl = computed(() => {
   const url = config.value?.mapImageUrl?.trim();
   if (!url) return "";
+  const resolved = withBaseUrl(url);
   // 避免缓存旧坏图；占位图可带版本参数
-  if (url.startsWith("/map/")) {
-    return `${url}${url.includes("?") ? "&" : "?"}v=2`;
+  if (url.startsWith("/map/") || resolved.includes("/map/")) {
+    return `${resolved}${resolved.includes("?") ? "&" : "?"}v=2`;
   }
-  return url;
+  return resolved;
 });
 
 const selectedPoi = computed(() => findPoiById(pois.value, selectedPoiId.value || undefined));

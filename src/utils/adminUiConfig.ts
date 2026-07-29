@@ -1,4 +1,5 @@
 import type { AssistantUiConfig } from '@/types'
+import { withBaseUrl } from '@/utils/publicUrl'
 
 const ADMIN_UI_OVERRIDE_KEY = 'scenic_admin_ui_override'
 
@@ -19,6 +20,25 @@ export type AdminUiPatch = Partial<
     | 'motions'
   >
 >
+
+function resolveUiAssetUrls(config: AssistantUiConfig): AssistantUiConfig {
+  return {
+    ...config,
+    chatBackgroundUrl: withBaseUrl(config.chatBackgroundUrl),
+    assistantAvatarUrl: withBaseUrl(config.assistantAvatarUrl),
+    memberDefaultAvatarUrl: withBaseUrl(
+      config.memberDefaultAvatarUrl || '/member/default-avatar.svg',
+    ),
+    assistantCharacterUrl: config.assistantCharacterUrl
+      ? withBaseUrl(config.assistantCharacterUrl)
+      : config.assistantCharacterUrl,
+    defaultImageUrl: withBaseUrl(config.defaultImageUrl),
+    motions: config.motions.map((m) => ({
+      ...m,
+      assetUrl: withBaseUrl(m.assetUrl),
+    })),
+  }
+}
 
 export function getAdminUiOverride(): AdminUiPatch | null {
   const raw = localStorage.getItem(ADMIN_UI_OVERRIDE_KEY)
@@ -47,7 +67,12 @@ export function setAdminUiOverride(patch: AdminUiPatch | null): void {
 
 export function mergeUiConfig(base: AssistantUiConfig): AssistantUiConfig {
   const patch = getAdminUiOverride()
-  if (!patch) return { ...base, motions: base.motions.map((m) => ({ ...m })) }
+  if (!patch) {
+    return resolveUiAssetUrls({
+      ...base,
+      motions: base.motions.map((m) => ({ ...m })),
+    })
+  }
 
   const merged: AssistantUiConfig = {
     ...base,
@@ -61,7 +86,7 @@ export function mergeUiConfig(base: AssistantUiConfig): AssistantUiConfig {
     patch.memberDefaultAvatarUrl ?? merged.memberDefaultAvatarUrl ?? '/member/default-avatar.svg'
   merged.defaultImageUrl = patch.defaultImageUrl ?? merged.defaultImageUrl
 
-  return merged
+  return resolveUiAssetUrls(merged)
 }
 
 export function readFileAsDataUrl(file: File): Promise<string> {

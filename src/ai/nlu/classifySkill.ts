@@ -83,7 +83,7 @@ function parseClassification(content: string): SkillClassification | null {
 function isSkillRoutingEnabled(): boolean {
   const flag = import.meta.env.VITE_ENABLE_SKILL_NLU
   if (flag === 'false' || flag === '0') return false
-  return llmConfig.nlu.skillRouting !== false
+  return Boolean(llmConfig.nlu.skillRouting)
 }
 
 /** LLM 语义分类 Skill；失败或未启用时返回 null */

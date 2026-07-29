@@ -16,7 +16,7 @@ const businessConfigStore = useBusinessConfigStore();
 const skills = ref<AssistantSkillConfig[]>([]);
 
 onMounted(async () => {
-  await businessConfigStore.ensureLoaded();
+  await businessConfigStore.loadSkills();
   skills.value = normalizeSkillsTriggerKeywords(
     structuredClone(businessConfigStore.skills),
   );

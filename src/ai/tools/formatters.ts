@@ -5,7 +5,6 @@ import {
 } from '@/utils/activityDisplay'
 import type {
   Activity,
-  ActivityCardPayload,
   ChatMessageDraft,
   ContentBlock,
   ContentCardPayload,

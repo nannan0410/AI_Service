@@ -4,6 +4,7 @@ import { fetchAssistantUi } from '@/api/business'
 import defaultUiConfig from '@/mock/assistant/ui_config.json'
 import { applyChatTheme } from '@/utils/theme'
 import { mergeUiConfig, setAdminUiOverride, type AdminUiPatch } from '@/utils/adminUiConfig'
+import { withBaseUrl } from '@/utils/publicUrl'
 import type { AssistantMotionId, AssistantUiConfig } from '@/types'
 
 export const useAssistantStore = defineStore('assistant', () => {
@@ -21,7 +22,7 @@ export const useAssistantStore = defineStore('assistant', () => {
   const assistantNickname = computed(() => uiConfig.value.assistantNickname)
   const assistantAvatarUrl = computed(() => uiConfig.value.assistantAvatarUrl)
   const memberDefaultAvatarUrl = computed(
-    () => uiConfig.value.memberDefaultAvatarUrl || '/member/default-avatar.svg',
+    () => uiConfig.value.memberDefaultAvatarUrl || withBaseUrl('/member/default-avatar.svg'),
   )
   const defaultImageUrl = computed(() => uiConfig.value.defaultImageUrl)
   const currentMotionUrl = computed(() => {

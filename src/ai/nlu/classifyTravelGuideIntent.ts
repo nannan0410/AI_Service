@@ -66,7 +66,7 @@ function parseClassification(content: string): TravelGuideIntentClassification |
 function isTravelGuideNluEnabled(): boolean {
   const flag = import.meta.env.VITE_ENABLE_TRAVEL_GUIDE_NLU
   if (flag === 'false' || flag === '0') return false
-  return llmConfig.nlu.travelGuideIntent !== false
+  return Boolean(llmConfig.nlu.travelGuideIntent)
 }
 
 /** LLM 分类攻略子意图；失败或未启用时返回 null */
