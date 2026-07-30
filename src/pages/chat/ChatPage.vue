@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { showConfirmDialog, showLoadingToast, showToast, closeToast } from "vant";
+import {
+  showConfirmDialog,
+  showLoadingToast,
+  showToast,
+  closeToast,
+} from "vant";
 import { useAuthStore } from "@/store/authStore";
 import { useChatStore } from "@/store/chatStore";
 import { useAssistantStore } from "@/store/assistantStore";
@@ -60,7 +65,15 @@ import {
   shouldRunMapGuideWorkflowFromRoute,
 } from "@/ai/nlu/skillWorkflowGate";
 import { shouldInterruptPurchaseSession } from "@/utils/ticketPurchaseIntent";
-import { createOrderDraft, fetchCoupons, fetchMemberInfo, fetchOrders, postAiChatTag, submitCheckin, submitReview } from "@/api/business";
+import {
+  createOrderDraft,
+  fetchCoupons,
+  fetchMemberInfo,
+  fetchOrders,
+  postAiChatTag,
+  submitCheckin,
+  submitReview,
+} from "@/api/business";
 import {
   buildAiChatTagConfirmText,
   isAiChatPreferencePrimary,
@@ -68,7 +81,10 @@ import {
 } from "@/utils/aiChatTagIntent";
 import { upsertAiChatTag } from "@/utils/aiChatTagRuntime";
 import { startQuiz, submitQuizAnswer } from "@/api/quiz";
-import { buildCouponCardPayload, buildMergedCouponMessage } from "@/utils/couponRecommend";
+import {
+  buildCouponCardPayload,
+  buildMergedCouponMessage,
+} from "@/utils/couponRecommend";
 import { qualifiesReviewReward } from "@/utils/reviewForm";
 import { usePurchaseStore } from "@/store/purchaseStore";
 import MessageBubble from "@/components/chat/MessageBubble.vue";
@@ -154,8 +170,8 @@ const currentScenicName = computed(() => scenicStore.currentScenicName);
 const weatherLine = computed(() =>
   formatScenicWeatherLine(
     getScenicWeather(scenicStore.currentScenicId),
-    scenicStore.currentScenicName || undefined,
-  ),
+    scenicStore.currentScenicName || undefined
+  )
 );
 /** 欢迎页客流：每次进入欢迎态随机一档 */
 const crowdLevel = ref<CrowdLevel>(pickRandomCrowdLevel());
@@ -180,7 +196,9 @@ function urlScenicId(): string | null {
 }
 
 /** 解析并应用当前景区 + 会话；返回是否已选中景区 */
-function applyScenicFromEntry(options?: { forceNewConversation?: boolean }): boolean {
+function applyScenicFromEntry(options?: {
+  forceNewConversation?: boolean;
+}): boolean {
   if (authStore.memberId) {
     scenicStore.bindMember(authStore.memberId);
     conversationStore.bindMember(authStore.memberId);
@@ -190,7 +208,7 @@ function applyScenicFromEntry(options?: { forceNewConversation?: boolean }): boo
 
   const resolved = scenicStore.resolveScenicId(
     urlScenicId(),
-    conversationStore.scenicId,
+    conversationStore.scenicId
   );
 
   if (!resolved.scenicId) {
@@ -221,7 +239,7 @@ function applyScenicFromEntry(options?: { forceNewConversation?: boolean }): boo
     chatStore.loadForUser(
       authStore.memberId,
       assistantNickname.value,
-      resolved.scenicId,
+      resolved.scenicId
     );
   }
 
@@ -236,7 +254,7 @@ function openScenicPicker() {
 }
 
 const pickerInitialCityId = computed(() =>
-  scenicStore.resolvePickerCityId(scenicStore.currentScenicId),
+  scenicStore.resolvePickerCityId(scenicStore.currentScenicId)
 );
 
 function onPickerCityChange(cityId: string) {
@@ -252,7 +270,10 @@ async function onScenicPicked(scenicId: string) {
   if (prevId === scenicId) {
     scenicPickerVisible.value = false;
     scenicPickerRequired.value = false;
-    if (!conversationStore.hasConversation || conversationStore.scenicId !== scenicId) {
+    if (
+      !conversationStore.hasConversation ||
+      conversationStore.scenicId !== scenicId
+    ) {
       conversationStore.ensureConversation(scenicId, {
         personaId: authStore.personaId,
       });
@@ -287,7 +308,7 @@ async function onScenicPicked(scenicId: string) {
     chatStore.loadForUser(
       authStore.memberId,
       assistantNickname.value,
-      scenicId,
+      scenicId
     );
   }
   clearChatAndReturnWelcome();
@@ -312,8 +333,7 @@ function ensureScenicSelected(): boolean {
   return false;
 }
 const welcomeTemplateContext = computed(() => ({
-  nickname:
-    memberInfo.value?.nickname ?? authStore.userInfo?.nickname ?? "",
+  nickname: memberInfo.value?.nickname ?? authStore.userInfo?.nickname ?? "",
   orders: userOrders.value.length > 0 ? userOrders.value : undefined,
   scenicId: scenicStore.currentScenicId,
   scenicName: scenicStore.currentScenicName || undefined,
@@ -322,11 +342,11 @@ const resolvedWelcomeTemplate = computed(() => {
   const personaId = (authStore.personaId || "demo_new") as PersonaId;
   return businessConfigStore.getResolvedWelcomeTemplate(
     personaId,
-    welcomeTemplateContext.value,
+    welcomeTemplateContext.value
   );
 });
 const welcomeRecommendSubtitle = computed(
-  () => resolvedWelcomeTemplate.value?.subtitle?.trim() || "试试这些热门问题",
+  () => resolvedWelcomeTemplate.value?.subtitle?.trim() || "试试这些热门问题"
 );
 const welcomeCouponFilterCtx = computed(() => ({
   personaId: authStore.personaId,
@@ -338,7 +358,7 @@ const suggestedQuestions = computed(() => {
   return businessConfigStore.getSuggestedQuestions(
     personaId,
     welcomeCouponFilterCtx.value,
-    welcomeTemplateContext.value,
+    welcomeTemplateContext.value
   );
 });
 const recommendEntries = computed(() => {
@@ -427,7 +447,7 @@ onMounted(async () => {
     chatStore.loadForUser(
       authStore.memberId,
       assistantNickname.value,
-      scenicStore.currentScenicId,
+      scenicStore.currentScenicId
     );
   }
   showWelcomePanel.value = true;
@@ -442,7 +462,7 @@ watch(
     applyScenicFromEntry();
     await businessConfigStore.loadRecommendEntries(true);
     await loadUserCoupons();
-  },
+  }
 );
 
 watch(showWelcomePanel, (visible) => {
@@ -457,7 +477,7 @@ watch(
   () => {
     if (showWelcomePanel.value) refreshCrowdStatus();
     void loadUserCoupons();
-  },
+  }
 );
 
 watch(
@@ -466,7 +486,7 @@ watch(
     if (path !== "/chat") return;
     applyScenicFromEntry();
     loadUserCoupons();
-  },
+  }
 );
 
 function enterChatView() {
@@ -520,7 +540,8 @@ function clearChatAndReturnWelcome() {
 
 function isVisitorPickDisabled(message: { type: string; payload?: unknown }) {
   if (message.type !== "visitor_pick") return false;
-  const sessionId = (message.payload as VisitorPickPayload | undefined)?.sessionId;
+  const sessionId = (message.payload as VisitorPickPayload | undefined)
+    ?.sessionId;
   return sessionId ? confirmedVisitorSessions.value.has(sessionId) : false;
 }
 
@@ -530,13 +551,18 @@ function isTicketConfirmDisabled(message: { type: string; payload?: unknown }) {
 
   if (purchaseStore.isConfirmed(payload.sessionId)) return true;
 
-  if (message.type !== "ticket" && message.type !== "ticket_confirm") return false;
+  if (message.type !== "ticket" && message.type !== "ticket_confirm")
+    return false;
 
   const active = purchaseStore.session;
   if (!active || active.sessionId !== payload.sessionId) {
     return true;
   }
-  if (payload.quoteToken && active.quoteToken && payload.quoteToken !== active.quoteToken) {
+  if (
+    payload.quoteToken &&
+    active.quoteToken &&
+    payload.quoteToken !== active.quoteToken
+  ) {
     return true;
   }
   return false;
@@ -546,10 +572,16 @@ function isReviewDisabled(message: { type: string; payload?: unknown }) {
   if (message.type !== "review") return false;
   const payload = message.payload as ReviewCardPayload | undefined;
   if (!payload?.orders.length) return true;
-  return payload.orders.every((order) => submittedReviewOrders.value.has(order.orderId));
+  return payload.orders.every((order) =>
+    submittedReviewOrders.value.has(order.orderId)
+  );
 }
 
-function isQuizDisabled(message: { type: string; id?: string; payload?: unknown }) {
+function isQuizDisabled(message: {
+  type: string;
+  id?: string;
+  payload?: unknown;
+}) {
   if (message.type !== "quiz") return false;
   if (message.id && answeredQuizMessageIds.value.has(message.id)) return true;
   const payload = message.payload as QuizCardPayload | undefined;
@@ -590,7 +622,7 @@ async function onQuizStart(quizId: string) {
 async function onQuizAnswer(
   payload: QuizCardPayload,
   optionKey: string,
-  messageId: string,
+  messageId: string
 ) {
   if (
     chatStore.sending ||
@@ -720,7 +752,10 @@ async function onReviewSubmit(draft: ReviewSubmitDraft) {
     await loadUserCoupons();
 
     const rewardCoupons = res.data.rewardCoupons ?? [];
-    const hadRewardHint = qualifiesReviewReward(draft.content, draft.imageIds.length);
+    const hadRewardHint = qualifiesReviewReward(
+      draft.content,
+      draft.imageIds.length
+    );
 
     let successText = "感谢您的评价，我们已收到反馈。";
     if (res.data.rewardIssued && rewardCoupons.length) {
@@ -731,7 +766,8 @@ async function onReviewSubmit(draft: ReviewSubmitDraft) {
       ]);
     } else {
       if (hadRewardHint && !res.data.rewardIssued) {
-        successText = "评价已提交。优质赠券需文案超过 20 字且上传至少 2 张图片。";
+        successText =
+          "评价已提交。优质赠券需文案超过 20 字且上传至少 2 张图片。";
       }
       chatStore.addAssistantMessage(successText);
     }
@@ -750,7 +786,10 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function onCheckinConfirm(payload: PageGuideCardPayload, messageId: string) {
+async function onCheckinConfirm(
+  payload: PageGuideCardPayload,
+  messageId: string
+) {
   if (chatStore.sending || payload.actionDone || !payload.spotId) return;
 
   chatStore.sending = true;
@@ -879,9 +918,12 @@ async function onTicketConfirm(payload: TicketCardPayload) {
 /** 兼容历史 visitor_pick 消息 */
 async function onVisitorConfirm(
   payload: VisitorPickPayload,
-  visitorIdNumbers: string[],
+  visitorIdNumbers: string[]
 ) {
-  if (chatStore.sending || confirmedVisitorSessions.value.has(payload.sessionId)) {
+  if (
+    chatStore.sending ||
+    confirmedVisitorSessions.value.has(payload.sessionId)
+  ) {
     return;
   }
   chatStore.sending = true;
@@ -894,9 +936,13 @@ async function onVisitorConfirm(
       originalAmount: payload.totalAmount + (payload.discountAmount ?? 0),
       visitorIdNumbers,
     });
-    if (res.code !== 200 || !res.data) throw new Error(res.message || "创建订单草稿失败");
+    if (res.code !== 200 || !res.data)
+      throw new Error(res.message || "创建订单草稿失败");
     confirmedVisitorSessions.value.add(payload.sessionId);
-    router.push({ path: "/order/submit", query: { draftId: res.data.draftId } });
+    router.push({
+      path: "/order/submit",
+      query: { draftId: res.data.draftId },
+    });
   } catch (e) {
     showToast(e instanceof Error ? e.message : "创建订单失败");
   } finally {
@@ -957,7 +1003,7 @@ async function onSend() {
 
   const skillRoute = await skillStore.resolveSkillAsync(
     text,
-    skillRouteCallbacks,
+    skillRouteCallbacks
   );
   const { skill, source: skillRouteSource } = skillRoute;
   skillStore.setActiveSkill(skill?.skillId ?? null);
@@ -1008,11 +1054,11 @@ async function onSend() {
     const useTicketWorkflow = shouldRunTicketWorkflowFromRoute(
       skillRoute,
       text,
-      purchaseStore.session !== null,
+      purchaseStore.session !== null
     );
     const useTravelGuideWorkflow = shouldRunTravelGuideWorkflowFromRoute(
       skillRoute,
-      text,
+      text
     );
     const useOrderQueryWorkflow =
       shouldRunOrderQueryWorkflow(text) ||
@@ -1056,10 +1102,7 @@ async function onSend() {
         shouldRunMapGuideWorkflowFromRoute(skillRoute, text));
 
     // 明确其它业务意图时结束购票会话，避免续跑劫持
-    if (
-      purchaseStore.session &&
-      shouldInterruptPurchaseSession(text)
-    ) {
+    if (purchaseStore.session && shouldInterruptPurchaseSession(text)) {
       purchaseStore.clearSession();
     }
 
@@ -1076,30 +1119,30 @@ async function onSend() {
     const result = useNewGuestCouponWorkflow
       ? await runNewGuestCouponWorkflow(text, workflowCallbacks)
       : useParkingPayWorkflow
-        ? await runParkingPayWorkflow(text, workflowCallbacks)
+      ? await runParkingPayWorkflow(text, workflowCallbacks)
       : useQueueRecommendWorkflow
-        ? await runQueueRecommendWorkflow(text, workflowCallbacks)
+      ? await runQueueRecommendWorkflow(text, workflowCallbacks)
       : useStarIntroWorkflow
-        ? await runStarIntroWorkflow(text, workflowCallbacks)
+      ? await runStarIntroWorkflow(text, workflowCallbacks)
       : useShowScheduleWorkflow
-        ? await runShowScheduleWorkflow(text, workflowCallbacks)
+      ? await runShowScheduleWorkflow(text, workflowCallbacks)
       : useProactiveMarketingWorkflow
-        ? await runProactiveMarketingWorkflow(text, workflowCallbacks)
+      ? await runProactiveMarketingWorkflow(text, workflowCallbacks)
       : useProjectQueryWorkflow
-        ? await runProjectQueryWorkflow(text, workflowCallbacks)
+      ? await runProjectQueryWorkflow(text, workflowCallbacks)
       : useMapGuideWorkflow
-        ? await runMapGuideWorkflow(text, workflowCallbacks)
+      ? await runMapGuideWorkflow(text, workflowCallbacks)
       : useWeatherSuitabilityWorkflow
-        ? await runWeatherSuitabilityWorkflow(text, workflowCallbacks)
+      ? await runWeatherSuitabilityWorkflow(text, workflowCallbacks)
       : useTravelGuideWorkflow
-        ? await runTravelGuideWorkflow(text, personaId, workflowCallbacks)
+      ? await runTravelGuideWorkflow(text, personaId, workflowCallbacks)
       : useTicketWorkflow
       ? purchaseStore.session
         ? await continueTicketPurchaseWorkflow(
             text,
             personaId,
             purchaseStore.session,
-            workflowCallbacks,
+            workflowCallbacks
           )
         : await (() => {
             purchaseStore.startSession();
@@ -1107,53 +1150,52 @@ async function onSend() {
               text,
               personaId,
               workflowCallbacks,
-              purchaseStore.session,
+              purchaseStore.session
             );
           })()
       : useMemberOfferWorkflow
-        ? await (() => {
-            if (!purchaseStore.session) purchaseStore.startSession();
-            return runMemberOfferWorkflow(
-              text,
-              purchaseStore.session!,
-              workflowCallbacks,
-            );
-          })()
+      ? await (() => {
+          if (!purchaseStore.session) purchaseStore.startSession();
+          return runMemberOfferWorkflow(
+            text,
+            purchaseStore.session!,
+            workflowCallbacks
+          );
+        })()
       : useInvoiceWorkflow
-        ? await runInvoiceServiceWorkflow(text, workflowCallbacks)
+      ? await runInvoiceServiceWorkflow(text, workflowCallbacks)
       : useCheckinWorkflow
-        ? await runCheckinWorkflow(text, workflowCallbacks)
+      ? await runCheckinWorkflow(text, workflowCallbacks)
       : useReviewWorkflow
-        ? await runReviewServiceWorkflow(text, workflowCallbacks)
-        : useOrderQueryWorkflow
-          ? await runOrderQueryWorkflow(text, workflowCallbacks)
-          : await sendChatMessage(
-          buildHistory(),
-          text,
-          assistantStore.uiConfig,
-          {
-            skill,
-            toolNames:
-              skill != null
-                ? skillStore.getToolNamesForSkill(skill)
-                : isLikelyGeneralMessage(text)
-                  ? []
-                  : skillStore.getToolNamesForSkill(null),
-            onToolStart: (toolName, label) => {
-              aiStore.addToolStep(toolName, label);
-            },
-            onToolDone: (toolName, success) => {
-              aiStore.completeToolStep(toolName, success);
-            },
-          }
-        );
+      ? await runReviewServiceWorkflow(text, workflowCallbacks)
+      : useOrderQueryWorkflow
+      ? await runOrderQueryWorkflow(text, workflowCallbacks)
+      : await sendChatMessage(buildHistory(), text, assistantStore.uiConfig, {
+          skill,
+          toolNames:
+            skill != null
+              ? skillStore.getToolNamesForSkill(skill)
+              : isLikelyGeneralMessage(text)
+              ? []
+              : skillStore.getToolNamesForSkill(null),
+          onToolStart: (toolName, label) => {
+            aiStore.addToolStep(toolName, label);
+          },
+          onToolDone: (toolName, success) => {
+            aiStore.completeToolStep(toolName, success);
+          },
+        });
     aiStore.beginCompose();
     if (!result.content?.trim() && result.cards?.length) {
       chatStore.addAssistantCards(result.cards);
     } else {
       chatStore.addAssistantReply(result.content, result.cards);
     }
-    if (result.cards?.some((card) => card.type === "coupon" || card.type === "scene_recommend")) {
+    if (
+      result.cards?.some(
+        (card) => card.type === "coupon" || card.type === "scene_recommend"
+      )
+    ) {
       await loadUserCoupons();
     }
     aiStore.finish(true);
@@ -1199,7 +1241,11 @@ async function onSend() {
           aria-label="清除聊天记录"
           @click="onConfirmClearChat"
         >
-          <img :src="withBaseUrl('/restore.svg')" alt="" class="chat-page__restore-icon" />
+          <img
+            :src="withBaseUrl('/restore.svg')"
+            alt=""
+            class="chat-page__restore-icon"
+          />
         </button>
       </div>
 
@@ -1220,7 +1266,11 @@ async function onSend() {
           <button
             type="button"
             class="chat-page__scenic-btn"
-            :aria-label="currentScenicName ? `当前景区 ${currentScenicName}` : '选择服务景区'"
+            :aria-label="
+              currentScenicName
+                ? `当前景区 ${currentScenicName}`
+                : '选择服务景区'
+            "
             @click="openScenicPicker"
           >
             <span class="chat-page__scenic-name">
@@ -1337,9 +1387,7 @@ async function onSend() {
     var(--chat-input-height) + var(--chat-footer-pad-bottom)
   );
   /* 聊天态底栏：消息区与输入框间距 16px + 输入框 + 安全区 */
-  --chat-full-footer-height: calc(
-    16px + var(--chat-input-footer-height)
-  );
+  --chat-full-footer-height: calc(16px + var(--chat-input-footer-height));
   background-color: #f6fbff;
   background-image: var(--chat-bg-image, none);
   background-size: cover;

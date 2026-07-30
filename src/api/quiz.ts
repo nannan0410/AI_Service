@@ -1,4 +1,5 @@
 import request from '@/api/request'
+import { toQuerySafeText } from '@/utils/queryText'
 import type {
   ApiResponse,
   QuizAnswerResult,
@@ -15,7 +16,7 @@ export function fetchStars() {
 export function matchStar(q: string) {
   return request.get<
     ApiResponse<(ScenicStar & { quizInvite?: QuizInvitePayload }) | null>
-  >('/api/stars/match', { params: { q } })
+  >('/api/stars/match', { params: { q: toQuerySafeText(q) } })
 }
 
 export function fetchQuizInvite(quizId: string) {

@@ -186,6 +186,8 @@ docs/
 |----|------|
 | 子目录部署 | 生产 `base` 默认为 `/ai-assistant/`；路由为 Hash 模式（如 `/#/login`），刷新深链一般不依赖 SPA 回退 |
 | 生产 Mock | 静态托管时通过 `mockProdServer` 在浏览器内拦截 `/api`（演示专用）；对接真实后端后应关闭 |
+| 生产 Mock 路由匹配 | 浏览器版 mock 用「前缀正则 + 命中最先注册的一条」，与本地中间件的严格路径匹配不同：`/api/stars` 会抢走 `/api/stars/match`。`mockProdServer` 已统一按 url 长度倒序注册，新增子路由（如 `/api/xxx/yyy`）无需额外处理 |
+| 生产 Mock 文本参数 | 浏览器版 mock 解析 query 用 `JSON.parse` 拼串，文本含 `&`、`=`、`\`、`"`、换行会抛错。把用户原话拼进 GET query 时请用 `src/utils/queryText.ts` 的 `toQuerySafeText()` 先净化（`matchStar` 已接入） |
 | 局域网预览 | `npm run preview` 后请打开带 base 的地址，如 `http://localhost:5172/ai-assistant/` |
 
 ## 方案文档

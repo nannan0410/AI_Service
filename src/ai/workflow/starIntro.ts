@@ -17,7 +17,9 @@ export async function runStarIntroWorkflow(
   try {
     const { data: res } = await matchStar(message)
     callbacks?.onToolDone?.('getScenicActivities', res.code === 200)
-    if (res.code !== 200 || !res.data) {
+    const star = res.data
+    // 校验 name 而非仅判空：接口返回结构异常时也走兜底文案，避免卡片渲染出 undefined
+    if (res.code !== 200 || !star?.name) {
       return {
         content:
           '暂时没有匹配到对应的动物明星介绍。演示版可询问「企鹅」或「白鲸」（上海海洋公园）。',
@@ -25,7 +27,6 @@ export async function runStarIntroWorkflow(
       }
     }
 
-    const star = res.data
     const payload: StarIntroPayload = {
       starId: star.starId,
       name: star.name,
