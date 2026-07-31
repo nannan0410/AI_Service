@@ -63,12 +63,19 @@ npm run dev
    ```bash
    npm run build
    ```
-2. **上传**：把 `dist/` **里面的内容**放到服务器的 `/ai-assistant/` 目录（需能访问到 `index.html` 与 `assets/`）。
+2. **上传**：把 `dist/` **里面的内容**放到服务器的 `/ai-assistant/` 目录（需能访问到 `index.html` 与 `assets/`）。**务必整包覆盖**，不要只传部分 `assets`，否则懒加载页会 404（控制台常见 `Failed to fetch dynamically imported module`）。
 3. **Nginx** 静态托管即可（Hash 模式下路由在 `#` 之后，一般无需 SPA `try_files`）：
    ```nginx
    location /ai-assistant/ {
      alias /path/to/ai-assistant/;   # 指向上传的 dist 内容
      try_files $uri $uri/ /ai-assistant/index.html;
+   }
+   # 建议：入口 HTML 不缓存，带 hash 的 JS/CSS 长缓存，避免换包后浏览器还握着旧主包去拉已删除的分片
+   location = /ai-assistant/index.html {
+     add_header Cache-Control "no-cache";
+   }
+   location /ai-assistant/assets/ {
+     add_header Cache-Control "public, max-age=31536000, immutable";
    }
    ```
 4. 浏览器强刷或清缓存后再访问：`https://qa.ithongli.com/ai-assistant/#/login`  
@@ -189,6 +196,7 @@ docs/
 | 生产 Mock 路由匹配 | 浏览器版 mock 用「前缀正则 + 命中最先注册的一条」，与本地中间件的严格路径匹配不同：`/api/stars` 会抢走 `/api/stars/match`。`mockProdServer` 已统一按 url 长度倒序注册，新增子路由（如 `/api/xxx/yyy`）无需额外处理 |
 | 生产 Mock 文本参数 | 浏览器版 mock 解析 query 用 `JSON.parse` 拼串，文本含 `&`、`=`、`\`、`"`、换行会抛错。把用户原话拼进 GET query 时请用 `src/utils/queryText.ts` 的 `toQuerySafeText()` 先净化（`matchStar` 已接入） |
 | 局域网预览 | `npm run preview` 后请打开带 base 的地址，如 `http://localhost:5172/ai-assistant/` |
+| 懒加载分片 404 | 换包后旧主包会去拉已删除的 `*-旧hash.js`。`OrderSubmitPage` 已改为同步打包；其它页由 `router.onError` 检测后自动整页刷新一次。部署时请整包覆盖，并为 `index.html` 配置 `Cache-Control: no-cache` |
 
 ## 方案文档
 

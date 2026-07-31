@@ -96,6 +96,10 @@ import WelcomeAiStatus from "@/components/welcome/WelcomeAiStatus.vue";
 import ScenicPickerSheet from "@/components/scenic/ScenicPickerSheet.vue";
 import { MAX_QUICK_SERVICES } from "@/utils/welcomeLayout";
 import { withBaseUrl } from "@/utils/publicUrl";
+import {
+  isChunkLoadError,
+  reloadOnceForChunkError,
+} from "@/utils/chunkLoad";
 import { useScenicStore } from "@/store/scenicStore";
 import { useConversationStore } from "@/store/conversationStore";
 import {
@@ -905,7 +909,15 @@ async function onTicketConfirm(payload: TicketCardPayload) {
     chatStore.addAssistantCards([orderCard]);
     assistantStore.setMotion("nod");
     showToast("订单草稿已生成");
-    router.push({ path: "/order/submit", query: { draftId: draft.draftId } });
+    try {
+      await router.push({
+        path: "/order/submit",
+        query: { draftId: draft.draftId },
+      });
+    } catch (navError) {
+      if (isChunkLoadError(navError) && reloadOnceForChunkError()) return;
+      showToast("打开提交订单页失败，请刷新后重试");
+    }
   } catch (e) {
     assistantStore.setMotion("shake");
     showToast(e instanceof Error ? e.message : "创建订单失败");
@@ -939,10 +951,15 @@ async function onVisitorConfirm(
     if (res.code !== 200 || !res.data)
       throw new Error(res.message || "创建订单草稿失败");
     confirmedVisitorSessions.value.add(payload.sessionId);
-    router.push({
-      path: "/order/submit",
-      query: { draftId: res.data.draftId },
-    });
+    try {
+      await router.push({
+        path: "/order/submit",
+        query: { draftId: res.data.draftId },
+      });
+    } catch (navError) {
+      if (isChunkLoadError(navError) && reloadOnceForChunkError()) return;
+      showToast("打开提交订单页失败，请刷新后重试");
+    }
   } catch (e) {
     showToast(e instanceof Error ? e.message : "创建订单失败");
   } finally {

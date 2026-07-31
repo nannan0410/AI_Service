@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { showToast } from "vant";
 import ChatCardShell from "./ChatCardShell.vue";
 import type { OrderCardPayload } from "@/types";
+import {
+  isChunkLoadError,
+  reloadOnceForChunkError,
+} from "@/utils/chunkLoad";
 
 const props = defineProps<{ payload: OrderCardPayload }>();
 const router = useRouter();
@@ -19,14 +24,19 @@ const sourceLabel: Record<NonNullable<OrderCardPayload["source"]>, string> = {
   ta: "TA",
 };
 
-function onSubmit() {
+async function onSubmit() {
   if (!props.payload.draftId) {
     return;
   }
-  router.push({
-    path: "/order/submit",
-    query: { draftId: props.payload.draftId },
-  });
+  try {
+    await router.push({
+      path: "/order/submit",
+      query: { draftId: props.payload.draftId },
+    });
+  } catch (error) {
+    if (isChunkLoadError(error) && reloadOnceForChunkError()) return;
+    showToast("打开提交订单页失败，请刷新后重试");
+  }
 }
 </script>
 

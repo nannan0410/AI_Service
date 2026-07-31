@@ -1,5 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { setupRouterGuards } from './guards'
+/** 购票确认后的关键页：同步打包，避免生产环境懒加载分片因缓存/漏传 404 */
+import OrderSubmitPage from '@/pages/order/OrderSubmitPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
@@ -103,7 +105,7 @@ const router = createRouter({
     {
       path: '/order/submit',
       name: 'order-submit',
-      component: () => import('@/pages/order/OrderSubmitPage.vue'),
+      component: OrderSubmitPage,
       meta: { title: '提交订单' },
     },
     {
