@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import ChatCardShell from "./ChatCardShell.vue";
 import type { ActivityCardPayload } from "@/types";
+import { useAssistantStore } from "@/store/assistantStore";
 import {
   ACTIVITY_CATEGORY_LABELS,
   formatActivityMetaLine,
@@ -9,6 +10,7 @@ import {
   formatQueueLine,
   formatVirtualQueueLine,
 } from "@/utils/activityDisplay";
+import { filterExplainReason } from "@/utils/explainReasons";
 
 const props = withDefaults(
   defineProps<{
@@ -21,6 +23,8 @@ const props = withDefaults(
     embedded: false,
   },
 );
+
+const assistantStore = useAssistantStore();
 
 function queueLine(payload: ActivityCardPayload) {
   return formatQueueLine(payload, {
@@ -35,6 +39,13 @@ const resolvedTag = computed(() => {
   }
   return "项目";
 });
+
+const displayReason = computed(() =>
+  filterExplainReason(
+    props.payload.reason,
+    assistantStore.uiConfig.showExplainReasons !== false,
+  ),
+);
 </script>
 
 <template>
@@ -70,7 +81,7 @@ const resolvedTag = computed(() => {
           {{ tagItem }}
         </span>
       </div>
-      <p v-if="payload.reason" class="activity-card__reason">{{ payload.reason }}</p>
+      <p v-if="displayReason" class="activity-card__reason">{{ displayReason }}</p>
     </ChatCardShell>
   </div>
 </template>

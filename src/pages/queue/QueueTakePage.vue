@@ -88,6 +88,7 @@ function goHome() {
     <van-nav-bar
       title="免费虚拟排队"
       left-arrow
+      class="page__nav"
       @click-left="router.back()"
     />
 
@@ -159,6 +160,12 @@ function goHome() {
   flex-direction: column;
   min-height: 100vh;
   background: #f7f8fa;
+}
+
+.page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .page__loading {

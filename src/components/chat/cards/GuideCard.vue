@@ -6,7 +6,7 @@ import ChatCardShell from "./ChatCardShell.vue";
 import { downloadGuideCardImage } from "@/utils/saveGuideImage";
 import { fetchMapConfig } from "@/api/business";
 import { useScenicStore } from "@/store/scenicStore";
-import { hasMapGuideForScenic } from "@/utils/mapGuide";
+import { hasMapGuideForScenic, buildMapDeepLink } from "@/utils/mapGuide";
 import { DEFAULT_SCENIC_ID } from "@/utils/scenicScope";
 import type { TravelGuidePayload } from "@/types";
 import {
@@ -14,6 +14,8 @@ import {
   formatHotProjectLine,
   formatQueueLine,
 } from "@/utils/activityDisplay";
+import { useAssistantStore } from "@/store/assistantStore";
+import { filterExplainReason } from "@/utils/explainReasons";
 
 const props = defineProps<{ payload: TravelGuidePayload; embedded?: boolean }>();
 
@@ -25,6 +27,15 @@ function queueLine(item: TravelGuidePayload["activities"][number]) {
 
 const router = useRouter();
 const scenicStore = useScenicStore();
+const assistantStore = useAssistantStore();
+const showExplainReasons = computed(
+  () => assistantStore.uiConfig.showExplainReasons !== false,
+);
+
+function activityReason(item: TravelGuidePayload["activities"][number]) {
+  return filterExplainReason(item.reason, showExplainReasons.value);
+}
+
 const captureRef = ref<HTMLElement | null>(null);
 const saving = ref(false);
 const showOpenMap = ref(false);
@@ -48,6 +59,16 @@ const scopeLabels = computed(() => {
 const activitiesSectionTitle = computed(() =>
   isInParkGuide.value ? "线路途经" : "推荐项目",
 );
+
+/** 园内路线：按途经顺序收集可打点的 mapPoiId */
+const routePoiIds = computed(() => {
+  const ids: string[] = [];
+  for (const item of props.payload.activities ?? []) {
+    const poiId = item.mapPoiId?.trim();
+    if (poiId && !ids.includes(poiId)) ids.push(poiId);
+  }
+  return ids;
+});
 
 async function resolveMapAvailability() {
   const scenicId = scenicStore.currentScenicId || DEFAULT_SCENIC_ID;
@@ -76,8 +97,14 @@ async function onSaveGuide() {
 }
 
 function onOpenMap() {
-  // Phase 2 A1：真跳转地图；多点高亮留给后续
   const scenicId = scenicStore.currentScenicId || DEFAULT_SCENIC_ID;
+  // 园内今日路线：多点高亮 + 序号；其它攻略仍只进景区地图
+  if (isInParkGuide.value && routePoiIds.value.length) {
+    void router.push(
+      buildMapDeepLink({ scenicId, poiIds: routePoiIds.value }),
+    );
+    return;
+  }
   void router.push({ path: "/map", query: { scenicId } });
 }
 
@@ -177,7 +204,9 @@ onMounted(() => {
               >
                 建议 {{ item.recommendedDuration }}
               </span>
-              <em v-if="!isInParkGuide && item.reason">{{ item.reason }}</em>
+              <em v-if="!isInParkGuide && activityReason(item)">{{
+                activityReason(item)
+              }}</em>
             </li>
           </ul>
         </section>

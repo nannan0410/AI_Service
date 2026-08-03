@@ -138,6 +138,10 @@ export async function handleCreateOrderDraft(args: {
   visitDate?: string
   quantity?: { adult: number; child: number }
   originalAmount?: number
+  items?: Array<{
+    productId: string
+    quantity: { adult: number; child: number }
+  }>
 }): Promise<ToolExecutionResult> {
   try {
     const data = await unwrapApi(
@@ -149,6 +153,7 @@ export async function handleCreateOrderDraft(args: {
         visitDate: args.visitDate,
         quantity: args.quantity,
         originalAmount: args.originalAmount,
+        items: args.items,
       }),
     )
     return { success: true, data }

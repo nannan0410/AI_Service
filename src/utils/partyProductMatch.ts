@@ -9,38 +9,67 @@ export interface TicketRecommendation {
   recommendTag?: string
 }
 
+/** 购物车行（仅单品成人/儿童票组合；不与套票混单） */
+export interface CartLinePlan {
+  productId: string
+  productName: string
+  ticketTypeId: string
+  unitPrice: number
+  /** 购买张数 */
+  purchaseCount: number
+  purchaseUnit: '张' | '套'
+  quantity: { adult: number; child: number }
+  lineAmount: number
+}
+
+export interface CartRecommendation {
+  lines: CartLinePlan[]
+  /** 出行总人数 */
+  partyQuantity: { adult: number; child: number }
+  originalAmount: number
+  recommendTag?: string
+  /** 展示用汇总标题 */
+  title: string
+}
+
+export type PartyProductMatch =
+  | { kind: 'single'; recommendation: TicketRecommendation }
+  | { kind: 'cart'; recommendation: CartRecommendation }
+  | { kind: 'no_product'; reason: 'no_sku' | 'unsupported_party' }
+
 function getTicketRecommendLabel(product: TicketProduct): string | undefined {
   const label = product.recommendLabel?.trim()
   return label || undefined
 }
 
-export interface ProductLinePlan {
-  productId: string
-  productName: string
-  quantity: { adult: number; child: number }
-}
-
-export type PartyProductMatch =
-  | { kind: 'single'; recommendation: TicketRecommendation }
-  | { kind: 'no_product'; reason: 'no_sku' | 'unsupported_party' }
-  | { kind: 'multi_product'; plan: ProductLinePlan[] }
-
 function filterSelfOnSale(products: TicketProduct[]): TicketProduct[] {
   return products.filter((item) => item.channels.includes('self') && item.status === 'on')
+}
+
+export function calcTicketLineAmount(
+  product: TicketProduct,
+  quantity: { adult: number; child: number },
+): number {
+  if (product.composition) {
+    return product.price
+  }
+  if (product.ticketTypeId === 'adult') {
+    return product.price * Math.max(quantity.adult, 1)
+  }
+  if (product.ticketTypeId === 'child') {
+    return product.price * Math.max(quantity.child, 1)
+  }
+  return product.price
 }
 
 function buildSingleRecommendation(
   product: TicketProduct,
   quantity: { adult: number; child: number },
 ): TicketRecommendation {
-  const isAdultTicket = product.ticketTypeId === 'adult'
-  const originalAmount = isAdultTicket
-    ? product.price * Math.max(quantity.adult, 1)
-    : product.price
   return {
     product,
     quantity,
-    originalAmount,
+    originalAmount: calcTicketLineAmount(product, quantity),
     recommendTag: getTicketRecommendLabel(product),
   }
 }
@@ -56,89 +85,51 @@ function findExactBundle(
   })
 }
 
-/** 试算最少 SKU 组合；返回 null 表示目录无法覆盖 */
-function tryBuildProductPlan(
-  products: TicketProduct[],
+function buildAdultChildCart(
+  adultProduct: TicketProduct,
+  childProduct: TicketProduct,
   totalAdult: number,
   child: number,
-): ProductLinePlan[] | null {
-  const adultProduct = products.find((item) => item.ticketTypeId === 'adult')
-  const childProduct = products.find((item) => item.ticketTypeId === 'child')
-  const bundles = products.filter((item) => item.composition)
-
-  for (const bundle of bundles) {
-    const composition = bundle.composition!
-    const remainAdult = totalAdult - composition.adult
-    const remainChild = child - composition.child
-    if (remainAdult < 0 || remainChild < 0) continue
-
-    const lines: ProductLinePlan[] = [
-      {
-        productId: bundle.productId,
-        productName: bundle.name,
-        quantity: { ...composition },
-      },
-    ]
-
-    if (remainAdult === 0 && remainChild === 0) {
-      return lines
-    }
-
-    if (remainChild > 0) continue
-
-    if (remainAdult > 0) {
-      if (!adultProduct) return null
-      lines.push({
-        productId: adultProduct.productId,
-        productName: adultProduct.name,
-        quantity: { adult: remainAdult, child: 0 },
-      })
-      return lines
-    }
+): CartRecommendation {
+  const lines: CartLinePlan[] = [
+    {
+      productId: adultProduct.productId,
+      productName: adultProduct.name,
+      ticketTypeId: adultProduct.ticketTypeId ?? 'adult',
+      unitPrice: adultProduct.price,
+      purchaseCount: totalAdult,
+      purchaseUnit: '张',
+      quantity: { adult: totalAdult, child: 0 },
+      lineAmount: adultProduct.price * totalAdult,
+    },
+    {
+      productId: childProduct.productId,
+      productName: childProduct.name,
+      ticketTypeId: childProduct.ticketTypeId ?? 'child',
+      unitPrice: childProduct.price,
+      purchaseCount: child,
+      purchaseUnit: '张',
+      quantity: { adult: 0, child },
+      lineAmount: childProduct.price * child,
+    },
+  ]
+  const originalAmount = lines.reduce((sum, line) => sum + line.lineAmount, 0)
+  return {
+    lines,
+    partyQuantity: { adult: totalAdult, child },
+    originalAmount,
+    recommendTag: '单品组合',
+    title: `${adultProduct.name} + ${childProduct.name}`,
   }
-
-  if (child === 0 && totalAdult > 0) {
-    if (!adultProduct) return null
-    return [
-      {
-        productId: adultProduct.productId,
-        productName: adultProduct.name,
-        quantity: { adult: totalAdult, child: 0 },
-      },
-    ]
-  }
-
-  if (totalAdult === 0 && child > 0) {
-    if (!childProduct) return null
-    return [
-      {
-        productId: childProduct.productId,
-        productName: childProduct.name,
-        quantity: { adult: 0, child },
-      },
-    ]
-  }
-
-  if (totalAdult > 0 && child > 0) {
-    if (!adultProduct || !childProduct) return null
-    return [
-      {
-        productId: adultProduct.productId,
-        productName: adultProduct.name,
-        quantity: { adult: totalAdult, child: 0 },
-      },
-      {
-        productId: childProduct.productId,
-        productName: childProduct.name,
-        quantity: { adult: 0, child },
-      },
-    ]
-  }
-
-  return null
 }
 
-/** 按出行人数匹配可售 SKU；仅 `single` 可在助手内一键下单 */
+/**
+ * 按出行人数匹配可售 SKU。
+ * - 精确套票 → single（套票不与单品混单）
+ * - 纯成人 / 纯儿童 → single
+ * - 成人+儿童且无精确套票 → cart（仅成人票+儿童票）
+ * - 否则 no_product → 购票列表
+ */
 export function matchPartyToProducts(
   products: TicketProduct[],
   party: ParsedParty,
@@ -148,6 +139,10 @@ export function matchPartyToProducts(
   const { child, elderly } = party
 
   if (elderly > 0) {
+    return { kind: 'no_product', reason: 'unsupported_party' }
+  }
+
+  if (totalAdult <= 0 && child <= 0) {
     return { kind: 'no_product', reason: 'unsupported_party' }
   }
 
@@ -162,11 +157,11 @@ export function matchPartyToProducts(
     }
   }
 
+  const adultProduct = selfProducts.find((item) => item.ticketTypeId === 'adult')
+  const childProduct = selfProducts.find((item) => item.ticketTypeId === 'child')
+
   if (child === 0 && totalAdult > 0) {
-    const adultProduct = selfProducts.find((item) => item.ticketTypeId === 'adult')
-    if (!adultProduct) {
-      return { kind: 'no_product', reason: 'no_sku' }
-    }
+    if (!adultProduct) return { kind: 'no_product', reason: 'no_sku' }
     return {
       kind: 'single',
       recommendation: buildSingleRecommendation(adultProduct, {
@@ -176,22 +171,32 @@ export function matchPartyToProducts(
     }
   }
 
-  const plan = tryBuildProductPlan(selfProducts, totalAdult, child)
-  if (!plan) {
-    return { kind: 'no_product', reason: 'no_sku' }
+  if (totalAdult === 0 && child > 0) {
+    if (!childProduct) return { kind: 'no_product', reason: 'no_sku' }
+    return {
+      kind: 'single',
+      recommendation: buildSingleRecommendation(childProduct, {
+        adult: 0,
+        child,
+      }),
+    }
   }
 
-  if (plan.length === 1) {
-    const line = plan[0]
-    const product = selfProducts.find((item) => item.productId === line.productId)
-    if (!product) {
+  // 成人+儿童且无精确套票：仅单品购物车，绝不套票+单品混单
+  if (totalAdult > 0 && child > 0) {
+    if (!adultProduct || !childProduct) {
       return { kind: 'no_product', reason: 'no_sku' }
     }
     return {
-      kind: 'single',
-      recommendation: buildSingleRecommendation(product, line.quantity),
+      kind: 'cart',
+      recommendation: buildAdultChildCart(
+        adultProduct,
+        childProduct,
+        totalAdult,
+        child,
+      ),
     }
   }
 
-  return { kind: 'multi_product', plan }
+  return { kind: 'no_product', reason: 'no_sku' }
 }

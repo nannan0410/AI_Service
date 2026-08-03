@@ -13,6 +13,7 @@ import type {
   Coupon,
   CouponCardPayload,
   LlmChatResult,
+  OrderLineItem,
   PersonaId,
   TicketCardPayload,
   TicketFallbackPayload,
@@ -31,7 +32,10 @@ import {
   hasPurchaseMarketingSlot,
   shouldPushPurchaseMarketingCoupon,
 } from '@/utils/purchaseMarketing'
-import { matchPartyToProducts } from '@/utils/partyProductMatch'
+import {
+  matchPartyToProducts,
+  type CartRecommendation,
+} from '@/utils/partyProductMatch'
 import {
   FALLBACK_COUPON_CAPTION,
   buildPurchaseFallbackMessage,
@@ -57,20 +61,50 @@ function nextQuoteToken(): string {
   return `quote_${Date.now()}`
 }
 
+function cartLinesToOrderItems(recommendation: CartRecommendation): OrderLineItem[] {
+  return recommendation.lines.map((line) => ({
+    productId: line.productId,
+    productName: line.productName,
+    ticketType: (line.ticketTypeId as OrderLineItem['ticketType']) ?? 'adult',
+    unitPrice: line.unitPrice,
+    purchaseCount: line.purchaseCount,
+    purchaseUnit: line.purchaseUnit,
+    quantity: { ...line.quantity },
+    lineAmount: line.lineAmount,
+  }))
+}
+
 function buildTicketCardPayload(
   recommendation: TicketRecommendation,
   session: PurchaseSession,
   pricing: { originalAmount: number; payAmount: number; discountAmount: number; couponId?: string },
 ): TicketCardPayload {
   const isAdultTicket = recommendation.product.ticketTypeId === 'adult'
-  const purchaseCount = isAdultTicket ? Math.max(recommendation.quantity.adult, 1) : 1
-  const purchaseUnit: '张' | '套' = isAdultTicket ? '张' : '套'
+  const isChildTicket = recommendation.product.ticketTypeId === 'child'
+  const purchaseCount = isAdultTicket
+    ? Math.max(recommendation.quantity.adult, 1)
+    : isChildTicket
+      ? Math.max(recommendation.quantity.child, 1)
+      : 1
+  const purchaseUnit: '张' | '套' = isAdultTicket || isChildTicket ? '张' : '套'
 
   return {
     productId: recommendation.product.productId,
     ticketType: recommendation.product.ticketTypeId ?? 'adult',
     ticketName: recommendation.product.name,
     quantity: recommendation.quantity,
+    items: [
+      {
+        productId: recommendation.product.productId,
+        productName: recommendation.product.name,
+        ticketType: recommendation.product.ticketTypeId ?? 'adult',
+        unitPrice: recommendation.product.price,
+        purchaseCount,
+        purchaseUnit,
+        quantity: { ...recommendation.quantity },
+        lineAmount: recommendation.originalAmount,
+      },
+    ],
     unitPrice: recommendation.product.price,
     purchaseCount,
     purchaseUnit,
@@ -79,6 +113,30 @@ function buildTicketCardPayload(
     discountAmount: pricing.discountAmount || undefined,
     couponId: pricing.couponId,
     recommendedReason: buildRecommendReason(recommendation),
+    visitDate: session.visitDate,
+    status: 'quote',
+    sessionId: session.sessionId,
+    quoteToken: session.quoteToken,
+  }
+}
+
+function buildCartTicketCardPayload(
+  recommendation: CartRecommendation,
+  session: PurchaseSession,
+  pricing: { originalAmount: number; payAmount: number; discountAmount: number; couponId?: string },
+): TicketCardPayload {
+  const items = cartLinesToOrderItems(recommendation)
+  return {
+    productId: items[0]?.productId,
+    ticketType: items.length === 1 ? items[0].ticketType : 'adult',
+    ticketName: recommendation.title,
+    quantity: recommendation.partyQuantity,
+    items,
+    originalAmount: pricing.originalAmount,
+    totalAmount: pricing.payAmount,
+    discountAmount: pricing.discountAmount || undefined,
+    couponId: pricing.couponId,
+    recommendedReason: recommendation.recommendTag,
     visitDate: session.visitDate,
     status: 'quote',
     sessionId: session.sessionId,
@@ -99,21 +157,26 @@ export function buildTicketRecommendIntro(
   return `根据 ${partyLabel}${datePart}，为您推荐以下产品。`
 }
 
-async function loadPricing(
-  _personaId: PersonaId,
-  recommendation: TicketRecommendation,
+async function loadPricingByAmount(
+  originalAmount: number,
   callbacks?: ToolExecutionCallbacks,
-): Promise<{ originalAmount: number; payAmount: number; discountAmount: number; couponId?: string; coupons: Coupon[] }> {
+): Promise<{
+  originalAmount: number
+  payAmount: number
+  discountAmount: number
+  couponId?: string
+  coupons: Coupon[]
+}> {
   callbacks?.onToolStart?.('getCoupons', '查询可用优惠券')
   const coupons = await unwrapApi(fetchCoupons('available'))
   callbacks?.onToolDone?.('getCoupons', true)
 
-  const best = pickBestCoupon(coupons, recommendation.originalAmount)
+  const best = pickBestCoupon(coupons, originalAmount)
   const discountAmount = best?.discountAmount ?? 0
-  const payAmount = Math.max(recommendation.originalAmount - discountAmount, 0)
+  const payAmount = Math.max(originalAmount - discountAmount, 0)
 
   return {
-    originalAmount: recommendation.originalAmount,
+    originalAmount,
     payAmount,
     discountAmount,
     couponId: best?.coupon.couponId,
@@ -255,10 +318,7 @@ async function maybeIssueFallbackCoupon(
 
 async function buildPurchaseFallbackResult(
   session: PurchaseSession,
-  match: Extract<
-    ReturnType<typeof matchPartyToProducts>,
-    { kind: 'no_product' | 'multi_product' }
-  >,
+  match: Extract<ReturnType<typeof matchPartyToProducts>, { kind: 'no_product' }>,
   callbacks?: ToolExecutionCallbacks,
   captionPrefix?: string,
 ): Promise<LlmChatResult> {
@@ -290,7 +350,6 @@ async function buildPurchaseFallbackResult(
     kind: match.kind,
     party: { ...session.party },
     visitDate: session.visitDate,
-    plan: match.kind === 'multi_product' ? match.plan : undefined,
     listPath: TICKET_LIST_PATH,
     sessionId: session.sessionId,
   }
@@ -317,7 +376,7 @@ async function buildPurchaseFallbackResult(
 
 async function buildRecommendationResult(
   session: PurchaseSession,
-  personaId: PersonaId,
+  _personaId: PersonaId,
   callbacks?: ToolExecutionCallbacks,
   captionPrefix?: string,
 ): Promise<LlmChatResult> {
@@ -329,12 +388,13 @@ async function buildRecommendationResult(
   callbacks?.onToolDone?.('getProductCatalog', true)
 
   const match = matchPartyToProducts(products, session.party)
-  if (match.kind !== 'single') {
+  if (match.kind === 'no_product') {
     return buildPurchaseFallbackResult(session, match, callbacks, captionPrefix)
   }
 
-  const recommendation = match.recommendation
-  let pricing = await loadPricing(personaId, recommendation, callbacks)
+  const originalAmount = match.recommendation.originalAmount
+
+  let pricing = await loadPricingByAmount(originalAmount, callbacks)
   toolRecords.push({ name: 'getCoupons', result: { success: true, data: pricing.coupons } })
 
   const marketing = await maybeIssueMarketingCoupon(session, pricing.coupons, callbacks)
@@ -343,37 +403,45 @@ async function buildRecommendationResult(
       name: 'issueCoupon',
       result: { success: true, data: marketing.marketingCard.payload },
     })
-    pricing = await loadPricing(personaId, recommendation, callbacks)
+    pricing = await loadPricingByAmount(originalAmount, callbacks)
   }
 
-  session.productId = recommendation.product.productId
+  session.productId =
+    match.kind === 'single'
+      ? match.recommendation.product.productId
+      : match.recommendation.lines[0]?.productId
   session.couponId = pricing.couponId
   session.step = 'recommend'
   session.quoteToken = nextQuoteToken()
 
-  const ticketPayload = buildTicketCardPayload(recommendation, session, pricing)
+  const ticketPayload =
+    match.kind === 'single'
+      ? buildTicketCardPayload(match.recommendation, session, pricing)
+      : buildCartTicketCardPayload(match.recommendation, session, pricing)
   const intro = buildTicketRecommendIntro(session, captionPrefix)
 
-  const cards: ChatMessageDraft[] = [
-    {
-      type: 'ticket',
-      role: 'assistant',
-      content: intro,
-      payload: {
-        ...ticketPayload,
-        footerHint: TICKET_RECOMMEND_FOOTER_HINT,
-      },
-    },
-  ]
-  if (marketing.marketingCard) {
-    cards.unshift(marketing.marketingCard)
+  if (marketing.marketingCard?.payload) {
+    ticketPayload.offerCoupon = marketing.marketingCard.payload as CouponCardPayload
+    ticketPayload.offerCouponHint =
+      marketing.marketingCard.content?.trim() ||
+      '为您送上一张购票优惠券，下单时可自动抵扣。'
   }
 
   return {
     content: '',
     skillId: 'ticket_purchase',
     toolCallsUsed: toolRecords.map((item) => item.name),
-    cards,
+    cards: [
+      {
+        type: 'ticket',
+        role: 'assistant',
+        content: intro,
+        payload: {
+          ...ticketPayload,
+          footerHint: TICKET_RECOMMEND_FOOTER_HINT,
+        },
+      },
+    ],
   }
 }
 

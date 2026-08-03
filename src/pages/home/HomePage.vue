@@ -123,7 +123,7 @@ watch(
 
 <template>
   <div class="home-page">
-    <van-nav-bar fixed placeholder class="home-page__nav">
+    <van-nav-bar class="home-page__nav">
       <template #title>
         <button
           type="button"
@@ -219,9 +219,10 @@ watch(
   background: #f7f8fa;
 }
 
-.home-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.home-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .home-page__scenic-btn {

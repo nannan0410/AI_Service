@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { showToast } from "vant";
 import type {
@@ -36,8 +37,10 @@ import VisitorPicker from "@/components/chat/cards/VisitorPicker.vue";
 import QuizCard from "@/components/chat/cards/QuizCard.vue";
 import StarIntroCard from "@/components/chat/cards/StarIntroCard.vue";
 import MapActionCard from "@/components/chat/cards/MapActionCard.vue";
+import MessageFeedbackBar from "@/components/chat/MessageFeedbackBar.vue";
 import { isCouponRecommendPayload } from "@/utils/couponRecommend";
 import { ACTIVITY_CATEGORY_LABELS } from "@/utils/activityDisplay";
+import { resolveRevealCount } from "@/utils/cardReveal";
 
 const props = defineProps<{
   message: ChatMessage;
@@ -46,6 +49,7 @@ const props = defineProps<{
   reviewDisabled?: boolean;
   quizDisabled?: boolean;
   submittedReviewOrderIds?: string[];
+  favorited?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -55,9 +59,94 @@ const emit = defineEmits<{
   checkinConfirm: [payload: PageGuideCardPayload, messageId: string];
   quizStart: [quizId: string];
   quizAnswer: [payload: QuizCardPayload, optionKey: string, messageId: string];
+  feedbackLike: [messageId: string];
+  feedbackDislike: [messageId: string];
+  feedbackFavorite: [messageId: string];
 }>();
 
+const showFeedbackBar = computed(
+  () => props.message.role === "assistant" && props.message.type !== "system",
+);
+
 const router = useRouter();
+
+const scenePayload = computed(() =>
+  props.message.type === "scene_recommend"
+    ? asSceneRecommend(props.message.payload)
+    : null,
+);
+
+const sceneReveal = computed(() => {
+  const payload = scenePayload.value;
+  if (!payload) {
+    return {
+      showCoupon: false,
+      activities: [] as ActivityCardPayload[],
+      showQuiz: false,
+    };
+  }
+  const couponSlot = payload.coupon ? 1 : 0;
+  const activityCount = payload.activities?.length ?? 0;
+  const quizSlot = payload.quizInvite ? 1 : 0;
+  const total = couponSlot + activityCount + quizSlot;
+  const revealed = resolveRevealCount(props.message.revealCount, total);
+
+  let cursor = 0;
+  const showCoupon = Boolean(payload.coupon) && revealed > cursor;
+  if (payload.coupon) cursor += 1;
+
+  const activityStart = cursor;
+  const activityEnd = cursor + activityCount;
+  const activities = (payload.activities ?? []).slice(
+    0,
+    Math.max(0, Math.min(activityCount, revealed - activityStart)),
+  );
+  cursor = activityEnd;
+
+  const showQuiz = Boolean(payload.quizInvite) && revealed > cursor;
+
+  return { showCoupon, activities, showQuiz };
+});
+
+const couponRecommendItems = computed(() => {
+  if (
+    props.message.type !== "coupon" ||
+    !isCouponRecommendPayload(props.message.payload)
+  ) {
+    return [] as CouponCardPayload[];
+  }
+  const items = asCouponRecommend(props.message.payload).items;
+  const revealed = resolveRevealCount(props.message.revealCount, items.length);
+  return items.slice(0, revealed);
+});
+
+const showCouponRecommendAction = computed(() => {
+  if (!isCouponRecommendPayload(props.message.payload)) return false;
+  if (!showCouponRecommendViewButton(props.message.payload)) return false;
+  const total = asCouponRecommend(props.message.payload).items.length;
+  const revealed = resolveRevealCount(props.message.revealCount, total);
+  return revealed >= total && total > 0;
+});
+
+const ticketPayload = computed(() =>
+  props.message.type === "ticket" ? asTicket(props.message.payload) : null,
+);
+
+const ticketReveal = computed(() => {
+  const payload = ticketPayload.value;
+  if (!payload) {
+    return { showCoupon: false, showTicket: true };
+  }
+  const total = payload.offerCoupon ? 2 : 1;
+  const revealed = resolveRevealCount(props.message.revealCount, total);
+  if (!payload.offerCoupon) {
+    return { showCoupon: false, showTicket: revealed >= 1 };
+  }
+  return {
+    showCoupon: revealed >= 1,
+    showTicket: revealed >= 2,
+  };
+});
 
 function asVisitorPick(payload: unknown): VisitorPickPayload {
   return payload as VisitorPickPayload;
@@ -91,7 +180,12 @@ function showCouponRecommendViewButton(payload: unknown): boolean {
 function showTicketConfirmButton(message: ChatMessage): boolean {
   if (message.type !== "ticket") return false;
   const payload = asTicket(message.payload);
-  return payload.status === "quote" || payload.status === "confirm";
+  if (!(payload.status === "quote" || payload.status === "confirm")) return false;
+  if (payload.offerCoupon) {
+    const revealed = resolveRevealCount(message.revealCount, 2);
+    if (revealed < 2) return false;
+  }
+  return true;
 }
 
 function onTicketCardConfirm(message: ChatMessage) {
@@ -255,6 +349,13 @@ const cardTypes = new Set([
     <MemberAvatar v-if="message.role === 'user'" :size="36" />
 
     <div
+      class="bubble-stack"
+      :class="{
+        'bubble-stack--assistant': message.role === 'assistant',
+        'bubble-stack--with-feedback': showFeedbackBar,
+      }"
+    >
+    <div
       v-if="message.type === 'text' || message.type === 'system'"
       class="bubble"
       :class="{
@@ -269,22 +370,49 @@ const cardTypes = new Set([
 
     <div v-else-if="message.type === 'ticket'" class="bubble bubble--assistant bubble-card-box">
       <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
-      <TicketCard :payload="asTicket(message.payload)" embedded />
-      <p v-if="asTicket(message.payload).footerHint" class="bubble-card-box__footer">
-        {{ asTicket(message.payload).footerHint }}
-      </p>
-      <van-button
-        v-if="showTicketConfirmButton(message)"
-        type="primary"
-        size="small"
-        round
-        block
-        class="bubble-card-box__action bubble-card-box__action--ticket"
-        :disabled="ticketConfirmDisabled"
-        @click="onTicketCardConfirm(message)"
-      >
-        {{ ticketConfirmDisabled ? "已生成订单" : "确认并生成订单" }}
-      </van-button>
+      <template v-if="ticketReveal.showCoupon && ticketPayload?.offerCoupon">
+        <div class="bubble-card-box__reveal-item">
+          <p
+            v-if="ticketPayload.offerCouponHint"
+            class="bubble-card-box__sub-caption"
+          >
+            {{ ticketPayload.offerCouponHint }}
+          </p>
+          <CouponCard :payload="ticketPayload.offerCoupon" embedded />
+          <van-button
+            v-if="ticketPayload.offerCoupon.action === 'view' || ticketPayload.offerCoupon.action === 'use'"
+            size="small"
+            type="primary"
+            plain
+            round
+            block
+            class="bubble-card-box__action"
+            @click="openCouponPage"
+          >
+            点击查看
+          </van-button>
+        </div>
+      </template>
+      <template v-if="ticketReveal.showTicket && ticketPayload">
+        <div class="bubble-card-box__reveal-item">
+          <TicketCard :payload="ticketPayload" embedded />
+          <p v-if="ticketPayload.footerHint" class="bubble-card-box__footer">
+            {{ ticketPayload.footerHint }}
+          </p>
+          <van-button
+            v-if="showTicketConfirmButton(message)"
+            type="primary"
+            size="small"
+            round
+            block
+            class="bubble-card-box__action bubble-card-box__action--ticket"
+            :disabled="ticketConfirmDisabled"
+            @click="onTicketCardConfirm(message)"
+          >
+            {{ ticketConfirmDisabled ? "已生成订单" : "确认并生成订单" }}
+          </van-button>
+        </div>
+      </template>
     </div>
 
     <div v-else-if="message.type === 'ticket_confirm'" class="bubble bubble--assistant bubble-card-box">
@@ -351,14 +479,15 @@ const cardTypes = new Set([
       <template v-if="isCouponRecommendPayload(message.payload)">
         <div class="bubble-card-box__coupon-list">
           <CouponCard
-            v-for="(item, index) in asCouponRecommend(message.payload).items"
+            v-for="(item, index) in couponRecommendItems"
             :key="item.couponId || index"
             :payload="item"
             embedded
+            class="bubble-card-box__reveal-item"
           />
         </div>
         <van-button
-          v-if="showCouponRecommendViewButton(message.payload)"
+          v-if="showCouponRecommendAction"
           size="small"
           type="primary"
           plain
@@ -435,27 +564,26 @@ const cardTypes = new Set([
       class="bubble bubble--assistant bubble-card-box"
     >
       <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
-      <template v-if="asSceneRecommend(message.payload).coupon">
-        <CouponCard
-          :payload="asSceneRecommend(message.payload).coupon!"
-          embedded
-        />
-        <van-button
-          size="small"
-          type="primary"
-          plain
-          round
-          block
-          class="bubble-card-box__action"
-          @click="openCouponPage"
-        >
-          点击查看
-        </van-button>
+      <template v-if="sceneReveal.showCoupon && scenePayload?.coupon">
+        <div class="bubble-card-box__reveal-item">
+          <CouponCard :payload="scenePayload.coupon" embedded />
+          <van-button
+            size="small"
+            type="primary"
+            plain
+            round
+            block
+            class="bubble-card-box__action"
+            @click="openCouponPage"
+          >
+            点击查看
+          </van-button>
+        </div>
       </template>
       <div
-        v-for="item in asSceneRecommend(message.payload).activities"
+        v-for="item in sceneReveal.activities"
         :key="item.activityId"
-        class="bubble-card-box__scene-item"
+        class="bubble-card-box__scene-item bubble-card-box__reveal-item"
       >
         <ActivityCard :payload="item" :tag="activityTagLabel(item)" embedded />
         <div
@@ -488,7 +616,7 @@ const cardTypes = new Set([
           {{ item.mapActions[0].label }}
         </van-button>
         <van-button
-          v-else-if="asSceneRecommend(message.payload).scene === 'queue' && queueActionLabel(item)"
+          v-else-if="scenePayload?.scene === 'queue' && queueActionLabel(item)"
           size="small"
           type="primary"
           plain
@@ -501,9 +629,9 @@ const cardTypes = new Set([
         </van-button>
         <van-button
           v-else-if="
-            asSceneRecommend(message.payload).scene !== 'show' &&
-            asSceneRecommend(message.payload).scene !== 'queue' &&
-            asSceneRecommend(message.payload).scene !== 'nearby'
+            scenePayload?.scene !== 'show' &&
+            scenePayload?.scene !== 'queue' &&
+            scenePayload?.scene !== 'nearby'
           "
           size="small"
           type="primary"
@@ -516,20 +644,22 @@ const cardTypes = new Set([
           查看
         </van-button>
       </div>
-      <template v-if="asSceneRecommend(message.payload).quizInvite">
-        <p class="bubble-card-box__quiz-hint">
-          {{ asSceneRecommend(message.payload).quizInvite!.hint }}
-        </p>
-        <van-button
-          size="small"
-          type="primary"
-          round
-          block
-          class="bubble-card-box__action"
-          @click="onQuizInvite(asSceneRecommend(message.payload).quizInvite!.quizId)"
-        >
-          {{ asSceneRecommend(message.payload).quizInvite!.buttonLabel }}
-        </van-button>
+      <template v-if="sceneReveal.showQuiz && scenePayload?.quizInvite">
+        <div class="bubble-card-box__reveal-item">
+          <p class="bubble-card-box__quiz-hint">
+            {{ scenePayload.quizInvite.hint }}
+          </p>
+          <van-button
+            size="small"
+            type="primary"
+            round
+            block
+            class="bubble-card-box__action"
+            @click="onQuizInvite(scenePayload.quizInvite.quizId)"
+          >
+            {{ scenePayload.quizInvite.buttonLabel }}
+          </van-button>
+        </div>
       </template>
     </div>
 
@@ -596,6 +726,16 @@ const cardTypes = new Set([
         @confirm="(ids) => emit('visitorConfirm', asVisitorPick(message.payload), ids)"
       />
     </div>
+
+    <MessageFeedbackBar
+      v-if="showFeedbackBar"
+      :message="message"
+      :favorited="favorited"
+      @like="emit('feedbackLike', message.id)"
+      @dislike="emit('feedbackDislike', message.id)"
+      @favorite="emit('feedbackFavorite', message.id)"
+    />
+    </div>
   </div>
 </template>
 
@@ -632,6 +772,66 @@ const cardTypes = new Set([
   align-items: flex-start;
 }
 
+.bubble-row:not(.bubble-row--user):not(.bubble-row--system) > .bubble-stack--assistant {
+  max-width: var(--chat-assistant-bubble-max);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.bubble-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.bubble-stack--assistant > .bubble,
+.bubble-stack--assistant > .bubble-card,
+.bubble-stack--assistant > .bubble-card-box {
+  max-width: 100%;
+}
+
+/* 反馈图标在消息框内：外层统一白底，子气泡去掉独立阴影 */
+.bubble-stack--with-feedback {
+  position: relative;
+  padding: 10px 12px 8px;
+  border-radius: var(--bubble-radius);
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
+}
+
+.bubble-stack--with-feedback::before {
+  content: "";
+  position: absolute;
+  top: var(--bubble-tail-top);
+  left: calc(-1 * var(--bubble-tail-size));
+  width: 0;
+  height: 0;
+  border-top: var(--bubble-tail-size) solid transparent;
+  border-bottom: var(--bubble-tail-size) solid transparent;
+  border-right: var(--bubble-tail-size) solid #fff;
+  filter: drop-shadow(-1px 1px 1px rgba(0, 0, 0, 0.05));
+}
+
+.bubble-stack--with-feedback > .bubble--assistant,
+.bubble-stack--with-feedback > .bubble-card,
+.bubble-stack--with-feedback > .bubble-card-box {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+.bubble-stack--with-feedback > .bubble--assistant::before {
+  display: none;
+}
+
+.bubble-stack--with-feedback > .bubble-card-box {
+  gap: 10px;
+}
+
 .bubble-row:not(.bubble-row--user):not(.bubble-row--system) > .bubble,
 .bubble-row:not(.bubble-row--user):not(.bubble-row--system) > .bubble-card,
 .bubble-row:not(.bubble-row--user):not(.bubble-row--system) > .bubble-card-box {
@@ -649,8 +849,12 @@ const cardTypes = new Set([
   overflow-wrap: anywhere;
 }
 
-.bubble-row--user > .bubble {
+.bubble-row--user > .bubble-stack {
   max-width: 75%;
+}
+
+.bubble-row--user > .bubble-stack > .bubble {
+  max-width: 100%;
 }
 
 .bubble__icon {
@@ -752,6 +956,13 @@ const cardTypes = new Set([
   overflow-wrap: anywhere;
 }
 
+.bubble-card-box__sub-caption {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #646566;
+  line-height: 1.4;
+}
+
 .bubble-card-box__coupon-list {
   display: flex;
   flex-direction: column;
@@ -762,6 +973,21 @@ const cardTypes = new Set([
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.bubble-card-box__reveal-item {
+  animation: bubble-card-reveal 280ms ease-out;
+}
+
+@keyframes bubble-card-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .bubble-card-box__action {

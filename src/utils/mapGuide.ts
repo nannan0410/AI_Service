@@ -7,11 +7,28 @@ export function hasMapGuideForScenic(config: MapConfig | null | undefined): bool
 export function buildMapDeepLink(options: {
   scenicId: string
   poiId?: string
+  /** 有序多点高亮（今日路线等），逗号分隔 poiId */
+  poiIds?: string[]
 }): string {
   const params = new URLSearchParams()
   params.set('scenicId', options.scenicId)
-  if (options.poiId) params.set('poiId', options.poiId)
+  if (options.poiIds?.length) {
+    params.set('poiIds', options.poiIds.join(','))
+  } else if (options.poiId) {
+    params.set('poiId', options.poiId)
+  }
   return `/map?${params.toString()}`
+}
+
+/** 解析地图页 `poiIds` 查询：有序高亮列表 */
+export function parseRoutePoiIdsQuery(
+  raw: unknown,
+): string[] {
+  if (typeof raw !== 'string' || !raw.trim()) return []
+  return raw
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
 }
 
 export function findPoiByActivityId(

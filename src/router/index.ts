@@ -157,6 +157,12 @@ const router = createRouter({
       meta: { title: '我的' },
     },
     {
+      path: '/favorites',
+      name: 'favorites',
+      component: () => import('@/pages/favorites/FavoritesPage.vue'),
+      meta: { title: '收藏记录' },
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/',
     },

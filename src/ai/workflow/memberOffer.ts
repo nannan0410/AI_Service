@@ -6,6 +6,7 @@ import { resolveTagsForPersona } from '@/utils/demoRuleContext'
 import { DEFAULT_SCENIC_ID } from '@/utils/scenicScope'
 import { useAuthStore } from '@/store/authStore'
 import { useScenicStore } from '@/store/scenicStore'
+import { useAssistantStore } from '@/store/assistantStore'
 import type { PurchaseSession } from '@/store/purchaseStore'
 import type {
   ChatMessageDraft,
@@ -40,7 +41,8 @@ function defaultVisitDate(daysAhead = 7): string {
   return `${y}-${m}-${day}`
 }
 
-function formatTagLine(tags: string[]): string {
+function formatTagLine(tags: string[], showExplain: boolean): string {
+  if (!showExplain) return ''
   const labels: string[] = []
   if (tags.includes('family')) labels.push('亲子')
   if (tags.includes('high_value')) labels.push('高价值')
@@ -85,6 +87,8 @@ export async function runMemberOfferWorkflow(
 ): Promise<LlmChatResult> {
   const authStore = useAuthStore()
   const scenicStore = useScenicStore()
+  const assistantStore = useAssistantStore()
+  const showExplain = assistantStore.uiConfig.showExplainReasons !== false
   const scenicId = scenicStore.currentScenicId || DEFAULT_SCENIC_ID
   const personaId = authStore.personaId ?? 'demo_vip'
   const tags = resolveTagsForPersona(personaId)
@@ -152,9 +156,12 @@ export async function runMemberOfferWorkflow(
   session.step = 'recommend'
   session.quoteToken = nextQuoteToken()
 
+  const comboLabel = showExplain
+    ? '等级折扣 + 可用券 + 标签票品'
+    : '等级折扣 + 可用券'
   const intro = `${
     memberLevel ? `已识别您为「${memberLevel}」` : '已根据会员画像'
-  }${formatTagLine(tags)}。为您推荐以下「等级折扣 + 可用券 + 标签票品」组合：`
+  }${formatTagLine(tags, showExplain)}。为您推荐以下「${comboLabel}」组合：`
 
   const cards: ChatMessageDraft[] = []
 

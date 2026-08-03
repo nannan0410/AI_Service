@@ -57,8 +57,6 @@ async function onLogout() {
     <van-nav-bar
       title="我的"
       left-arrow
-      fixed
-      placeholder
       class="profile-page__nav"
       @click-left="router.replace('/')"
     />
@@ -67,6 +65,13 @@ async function onLogout() {
       <van-cell title="会员等级" :value="member?.level" />
       <van-cell title="积分" :value="`${member?.points ?? 0}`" />
       <van-cell title="演示身份" :value="authStore.personaId || '-'" />
+      <van-cell
+        class="profile__config-cell"
+        title="收藏记录"
+        is-link
+        to="/favorites"
+        label="与聊天分开保存；清除聊天不会删除"
+      />
       <van-cell
         class="profile__config-cell"
         title="后台配置"
@@ -110,9 +115,10 @@ async function onLogout() {
   background: #f7f8fa;
 }
 
-.profile-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.profile-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .profile {

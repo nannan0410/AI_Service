@@ -25,6 +25,12 @@ import {
   resolveTravelGuideIntent,
   travelGuideIntentToScope,
 } from '@/utils/travelGuideIntent'
+import { isLikelyGeneralMessage } from '@/ai/nlu/isLikelyGeneralMessage'
+import {
+  buildLocalGeneralChatResult,
+  buildTimeoutGeneralChatResult,
+  isLlmTimeoutError,
+} from '@/ai/nlu/generalChatFallback'
 import type {
   AssistantSkillConfig,
   AssistantUiConfig,
@@ -54,11 +60,13 @@ async function requestChatCompletion(
   messages: LlmMessage[],
   tools: ReturnType<typeof toOpenAiToolSchemas> | undefined,
   temperature: number,
+  timeoutMs = llmConfig.chatTimeoutMs,
 ): Promise<ChatCompletionChoice> {
   if (!tools?.length) {
     const message = await requestLlmChatCompletion(messages, {
       temperature,
       maxTokens: llmConfig.maxTokens,
+      timeoutMs,
     })
     return { message }
   }
@@ -77,14 +85,29 @@ async function requestChatCompletion(
     tool_choice: 'auto',
   }
 
-  const response = await fetch(`${llmConfig.baseURL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  })
+  const controller = new AbortController()
+  const timer =
+    timeoutMs > 0 ? window.setTimeout(() => controller.abort(), timeoutMs) : undefined
+
+  let response: Response
+  try {
+    response = await fetch(`${llmConfig.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('LLM 请求超时')
+    }
+    throw error
+  } finally {
+    if (timer != null) window.clearTimeout(timer)
+  }
 
   const data = (await response.json()) as ChatCompletionResponse
 
@@ -394,11 +417,21 @@ export async function chatCompletionWithTools(
   const toolCallsUsed: string[] = []
   const toolRecords: ToolCallRecord[] = []
   const lastUser = [...history].reverse().find((message) => message.role === 'user')
+  const userText = lastUser?.content || ''
+
+  // 分层 1：寒暄 / 无业务意图 → 本地秒回，不调主模型
+  if (!tools.length && isLikelyGeneralMessage(userText)) {
+    return buildLocalGeneralChatResult(skill?.skillId)
+  }
 
   const apiKey = getLlmApiKey()
   if (!apiKey) {
-    const offline = await runOfflineToolFallback(lastUser?.content || '', skill, options)
+    const offline = await runOfflineToolFallback(userText, skill, options)
     if (offline) return offline
+    // 离线且无 Tool 可落：用引导文案，避免空转
+    if (!tools.length) {
+      return buildLocalGeneralChatResult(skill?.skillId)
+    }
     return {
       content:
         '【演示提示】请在项目根目录 .env 中设置 VITE_LLM_API_KEY（或 VITE_SILICONFLOW_API_KEY / VITE_DEEPSEEK_API_KEY）后重启 dev，即可启用真实 AI 对话。当前为离线占位回复。',
@@ -411,50 +444,71 @@ export async function chatCompletionWithTools(
     ...history.map((m) => ({ ...m })),
   ]
 
-  for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    const choice = await requestChatCompletion(messages, toolSchemas, temperature)
-    const assistantMessage = choice.message!
+  try {
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const choice = await requestChatCompletion(messages, toolSchemas, temperature)
+      const assistantMessage = choice.message!
 
-    if (assistantMessage.tool_calls?.length) {
-      messages.push({
-        role: 'assistant',
-        content: assistantMessage.content,
-        tool_calls: assistantMessage.tool_calls,
-      })
-
-      for (const call of assistantMessage.tool_calls) {
-        const toolName = call.function.name
-        toolCallsUsed.push(toolName)
-        const result = await executeTool(toolName, call.function.arguments, options)
-        toolRecords.push({ name: toolName, result })
+      if (assistantMessage.tool_calls?.length) {
         messages.push({
-          role: 'tool',
-          tool_call_id: call.id,
-          name: toolName,
-          content: formatToolResult(result),
+          role: 'assistant',
+          content: assistantMessage.content,
+          tool_calls: assistantMessage.tool_calls,
         })
+
+        for (const call of assistantMessage.tool_calls) {
+          const toolName = call.function.name
+          toolCallsUsed.push(toolName)
+          const result = await executeTool(toolName, call.function.arguments, options)
+          toolRecords.push({ name: toolName, result })
+          messages.push({
+            role: 'tool',
+            tool_call_id: call.id,
+            name: toolName,
+            content: formatToolResult(result),
+          })
+        }
+        continue
       }
-      continue
+
+      const content = assistantMessage.content?.trim()
+      if (!content) {
+        throw new Error('LLM 返回内容为空')
+      }
+
+      return mergeCouponQueryReplyIfNeeded(
+        {
+          content,
+          toolCallsUsed,
+          skillId: skill?.skillId ?? null,
+          cards: buildCardsFromToolResults(toolRecords),
+        },
+        toolRecords,
+        userText,
+      )
     }
 
-    const content = assistantMessage.content?.trim()
-    if (!content) {
-      throw new Error('LLM 返回内容为空')
+    throw new Error('Tool 调用轮次过多，请简化问题后重试')
+  } catch (error) {
+    // 分层 2：主对话超时（或明显空响应）→ 兜底；其它错误仍上抛
+    if (isLlmTimeoutError(error)) {
+      if (toolRecords.length) {
+        return {
+          ...buildTimeoutGeneralChatResult(skill?.skillId),
+          toolCallsUsed,
+          cards: buildCardsFromToolResults(toolRecords),
+        }
+      }
+      return buildTimeoutGeneralChatResult(skill?.skillId)
     }
-
-    return mergeCouponQueryReplyIfNeeded(
-      {
-        content,
-        toolCallsUsed,
-        skillId: skill?.skillId ?? null,
-        cards: buildCardsFromToolResults(toolRecords),
-      },
-      toolRecords,
-      lastUser?.content || '',
-    )
+    if (
+      error instanceof Error &&
+      /返回内容为空|LLM 请求失败/.test(error.message)
+    ) {
+      return buildTimeoutGeneralChatResult(skill?.skillId)
+    }
+    throw error
   }
-
-  throw new Error('Tool 调用轮次过多，请简化问题后重试')
 }
 
 export async function chatCompletion(

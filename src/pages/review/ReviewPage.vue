@@ -148,8 +148,6 @@ async function onSubmit() {
     <van-nav-bar
       title="服务点评"
       left-arrow
-      fixed
-      placeholder
       class="review-page__nav"
       @click-left="$router.back()"
     />
@@ -240,9 +238,10 @@ async function onSubmit() {
   background: #f7f8fa;
   padding-bottom: 24px;
 }
-.review-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.review-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .order-card {
   margin-top: 12px;

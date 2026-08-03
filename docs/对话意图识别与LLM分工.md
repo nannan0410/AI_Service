@@ -1,7 +1,7 @@
 # 对话意图识别与 LLM 分工
 
 > **文档用途**：梳理演示版聊天中「哪些场景用 LLM、哪些用代码/后端规则」，并说明购票流程为何不走 LLM。  
-> **更新日期**：2026-07-22  
+> **更新日期**：2026-07-29  
 > **相关代码**：`ChatPage.vue` → `onSend`；`src/ai/workflow/*`；`src/ai/llm.ts`；`src/ai/skills/router.ts`
 
 **相关文档：**
@@ -20,26 +20,65 @@
 用户输入文本
     │
     ├─ skillStore.resolveSkill(text)     // skills.json triggerKeywords（关键词，非 LLM）
+    │     （可选）关键词未命中 → LLM Skill 语义分类（见 §12）
     │
-    ├─① Workflow 层（代码正则，最高优先级；ChatPage 执行顺序摘要）
+    ├─① Workflow 层（代码正则 / 高置信语义进门，最高优先级）
     │     新客领券 / 停车 / 虚拟排队 / 明星介绍 / 演出场次
     │     天气人流适合度 / 游玩攻略（travel_guide）
     │     购票会话 / 会员权益选品（member_offer，优先于泛查券）
     │     主动营销（餐饮零售） / 发票 / 打卡 / 点评 / 订单…
+    │     附近项目 project_query 等
     │
-    ├─② 未命中 Workflow → sendChatMessage
-    │     → LLM + Tool Calling（有 API Key）
-    │     → 或 runOfflineToolFallback（无 Key，正则选 Tool，仅演示）
+    ├─② 未命中 Workflow → sendChatMessage / chatCompletionWithTools（见 §1.1）
+    │     → 寒暄本地秒回 / LLM+Tool / 超时兜底 / 无 Key 离线兜底
     │
     └─③ formatters → 业务卡片 / 文本回复
 ```
 
-**优先级**：Workflow 正则 > Skill 关键词 > LLM / 离线兜底。  
+**优先级**：Workflow（正则或高置信语义进门）> Skill 关键词 > 主对话 LLM / 离线兜底。  
 **分流要点**：命中 `shouldRunShowScheduleWorkflow` / `shouldRunWeatherSuitabilityWorkflow` 时**不**走宽泛 `travel_guide`；`member_offer` 优先于 `proactive_marketing` 泛查券。
 
 **排他与冲突（演示）**：代码层互斥的只读说明见 `intent_exclusions.json`；后台「业务场景 → 路由排他规则」仅展示，冲突检查页 `/config/route-check` 看触发词重叠是否被排他覆盖（不改路由）。
 
 **说明**：UI 上的「理解用户意图」步骤（`aiExecutionStore`）是展示用；命中 Workflow 时会立刻 `markIntentDone()`，**并不调用 LLM 做意图分类**。
+
+### 1.1 主对话分层现状（未进 Workflow 时）
+
+落入 `sendChatMessage` / `chatCompletionWithTools`（`src/ai/llm.ts` + `generalChatFallback.ts`）时：
+
+| 顺序 | 条件 | 行为 | 代码要点 |
+|------|------|------|----------|
+| A | 寒暄 / 无明显业务意图 | **本地秒回**默认引导语，**不调主模型** | `isLikelyGeneralMessage` → `GENERAL_CHAT_LOCAL_COPY` |
+| B | 有 API Key，非寒暄 | 调主模型（可带 Tool Calling） | `chatTimeoutMs` 默认 **30s** |
+| C | 主模型超时 / 空响应 / 失败 | **超时默认引导语** | `GENERAL_CHAT_TIMEOUT_COPY`；`AbortController` |
+| D | 无 API Key | 离线正则选 Tool 或本地引导 / 演示占位文案 | `runOfflineToolFallback` |
+
+**与「脏话 / 敏感」相关的现状说明：**
+
+- 演示版 **没有**独立的脏话识别层、敏感词表或专用收敛提示文案。
+- 不当用语若进入主模型路径，表现依赖 **模型自身安全/礼貌策略**（看起来像被「过滤」或婉拒），**不是**本仓库规则引擎保证的能力。
+- 正式版若需要可审计的收敛话术，应单独立项（关键词/审核服务 + 固定回复），勿与寒暄秒回、超时兜底混为一谈。
+
+**「模糊再次确认」现状说明：**
+
+- **不是**总路由上的全局澄清层（不会对任意模糊句统一反问「你是想 A 还是 B」）。
+- 场景内已有能力示例：购票人数/日期槽位补问与推荐卡确认；虚拟排队/演出等 **项目名简称模糊匹配**；攻略子意图 LLM 分类等。均挂在对应 Workflow / NLU 内。
+
+Skill 语义分类另有 `skillRoutingTimeoutMs`（默认 **15s**），与主对话 30s 超时独立（见 §12）。
+
+### 1.2 推荐结果两类（现状梳理）
+
+对话里「为什么推荐这个项目/票」在产品上可分成两类（与是否走 LLM 无关）：
+
+| 类型 | 含义 | 演示版现状 | 卡片上的解释文案示例 |
+|------|------|------------|----------------------|
+| **① 标签类** | 读画像标签做排序/选品，并可展示「因标签推荐」 | 订单标签、会员标签、事实/消费标签、**AI 对话写回标签**（`UserProfileTags`：`orderTags` / `memberTags` / `fact` / `consume` / `aiTags`） | `因亲子标签推荐`、会员选品角标中的「· 亲子标签」等 |
+| **② 定向推荐类** | 按场景策略置顶/插入某一类项目，**不是**「因某某画像标签」句式 | **仅「歇脚推荐」**：在园且入园≥4h 问附近项目时，关怀文案 + 置顶冰淇淋小站（`nearbyCareTip` + `projectQuery`） | `歇脚推荐 · 美食广场` |
+| （相关但非②） | 天气 / 客流 | **问答 Workflow**「今天适合游玩吗」+ 欢迎 Hero 展示 Mock 天气/人流；**尚未**做成挂在项目卡上的「因天气/客流推荐」定向角标 | — |
+
+**解释层开关（演示 UI）**：`AssistantUiConfig.showExplainReasons`（后台「助手 UI → 展示推荐解释层」，默认开）。关闭后卡片上隐藏/剥离标签解释与歇脚角标等，**保留**项目 tags chips、相对距离、排队/场次、票种 `recommendLabel` 等产品信息。过滤集中在 `src/utils/explainReasons.ts`（展示期过滤；匹配逻辑仍可跑）。
+
+**代码形态说明**：解释文案目前以约定字符串 + 正则剥离为主（如 `因…推荐`、歇脚特判），**尚未**类型化为 `reasonKind: 'explain' | 'ops'`；扩展天气/客流定向推荐时建议改为显式 kind，避免再堆特判。
 
 ---
 
@@ -169,7 +208,7 @@
 | 菜系 | 问「中餐/西餐/小吃」按 activity `tags` 过滤（`diningCuisine.ts`） |
 | 文件 | `src/ai/workflow/proactiveMarketing.ts` |
 
-**附近项目场景关怀**（`project_query`）：在园且入园≥4 小时（今日核销 `completedAt`，或演示默认今日 10:00）时，推荐前附歇脚/冰淇淋温馨提示（`nearbyCareTip.ts`）；结果合并为 **单条** `scene_recommend(scene=nearby)`，含相对当前位置距离标注，关怀时置顶「冰淇淋小站」。
+**附近项目场景关怀**（`project_query`）：在园且入园≥4 小时（今日核销 `completedAt`，或演示默认今日 10:00）时，推荐前附歇脚/冰淇淋温馨提示（`nearbyCareTip.ts`）；结果合并为 **单条** `scene_recommend(scene=nearby)`，含相对当前位置距离标注，关怀时置顶「冰淇淋小站」。此为当前唯一落地的 **定向推荐类**（角标「歇脚推荐」）；标签类「因…推荐」可并存。解释层开关与分类现状见 **§1.2**。
 
 ### 3.10 会员权益选品
 
@@ -292,7 +331,7 @@ LLM 每轮独立生成，**不天然记住**「已问过人数、还差日期」
 
 ### 7.4 卡片与跳转是强 UI 契约
 
-购票产出是 **TicketCard / TicketConfirmCard / OrderCard**，字段含 `productId`、`quantity`、`visitDate`、`sessionId` 等。
+购票产出是 **TicketCard / TicketConfirmCard / OrderCard**，字段含 `productId`、`quantity`、可选 `items[]`（成人+儿童购物车）、可选 `offerCoupon`（推荐成功时营销券与票同框）、`visitDate`、`sessionId` 等。套票与单品不可混单。同框子卡由 `revealCount` / `cardReveal.ts` 级联展示。
 
 Workflow **直接组装 `ChatMessageDraft`**，与 `MessageBubble`、下单页 `OrderSubmitPage` 契约一致。若 LLM 自由回复：
 
@@ -421,6 +460,17 @@ npx vite-node scripts/test-merge-purchase-slots.mts
 
 过程面板：语义路由时显示 **「语义识别对话场景」**；命中后场景步显示 `场景名（语义识别）`。
 
+### 12.1.1 主对话分层（未进 Workflow 时）
+
+详见 **§1.1**（寒暄秒回 / 30s 超时兜底 / 无独立脏话层 / 模糊确认为场景内能力）。摘要：
+
+| 层 | 条件 | 行为 |
+|----|------|------|
+| 1 寒暄秒回 | `isLikelyGeneralMessage` 且无 Tool | **不调主模型**，本地引导文案（`generalChatFallback.ts`） |
+| 2 超时兜底 | 调主模型；单次请求 `chatTimeoutMs`（默认 30s） | 超时 / 空响应 → 兜底文案 |
+
+Skill 语义分类另有 `skillRoutingTimeoutMs`（默认 15s），与主对话超时独立。推荐两类与解释层开关见 **§1.2**。
+
 ### 12.2 P0-2 增强（Workflow 入口）
 
 `skillWorkflowGate.ts`：当 **LLM 路由** 且 `confidence ≥ 0.8`（可配置）时，可 **替代 Workflow 二级正则**，直接进入：
@@ -487,6 +537,7 @@ npx vite-node scripts/test-travel-guide-intent-route.mts
 
 | 日期 | 说明 |
 |------|------|
+| 2026-07-29 | §1 / §1.1 / §1.2：写清总路由与主对话分层现状；明确无独立脏话层（依赖模型策略）；推荐分标签类 vs 定向类（现仅歇脚）；解释层开关与 `explainReasons` |
 | 2026-07-23 | 「今天适合游玩吗」：天气 Mock + 随机人流三档 Workflow，优先于宽泛攻略 / 通用 LLM |
 | 2026-07-22 | 答题挂靠演出/明星；新增 `member_offer`；演出优先于攻略；点名项目简称模糊匹配；餐饮/零售非在园不推券 |
 | 2026-07-22 | 虚拟排队 `queue_recommend` Workflow；欢迎 Hero 当日天气本地 Mock |

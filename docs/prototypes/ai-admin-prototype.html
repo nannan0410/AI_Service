@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI 客服后台 · 原型（嵌入子系统）</title>
+  <style>
+    :root {
+      --primary: #1677ff;
+      --primary-hover: #4096ff;
+      --primary-bg: #e6f4ff;
+      --danger: #ff4d4f;
+      --success: #52c41a;
+      --warning: #faad14;
+      --text: rgba(0, 0, 0, 0.88);
+      --text-secondary: rgba(0, 0, 0, 0.65);
+      --text-muted: rgba(0, 0, 0, 0.45);
+      --border: #f0f0f0;
+      --border-strong: #d9d9d9;
+      --bg: #f5f5f5;
+      --sidebar-w: 220px;
+      --header-h: 56px;
+      --radius: 6px;
+      --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.5714;
+    }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { color: var(--primary-hover); }
+
+    /* —— 壳：模拟已嵌入大系统，无登录 —— */
+    .app {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      grid-template-rows: var(--header-h) 1fr;
+      height: 100vh;
+      min-width: 1100px;
+    }
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+    .header__brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .header__brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, var(--primary), #69b1ff);
+    }
+    .header__brand span { color: var(--text-muted); font-weight: 400; font-size: 13px; margin-left: 4px; }
+    .header__right { display: flex; align-items: center; gap: 12px; }
+    .header__hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-right: 8px;
+    }
+
+    .sidebar {
+      background: #fff;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 12px 0 24px;
+    }
+    .sidebar__group {
+      padding: 8px 16px 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      width: calc(100% - 16px);
+      margin: 2px 8px;
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-align: left;
+      color: var(--text-secondary);
+      transition: background .15s, color .15s;
+    }
+    .nav-item:hover { background: rgba(0, 0, 0, 0.04); color: var(--text); }
+    .nav-item.active {
+      background: var(--primary-bg);
+      color: var(--primary);
+      font-weight: 500;
+    }
+    .nav-item__dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      margin-right: 10px;
+      opacity: 0.5;
+    }
+    .nav-item.active .nav-item__dot { opacity: 1; }
+
+    .main {
+      overflow: auto;
+      padding: 16px 20px 32px;
+    }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .page-head h1 {
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .page-head__desc {
+      margin-top: 4px;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .page-head__actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .card {
+      background: #fff;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .card__title {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card__body { padding: 16px; }
+    .card__body--flush { padding: 0; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 32px;
+      padding: 0 15px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .15s;
+    }
+    .btn:hover { color: var(--primary); border-color: var(--primary); }
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #fff; }
+    .btn-link {
+      border: none;
+      background: transparent;
+      color: var(--primary);
+      height: auto;
+      padding: 0 4px;
+    }
+    .btn-link:hover { color: var(--primary-hover); }
+    .btn-danger-link { color: var(--danger); }
+    .btn-danger-link:hover { color: #ff7875; }
+    .btn-sm { height: 28px; padding: 0 10px; font-size: 13px; }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 12px;
+      align-items: start;
+      margin-bottom: 16px;
+      max-width: 720px;
+    }
+    .field-row label {
+      padding-top: 5px;
+      text-align: right;
+      color: var(--text-secondary);
+    }
+    .field-row label .req { color: var(--danger); margin-right: 2px; }
+    .field-hint {
+      grid-column: 2;
+      margin-top: -10px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .input, .select, .textarea {
+      width: 100%;
+      max-width: 400px;
+      height: 32px;
+      padding: 0 11px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #fff;
+      outline: none;
+    }
+    .input:focus, .select:focus, .textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.1);
+    }
+    .textarea {
+      height: auto;
+      min-height: 80px;
+      padding: 8px 11px;
+      resize: vertical;
+      max-width: 560px;
+    }
+    .input-wide { max-width: 560px; }
+    .switch {
+      width: 44px;
+      height: 22px;
+      border-radius: 11px;
+      background: rgba(0, 0, 0, 0.25);
+      border: none;
+      position: relative;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+    .switch.on { background: var(--primary); }
+    .switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: left .15s;
+    }
+    .switch.on::after { left: 24px; }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 16px;
+      align-items: flex-end;
+      padding: 16px;
+      background: #fff;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .filter-item { display: flex; flex-direction: column; gap: 6px; }
+    .filter-item > span { font-size: 12px; color: var(--text-secondary); }
+    .filter-item .input, .filter-item .select { max-width: 200px; width: 200px; }
+    .filter-actions { margin-left: auto; display: flex; gap: 8px; }
+
+    .table-wrap { overflow-x: auto; }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.data th,
+    table.data td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: middle;
+    }
+    table.data th {
+      background: #fafafa;
+      color: var(--text-secondary);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    table.data td { color: var(--text); }
+    .empty {
+      padding: 48px 16px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .empty__icon {
+      width: 64px;
+      height: 48px;
+      margin: 0 auto 12px;
+      border: 2px dashed var(--border-strong);
+      border-radius: 8px;
+      opacity: 0.6;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+      background: #fff;
+      padding: 0 16px;
+      border-radius: var(--radius) var(--radius) 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+    .tabs + .card { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: 0; }
+    .tab {
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-secondary);
+      position: relative;
+    }
+    .tab.active {
+      color: var(--primary);
+      font-weight: 500;
+    }
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 0;
+      height: 2px;
+      background: var(--primary);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .tag {
+      display: inline-block;
+      padding: 0 7px;
+      height: 22px;
+      line-height: 20px;
+      border-radius: 4px;
+      border: 1px solid var(--border-strong);
+      font-size: 12px;
+      color: var(--text-secondary);
+      background: #fafafa;
+    }
+    .tag-blue { color: var(--primary); background: var(--primary-bg); border-color: #91caff; }
+    .tag-green { color: #389e0d; background: #f6ffed; border-color: #b7eb8f; }
+    .tag-orange { color: #d46b08; background: #fff7e6; border-color: #ffd591; }
+
+    .upload-box {
+      width: 104px;
+      height: 104px;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      background: #fafafa;
+    }
+    .upload-box:hover { border-color: var(--primary); color: var(--primary); }
+    .upload-row { display: flex; flex-wrap: wrap; gap: 12px; }
+
+    .alert {
+      padding: 8px 12px;
+      background: #e6f4ff;
+      border: 1px solid #91caff;
+      border-radius: var(--radius);
+      color: var(--text-secondary);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .alert--warn {
+      background: #fffbe6;
+      border-color: #ffe58f;
+    }
+    .readonly-block {
+      padding: 12px 16px;
+      background: #fafafa;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .form-actions {
+      margin-top: 8px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+
+    .drawer-mask {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 100;
+    }
+    .drawer-mask.open { display: block; }
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 480px;
+      max-width: 100%;
+      height: 100%;
+      background: #fff;
+      z-index: 101;
+      transform: translateX(100%);
+      transition: transform .2s;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -6px 0 16px rgba(0, 0, 0, 0.08);
+    }
+    .drawer.open { transform: translateX(0); }
+    .drawer__head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .drawer__body { flex: 1; overflow: auto; padding: 20px; }
+    .drawer__foot {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .proto-badge {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 0 6px;
+      height: 20px;
+      line-height: 18px;
+      font-size: 11px;
+      font-weight: 400;
+      border-radius: 4px;
+      border: 1px solid #ffd591;
+      background: #fff7e6;
+      color: #d46b08;
+      vertical-align: middle;
+    }
+    .split-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 1200px) {
+      .split-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header__brand">
+        <div class="header__brand-mark" aria-hidden="true"></div>
+        智慧乐园平台
+        <span>/ AI 客服（子系统原型 · 无登录）</span>
+      </div>
+      <div class="header__right">
+        <span class="header__hint">配置上下文随当前景区；游客端无切换景区</span>
+        <select class="select" style="width: 180px" aria-label="当前景区">
+          <option value="">请选择景区</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm">预览 H5</button>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="AI 客服菜单">
+      <div class="sidebar__group">对话与配置</div>
+      <button type="button" class="nav-item active" data-page="skill"><i class="nav-item__dot"></i>SKILL 场景</button>
+      <button type="button" class="nav-item" data-page="conflict"><i class="nav-item__dot"></i>冲突检查</button>
+      <button type="button" class="nav-item" data-page="ui"><i class="nav-item__dot"></i>UI 配置</button>
+      <button type="button" class="nav-item" data-page="welcome-q"><i class="nav-item__dot"></i>游游推荐</button>
+      <button type="button" class="nav-item" data-page="service"><i class="nav-item__dot"></i>服务推荐</button>
+      <div class="sidebar__group">主数据</div>
+      <button type="button" class="nav-item" data-page="tags"><i class="nav-item__dot"></i>标签管理</button>
+      <button type="button" class="nav-item" data-page="products"><i class="nav-item__dot"></i>产品管理</button>
+      <button type="button" class="nav-item" data-page="coupons"><i class="nav-item__dot"></i>券管理</button>
+      <button type="button" class="nav-item" data-page="content"><i class="nav-item__dot"></i>内容配置</button>
+      <div class="sidebar__group">系统与反馈</div>
+      <button type="button" class="nav-item" data-page="params"><i class="nav-item__dot"></i>参数配置</button>
+      <button type="button" class="nav-item" data-page="feedback"><i class="nav-item__dot"></i>问题记录</button>
+    </aside>
+
+    <main class="main">
+      <!-- SKILL -->
+      <section class="page active" id="page-skill">
+        <div class="page-head">
+          <div>
+            <h1>SKILL 场景</h1>
+            <p class="page-head__desc">配置 Skill 启停、触发关键词、绑定工具与场景指令。子意图锁定关键词不可删除。</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn" disabled title="原型占位">刷新</button>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span>名称 / skillId</span>
+            <input class="input" type="text" placeholder="请输入" />
+          </div>
+          <div class="filter-item">
+            <span>状态</span>
+            <select class="select">
+              <option value="">全部</option>
+              <option value="1">启用</option>
+              <option value="0">停用</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button type="button" class="btn">重置</button>
+            <button type="button" class="btn btn-primary">查询</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__title">Skill 列表</div>
+          <div class="card__body--flush table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>名称</th>
+                  <th>skillId</th>
+                  <th>状态</th>
+                  <th>触发关键词</th>
+                  <th>绑定工具</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6">
+                    <div class="empty">
+                      <div class="empty__icon"></div>
+                      <div>暂无数据</div>
+                      <div style="margin-top:8px;font-size:12px">接口对接后展示列表；点击「编辑」打开抽屉</div>
+                      <button type="button" class="btn btn-primary btn-sm" style="margin-top:12px" data-open-drawer="skill">打开编辑示意</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 冲突检查 -->
+      <section class="page" id="page-conflict">
+        <div class="page-head">
+          <div>
+            <h1>冲突检查 <span class="proto-badge">只读</span></h1>
+            <p class="page-head__desc">展示 Workflow / Skill 路由互斥说明，不可在此配置。对应正式口径：检查工具页不进运营后台，仅保留只读说明。</p>
+          </div>
+        </div>
+        <div class="alert">以下为互斥说明占位区域，正式由配置中心或文档接口下发文案，不提供编辑。</div>
+        <div class="card">
+          <div class="card__title">路由排他规则</div>
+          <div class="card__body">
+            <div class="readonly-block">
+              · 规则条目由系统维护（只读）<br />
+              · 示例结构：优先 Skill / Workflow → 被压制路径 → 说明<br />
+              · 本页不提供新增、编辑、删除
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- UI 配置（含欢迎文案） -->
+      <section class="page" id="page-ui">
+        <div class="page-head">
+          <div>
+            <h1>UI 配置</h1>
+            <p class="page-head__desc">助手形象、主色、资源图与欢迎标题文案。保存后可通过「预览 H5」验收。</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn">恢复默认</button>
+            <button type="button" class="btn btn-primary">保存</button>
+          </div>
+        </div>
+
+        <div class="tabs" data-tabs="ui">
+          <button type="button" class="tab active" data-tab="ui-base">基础与主色</button>
+          <button type="button" class="tab" data-tab="ui-assets">形象资源</button>
+          <button type="button" class="tab" data-tab="ui-welcome">欢迎文案</button>
+        </div>
+
+        <div class="card tab-panel active" data-tab-panel="ui-base">
+          <div class="card__body">
+            <div class="field-row">
+              <label><span class="req">*</span>助手名称</label>
+              <input class="input" type="text" placeholder="请输入助手名称" />
+            </div>
+            <div class="field-row">
+              <label><span class="req">*</span>助手昵称</label>
+              <input class="input" type="text" placeholder="请输入助手昵称" />
+            </div>
+            <div class="field-row">
+              <label>对话标题</label>
+              <input class="input" type="text" placeholder="请输入对话标题" />
+            </div>
+            <div class="field-row">
+              <label>推荐解释层</label>
+              <div>
+                <button type="button" class="switch on" aria-pressed="true" title="开"></button>
+                <span style="margin-left:8px;color:var(--text-muted);font-size:12px">如「因…推荐」；不影响项目标签与票种角标</span>
+              </div>
+            </div>
+            <div class="field-row">
+              <label>主色</label>
+              <input class="input" type="text" placeholder="#1677ff" style="max-width:160px" />
+            </div>
+            <div class="field-row">
+              <label>浅色背景</label>
+              <input class="input" type="text" placeholder="#e6f4ff" style="max-width:160px" />
+            </div>
+            <div class="field-row">
+              <label>深色强调</label>
+              <input class="input" type="text" placeholder="#0958d9" style="max-width:160px" />
+            </div>
+            <div class="field-row">
+              <label>聊天背景图</label>
+              <div class="upload-box">+ 上传</div>
+            </div>
+            <p class="field-hint">支持 JPG/PNG；具体体积限制以实现为准</p>
+          </div>
+        </div>
+
+        <div class="card tab-panel" data-tab-panel="ui-assets">
+          <div class="card__body">
+            <div class="field-row">
+              <label>助手头像</label>
+              <div class="upload-box">+ 上传</div>
+            </div>
+            <div class="field-row">
+              <label>会员默认头像</label>
+              <div class="upload-box">+ 上传</div>
+            </div>
+            <div class="field-row">
+              <label>助手默认全身图</label>
+              <div class="upload-box">+ 上传</div>
+            </div>
+            <div class="field-row">
+              <label>对话形态图</label>
+              <div class="upload-row">
+                <div class="upload-box">idle</div>
+                <div class="upload-box">thinking</div>
+                <div class="upload-box">nod</div>
+                <div class="upload-box">shake</div>
+                <div class="upload-box">wave</div>
+                <div class="upload-box">point</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card tab-panel" data-tab-panel="ui-welcome">
+          <div class="card__body">
+            <div class="alert alert--warn">欢迎标题文案归 UI；按会员态 / 在园态等条件配置，不再绑定演示账号 persona。</div>
+            <div class="field-row">
+              <label>适用条件</label>
+              <select class="select"><option value="">请选择规则条件（对接后）</option></select>
+            </div>
+            <div class="field-row">
+              <label>标题 title</label>
+              <input class="input input-wide" type="text" placeholder="请输入欢迎标题" />
+            </div>
+            <div class="field-row">
+              <label>副标题 subtitle</label>
+              <input class="input input-wide" type="text" placeholder="请输入副标题，可含占位符" />
+            </div>
+            <div class="field-row">
+              <label>正文 body</label>
+              <textarea class="textarea" placeholder="请输入欢迎正文"></textarea>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn">新增一条文案</button>
+              <button type="button" class="btn btn-primary">保存欢迎文案</button>
+            </div>
+            <div class="card" style="margin-top:16px;margin-bottom:0">
+              <div class="card__title">已配置文案</div>
+              <div class="empty">
+                <div class="empty__icon"></div>
+                <div>暂无数据</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 游游推荐 -->
+      <section class="page" id="page-welcome-q">
+        <div class="page-head">
+          <div>
+            <h1>游游推荐</h1>
+            <p class="page-head__desc">欢迎页「游游推荐」问题卡片；支持规则过滤、优先级、置顶。最多展示条数以实现为准。</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn-primary" data-open-drawer="welcome-q">新增</button>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span>文案 / prompt</span>
+            <input class="input" type="text" placeholder="请输入" />
+          </div>
+          <div class="filter-actions">
+            <button type="button" class="btn">重置</button>
+            <button type="button" class="btn btn-primary">查询</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__body--flush table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>展示文案</th>
+                  <th>发送 prompt</th>
+                  <th>优先级</th>
+                  <th>置顶</th>
+                  <th>规则摘要</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="6"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 服务推荐 -->
+      <section class="page" id="page-service">
+        <div class="page-head">
+          <div>
+            <h1>服务推荐</h1>
+            <p class="page-head__desc">欢迎页快捷服务入口（原 recommend_entries）。规则过滤后按优先级展示，建议最多 4 个。</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn-primary" data-open-drawer="service">新增</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__body--flush table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>标题</th>
+                  <th>图标</th>
+                  <th>跳转 / prompt</th>
+                  <th>优先级</th>
+                  <th>规则摘要</th>
+                  <th>启用</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="7"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 标签 -->
+      <section class="page" id="page-tags">
+        <div class="page-head">
+          <div>
+            <h1>标签管理</h1>
+            <p class="page-head__desc">画像标签目录与规则；供欢迎推荐、选品等规则引擎使用。</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn-primary">新增标签</button>
+          </div>
+        </div>
+        <div class="tabs" data-tabs="tags">
+          <button type="button" class="tab active" data-tab="tags-catalog">标签目录</button>
+          <button type="button" class="tab" data-tab="tags-rules">打标规则</button>
+        </div>
+        <div class="card tab-panel active" data-tab-panel="tags-catalog">
+          <div class="card__body--flush">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>标签 ID</th>
+                  <th>名称</th>
+                  <th>分组</th>
+                  <th>说明</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card tab-panel" data-tab-panel="tags-rules">
+          <div class="card__body--flush">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>规则名称</th>
+                  <th>条件</th>
+                  <th>写入标签</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 产品 -->
+      <section class="page" id="page-products">
+        <div class="page-head">
+          <div>
+            <h1>产品管理</h1>
+            <p class="page-head__desc">门票等可售产品（按景区）。字段细节以接口三分表为准。</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn-primary">新增产品</button>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span>产品名称</span>
+            <input class="input" type="text" placeholder="请输入" />
+          </div>
+          <div class="filter-item">
+            <span>票种类型</span>
+            <select class="select"><option value="">全部</option></select>
+          </div>
+          <div class="filter-item">
+            <span>上下架</span>
+            <select class="select">
+              <option value="">全部</option>
+              <option>上架</option>
+              <option>下架</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button type="button" class="btn">重置</button>
+            <button type="button" class="btn btn-primary">查询</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__body--flush">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>产品 ID</th>
+                  <th>名称</th>
+                  <th>票种类型</th>
+                  <th>售价</th>
+                  <th>渠道</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="7"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 券 -->
+      <section class="page" id="page-coupons">
+        <div class="page-head">
+          <div>
+            <h1>券管理</h1>
+            <p class="page-head__desc">券产品配置（面额、条件、有效期、适用景区等）。布局对齐大系统「优惠券」列表习惯。</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn-primary">新增券</button>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span>券名称</span>
+            <input class="input" type="text" placeholder="请输入" />
+          </div>
+          <div class="filter-item">
+            <span>状态</span>
+            <select class="select"><option value="">全部</option></select>
+          </div>
+          <div class="filter-actions">
+            <button type="button" class="btn">重置</button>
+            <button type="button" class="btn btn-primary">查询</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__body--flush">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>券产品 ID</th>
+                  <th>名称</th>
+                  <th>类型</th>
+                  <th>面额 / 折扣</th>
+                  <th>使用条件</th>
+                  <th>有效期</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="7"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 内容 -->
+      <section class="page" id="page-content">
+        <div class="page-head">
+          <div>
+            <h1>内容配置</h1>
+            <p class="page-head__desc">交通/入园等内容块、园内项目与活动等。</p>
+          </div>
+        </div>
+        <div class="tabs" data-tabs="content">
+          <button type="button" class="tab active" data-tab="content-blocks">内容块</button>
+          <button type="button" class="tab" data-tab="content-activities">项目 / 活动</button>
+        </div>
+        <div class="card tab-panel active" data-tab-panel="content-blocks">
+          <div class="card__title">
+            内容块
+            <button type="button" class="btn btn-primary btn-sm">新增</button>
+          </div>
+          <div class="card__body--flush">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>contentId</th>
+                  <th>类型</th>
+                  <th>标题</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card tab-panel" data-tab-panel="content-activities">
+          <div class="card__title">
+            项目 / 活动
+            <button type="button" class="btn btn-primary btn-sm">新增</button>
+          </div>
+          <div class="card__body--flush">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>名称</th>
+                  <th>分类</th>
+                  <th>位置</th>
+                  <th>开放时段</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 参数 -->
+      <section class="page" id="page-params">
+        <div class="page-head">
+          <div>
+            <h1>参数配置 <span class="proto-badge">对接用</span></h1>
+            <p class="page-head__desc">外部接口与业务阈值等。首发可为占位表单，待对接后填写真实地址与开关。</p>
+          </div>
+          <div class="page-head__actions">
+            <button type="button" class="btn btn-primary">保存</button>
+          </div>
+        </div>
+        <div class="split-2">
+          <div class="card">
+            <div class="card__title">接口对接</div>
+            <div class="card__body">
+              <div class="field-row" style="max-width:none;grid-template-columns:100px 1fr">
+                <label>地图接口</label>
+                <input class="input input-wide" type="text" placeholder="请输入 Base URL / 标识" />
+              </div>
+              <div class="field-row" style="max-width:none;grid-template-columns:100px 1fr">
+                <label>订单接口</label>
+                <input class="input input-wide" type="text" placeholder="请输入 Base URL / 标识" />
+              </div>
+              <div class="field-row" style="max-width:none;grid-template-columns:100px 1fr">
+                <label>天气接口</label>
+                <input class="input input-wide" type="text" placeholder="请输入 Base URL / 标识" />
+              </div>
+              <div class="field-row" style="max-width:none;grid-template-columns:100px 1fr">
+                <label>LLM 接口</label>
+                <input class="input input-wide" type="text" placeholder="请输入 Endpoint / 模型标识" />
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card__title">业务阈值</div>
+            <div class="card__body">
+              <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+                <label>客流偏高阈值</label>
+                <input class="input" type="text" placeholder="数值，对接后定义单位" />
+              </div>
+              <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+                <label>客流拥挤阈值</label>
+                <input class="input" type="text" placeholder="数值，对接后定义单位" />
+              </div>
+              <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+                <label>新客领券窗口(天)</label>
+                <input class="input" type="text" placeholder="请输入" />
+              </div>
+              <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+                <label>可开票窗口(天)</label>
+                <input class="input" type="text" placeholder="请输入" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card__title">规则字段说明 <span class="tag">只读</span></div>
+          <div class="card__body">
+            <div class="readonly-block">
+              展示规则引擎可用字段目录（原 field_catalog）：字段名、类型、取值说明。<br />
+              本区只读，不在此增删字段。对接后由接口返回。
+            </div>
+            <div class="empty" style="padding-top:24px">
+              <div class="empty__icon"></div>
+              <div>暂无数据</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 问题记录 -->
+      <section class="page" id="page-feedback">
+        <div class="page-head">
+          <div>
+            <h1>问题记录</h1>
+            <p class="page-head__desc">踩：结构化上报明细，用于反推 Skill 关键词。赞：统计数据。收藏首发可不上云。</p>
+          </div>
+        </div>
+        <div class="tabs" data-tabs="feedback">
+          <button type="button" class="tab active" data-tab="fb-down">踩上报</button>
+          <button type="button" class="tab" data-tab="fb-up">赞统计</button>
+        </div>
+        <div class="card tab-panel active" data-tab-panel="fb-down">
+          <div class="filter-bar" style="border:none;margin:0;border-radius:0;border-bottom:1px solid var(--border)">
+            <div class="filter-item">
+              <span>时间范围</span>
+              <input class="input" type="text" placeholder="开始日期 ~ 结束日期" style="width:240px;max-width:240px" />
+            </div>
+            <div class="filter-item">
+              <span>skillId</span>
+              <input class="input" type="text" placeholder="请输入" />
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="btn">重置</button>
+              <button type="button" class="btn btn-primary">查询</button>
+            </div>
+          </div>
+          <div class="card__body--flush">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>景区</th>
+                  <th>用户话术</th>
+                  <th>回复摘要</th>
+                  <th>skillId</th>
+                  <th>routeSource</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="7"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card tab-panel" data-tab-panel="fb-up">
+          <div class="card__body">
+            <div class="alert">赞统计：按日 / 按 Skill / 按景区聚合，具体图表以实现为准。原型仅保留筛选与结果区结构。</div>
+            <div class="filter-bar" style="padding:0;border:none;margin-bottom:16px">
+              <div class="filter-item">
+                <span>统计维度</span>
+                <select class="select">
+                  <option>按日</option>
+                  <option>按 Skill</option>
+                  <option>按景区</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <span>时间范围</span>
+                <input class="input" type="text" placeholder="开始日期 ~ 结束日期" style="width:240px;max-width:240px" />
+              </div>
+              <div class="filter-actions" style="margin-left:0">
+                <button type="button" class="btn btn-primary">查询</button>
+              </div>
+            </div>
+            <div class="empty">
+              <div class="empty__icon"></div>
+              <div>暂无数据</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 抽屉：Skill 编辑示意 -->
+  <div class="drawer-mask" id="drawer-mask"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer__head">
+      <span id="drawer-title">编辑 Skill</span>
+      <button type="button" class="btn-link" id="drawer-close">关闭</button>
+    </div>
+    <div class="drawer__body" id="drawer-body">
+      <!-- filled by JS template -->
+    </div>
+    <div class="drawer__foot">
+      <button type="button" class="btn" id="drawer-cancel">取消</button>
+      <button type="button" class="btn btn-primary">确定</button>
+    </div>
+  </aside>
+
+  <script>
+    (function () {
+      var pages = document.querySelectorAll(".page");
+      var navItems = document.querySelectorAll(".nav-item");
+
+      function showPage(id) {
+        pages.forEach(function (p) {
+          p.classList.toggle("active", p.id === "page-" + id);
+        });
+        navItems.forEach(function (n) {
+          n.classList.toggle("active", n.getAttribute("data-page") === id);
+        });
+      }
+
+      navItems.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          showPage(btn.getAttribute("data-page"));
+        });
+      });
+
+      var tabPrefix = {
+        ui: "ui-",
+        tags: "tags-",
+        content: "content-",
+        feedback: "fb-",
+      };
+
+      document.querySelectorAll("[data-tabs]").forEach(function (tabsEl) {
+        var group = tabsEl.getAttribute("data-tabs");
+        var prefix = tabPrefix[group] || "";
+        tabsEl.querySelectorAll(".tab").forEach(function (tab) {
+          tab.addEventListener("click", function () {
+            var key = tab.getAttribute("data-tab");
+            tabsEl.querySelectorAll(".tab").forEach(function (t) {
+              t.classList.toggle("active", t === tab);
+            });
+            var page = tabsEl.closest(".page") || document;
+            page.querySelectorAll(".tab-panel").forEach(function (panel) {
+              var pid = panel.getAttribute("data-tab-panel") || "";
+              if (prefix && pid.indexOf(prefix) !== 0) return;
+              panel.classList.toggle("active", pid === key);
+            });
+          });
+        });
+      });
+
+      document.querySelectorAll(".switch").forEach(function (sw) {
+        sw.addEventListener("click", function () {
+          sw.classList.toggle("on");
+          sw.setAttribute("aria-pressed", sw.classList.contains("on") ? "true" : "false");
+        });
+      });
+
+      var mask = document.getElementById("drawer-mask");
+      var drawer = document.getElementById("drawer");
+      var drawerTitle = document.getElementById("drawer-title");
+      var drawerBody = document.getElementById("drawer-body");
+
+      var templates = {
+        skill:
+          '<div class="field-row"><label>名称</label><input class="input" type="text" placeholder="请输入" /></div>' +
+          '<div class="field-row"><label>skillId</label><input class="input" type="text" placeholder="只读 / 系统生成" disabled /></div>' +
+          '<div class="field-row"><label>启用</label><button type="button" class="switch on"></button></div>' +
+          '<div class="field-row"><label>触发关键词</label><input class="input input-wide" type="text" placeholder="输入后回车添加（示意）" /></div>' +
+          '<p class="field-hint">锁定关键词不可删除；跨 Skill 冲突需校验</p>' +
+          '<div class="field-row"><label>绑定工具</label><select class="select" multiple style="height:88px"><option disabled>对接后选项</option></select></div>' +
+          '<div class="field-row"><label>场景指令</label><textarea class="textarea" placeholder="请输入场景指令"></textarea></div>',
+        "welcome-q":
+          '<div class="field-row"><label>展示文案</label><input class="input input-wide" type="text" placeholder="请输入" /></div>' +
+          '<div class="field-row"><label>prompt</label><input class="input input-wide" type="text" placeholder="点击后发送的用户话术" /></div>' +
+          '<div class="field-row"><label>优先级</label><input class="input" type="text" placeholder="数字，越大越靠前" /></div>' +
+          '<div class="field-row"><label>置顶</label><button type="button" class="switch"></button></div>' +
+          '<div class="field-row"><label>展示规则</label><select class="select"><option value="">无规则（始终展示）</option></select></div>' +
+          '<p class="field-hint">规则字段对接后配置；支持多条件 AND</p>',
+        service:
+          '<div class="field-row"><label>标题</label><input class="input" type="text" placeholder="请输入" /></div>' +
+          '<div class="field-row"><label>图标</label><input class="input" type="text" placeholder="图标 key / URL" /></div>' +
+          '<div class="field-row"><label>目标类型</label><select class="select"><option>发送 prompt</option><option>跳转页面</option></select></div>' +
+          '<div class="field-row"><label>prompt / 路径</label><input class="input input-wide" type="text" placeholder="请输入" /></div>' +
+          '<div class="field-row"><label>优先级</label><input class="input" type="text" placeholder="数字" /></div>' +
+          '<div class="field-row"><label>展示规则</label><select class="select"><option value="">无规则（始终展示）</option></select></div>',
+      };
+
+      function openDrawer(type) {
+        var titles = { skill: "编辑 Skill", "welcome-q": "编辑游游推荐", service: "编辑服务推荐" };
+        drawerTitle.textContent = titles[type] || "编辑";
+        drawerBody.innerHTML = templates[type] || "";
+        drawerBody.querySelectorAll(".switch").forEach(function (sw) {
+          sw.addEventListener("click", function () {
+            sw.classList.toggle("on");
+          });
+        });
+        mask.classList.add("open");
+        drawer.classList.add("open");
+        drawer.setAttribute("aria-hidden", "false");
+      }
+
+      function closeDrawer() {
+        mask.classList.remove("open");
+        drawer.classList.remove("open");
+        drawer.setAttribute("aria-hidden", "true");
+      }
+
+      document.querySelectorAll("[data-open-drawer]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          openDrawer(btn.getAttribute("data-open-drawer"));
+        });
+      });
+      mask.addEventListener("click", closeDrawer);
+      document.getElementById("drawer-close").addEventListener("click", closeDrawer);
+      document.getElementById("drawer-cancel").addEventListener("click", closeDrawer);
+    })();
+  </script>
+</body>
+</html>

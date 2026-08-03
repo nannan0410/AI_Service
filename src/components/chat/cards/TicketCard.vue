@@ -2,6 +2,8 @@
 import { computed } from "vue";
 import ChatCardShell from "./ChatCardShell.vue";
 import type { TicketCardPayload } from "@/types";
+import { useAssistantStore } from "@/store/assistantStore";
+import { filterExplainReason } from "@/utils/explainReasons";
 import {
   payableAmount,
   preferentialAmount,
@@ -10,9 +12,21 @@ import {
 
 const props = defineProps<{ payload: TicketCardPayload; embedded?: boolean }>();
 
-const purchase = computed(() => resolvePurchaseUnit(props.payload));
+const assistantStore = useAssistantStore();
+
+const cartLines = computed(() => props.payload.items ?? []);
+const isMultiLine = computed(() => cartLines.value.length > 1);
+const purchase = computed(() =>
+  isMultiLine.value ? null : resolvePurchaseUnit(props.payload),
+);
 const payable = computed(() => payableAmount(props.payload));
 const preferential = computed(() => preferentialAmount(props.payload));
+const displayRecommendedReason = computed(() =>
+  filterExplainReason(
+    props.payload.recommendedReason,
+    assistantStore.uiConfig.showExplainReasons !== false,
+  ),
+);
 </script>
 
 <template>
@@ -20,10 +34,10 @@ const preferential = computed(() => preferentialAmount(props.payload));
     <template #tags>
       <span class="ticket-card__tag ticket-card__tag--ticket">门票</span>
       <span
-        v-if="payload.recommendedReason"
+        v-if="displayRecommendedReason"
         class="ticket-card__tag ticket-card__tag--reason"
       >
-        {{ payload.recommendedReason }}
+        {{ displayRecommendedReason }}
       </span>
     </template>
 
@@ -35,7 +49,16 @@ const preferential = computed(() => preferentialAmount(props.payload));
       </template>
     </p>
 
-    <p class="ticket-card__unit-line">
+    <ul v-if="isMultiLine" class="ticket-card__lines">
+      <li v-for="line in cartLines" :key="line.productId" class="ticket-card__line">
+        <span class="ticket-card__line-name">{{ line.productName }}</span>
+        <span class="ticket-card__line-meta">
+          ¥{{ line.unitPrice }} × {{ line.purchaseCount }}{{ line.purchaseUnit }}
+        </span>
+        <span class="ticket-card__line-amount">¥{{ line.lineAmount }}</span>
+      </li>
+    </ul>
+    <p v-else-if="purchase" class="ticket-card__unit-line">
       单价 ¥{{ purchase.unitPrice }} × {{ purchase.purchaseCount }} {{ purchase.purchaseUnit }}
     </p>
 
@@ -85,6 +108,40 @@ const preferential = computed(() => preferentialAmount(props.payload));
 
 .ticket-card__qty {
   margin: 0 0 6px;
+}
+
+.ticket-card__lines {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.ticket-card__line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px 8px;
+  align-items: baseline;
+  font-size: 13px;
+  color: #646566;
+}
+
+.ticket-card__line + .ticket-card__line {
+  margin-top: 6px;
+}
+
+.ticket-card__line-name {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.ticket-card__line-meta {
+  white-space: nowrap;
+}
+
+.ticket-card__line-amount {
+  font-weight: 600;
+  color: #323233;
+  white-space: nowrap;
 }
 
 .ticket-card__unit-line {

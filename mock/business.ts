@@ -144,6 +144,10 @@ export default [
         visitDate?: string
         quantity?: { adult: number; child: number }
         originalAmount?: number
+        items?: Array<{
+          productId: string
+          quantity: { adult: number; child: number }
+        }>
       }
     }) => {
       const personaId = requirePersona(headers)
@@ -156,6 +160,7 @@ export default [
         visitDate: body?.visitDate,
         quantity: body?.quantity,
         originalAmount: body?.originalAmount,
+        items: body?.items,
         scenicId: getScenicIdFromHeaders(headers),
       })
       if (!result.ok) return { code: 400, message: result.message, data: null }

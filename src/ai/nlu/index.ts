@@ -38,6 +38,13 @@ export {
 } from './resolveSkillRoute'
 export { isLikelyGeneralMessage } from './isLikelyGeneralMessage'
 export {
+  GENERAL_CHAT_LOCAL_COPY,
+  GENERAL_CHAT_TIMEOUT_COPY,
+  buildLocalGeneralChatResult,
+  buildTimeoutGeneralChatResult,
+  isLlmTimeoutError,
+} from './generalChatFallback'
+export {
   isSkillWorkflowEnhancementEnabled,
   getSkillWorkflowConfidenceThreshold,
   isLlmWorkflowEntry,

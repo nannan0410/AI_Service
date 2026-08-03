@@ -100,10 +100,18 @@ export function buildOrderQueryCards(orders: Order[]): ChatMessageDraft[] {
     const child = order.quantity.child
     const qtyLabel = child > 0 ? `${adult} 成人 ${child} 儿童` : `${adult} 张`
     const visitHint = order.visitDate ? ` · ${order.visitDate} 出行` : ''
+    const items =
+      order.items?.length
+        ? order.items.map((line) => ({
+            name: line.productName,
+            qty: line.purchaseCount,
+            price: line.lineAmount,
+          }))
+        : [{ name: order.ticketName, qty: adult + child, price: order.totalAmount }]
     const payload: OrderCardPayload = {
       orderId: order.orderId,
       ticketName: order.ticketName,
-      items: [{ name: order.ticketName, qty: adult + child, price: order.totalAmount }],
+      items,
       totalAmount: order.totalAmount,
       status: order.status,
       source: order.source,

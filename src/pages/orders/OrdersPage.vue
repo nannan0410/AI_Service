@@ -71,8 +71,6 @@ function orderTags(order: Order): ProfileTag[] {
     <van-nav-bar
       title="我的订单"
       left-arrow
-      fixed
-      placeholder
       class="order-page__nav"
       @click-left="$router.back()"
     />
@@ -144,9 +142,10 @@ function orderTags(order: Order): ProfileTag[] {
   background: #f7f8fa;
 }
 
-.order-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.order-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .list {

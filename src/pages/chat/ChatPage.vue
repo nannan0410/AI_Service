@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   showConfirmDialog,
@@ -87,6 +87,7 @@ import {
 } from "@/utils/couponRecommend";
 import { qualifiesReviewReward } from "@/utils/reviewForm";
 import { usePurchaseStore } from "@/store/purchaseStore";
+import { useFeedbackStore } from "@/store/feedbackStore";
 import MessageBubble from "@/components/chat/MessageBubble.vue";
 import ToolProcessPanel from "@/components/chat/ToolProcessPanel.vue";
 import WelcomeHero from "@/components/welcome/WelcomeHero.vue";
@@ -114,8 +115,10 @@ import {
 import type {
   ChatMessageDraft,
   Coupon,
+  FeedbackRouteSource,
   LlmMessage,
   MemberInfo,
+  MessageFeedbackMeta,
   Order,
   OrderCardPayload,
   PageGuideCardPayload,
@@ -139,9 +142,10 @@ const skillStore = useSkillStore();
 const businessConfigStore = useBusinessConfigStore();
 const scenicStore = useScenicStore();
 const conversationStore = useConversationStore();
+const purchaseStore = usePurchaseStore();
+const feedbackStore = useFeedbackStore();
 const route = useRoute();
 const router = useRouter();
-const purchaseStore = usePurchaseStore();
 
 const input = ref("");
 const listRef = ref<HTMLElement | null>(null);
@@ -206,6 +210,8 @@ function applyScenicFromEntry(options?: {
   if (authStore.memberId) {
     scenicStore.bindMember(authStore.memberId);
     conversationStore.bindMember(authStore.memberId);
+    feedbackStore.bindMember(authStore.memberId);
+    feedbackStore.loadPersisted();
   }
   scenicStore.loadCatalog();
   conversationStore.loadPersisted();
@@ -459,6 +465,10 @@ onMounted(async () => {
   assistantStore.setMotion("wave", 2200);
 });
 
+onBeforeUnmount(() => {
+  chatStore.cancelPresent();
+});
+
 watch(
   () => authStore.personaId,
   async (personaId) => {
@@ -512,6 +522,7 @@ async function onConfirmClearChat() {
   try {
     await showConfirmDialog({
       title: "是否清除当前聊天记录？",
+      message: "仅清除本景区聊天时间线，不会删除收藏记录。",
       confirmButtonText: "确认清除",
       cancelButtonText: "我再想想",
       className: "chat-clear-dialog",
@@ -876,6 +887,10 @@ async function onTicketConfirm(payload: TicketCardPayload) {
       quantity: payload.quantity,
       originalAmount: payload.originalAmount,
       visitorIdNumbers: [],
+      items: payload.items?.map((line) => ({
+        productId: line.productId,
+        quantity: line.quantity,
+      })),
     });
     if (res.code !== 200 || !res.data) {
       throw new Error(res.message || "创建订单草稿失败");
@@ -893,13 +908,20 @@ async function onTicketConfirm(payload: TicketCardPayload) {
         orderId: draft.draftId,
         draftId: draft.draftId,
         ticketName: draft.ticketName,
-        items: [
-          {
-            name: draft.ticketName,
-            qty: draft.quantity.adult + draft.quantity.child,
-            price: draft.totalAmount,
-          },
-        ],
+        items:
+          draft.items?.length
+            ? draft.items.map((line) => ({
+                name: line.productName,
+                qty: line.purchaseCount,
+                price: line.lineAmount,
+              }))
+            : [
+                {
+                  name: draft.ticketName,
+                  qty: draft.quantity.adult + draft.quantity.child,
+                  price: draft.totalAmount,
+                },
+              ],
         totalAmount: draft.totalAmount,
         status: "pending",
         source: "self",
@@ -982,6 +1004,62 @@ function buildHistory(): LlmMessage[] {
     }));
 }
 
+function feedbackContext() {
+  return {
+    scenicId: scenicStore.currentScenicId,
+    scenicName: scenicStore.currentScenicName || undefined,
+    personaId: authStore.personaId || undefined,
+  };
+}
+
+function onFeedbackLike(messageId: string) {
+  const message = chatStore.messages.find((item) => item.id === messageId);
+  if (!message) return;
+  const next = feedbackStore.setReaction(message, "like", feedbackContext());
+  chatStore.patchMessage(messageId, { reaction: next.reaction });
+  showToast(next.reaction === "like" ? "已点赞" : "已取消赞");
+}
+
+function onFeedbackDislike(messageId: string) {
+  const message = chatStore.messages.find((item) => item.id === messageId);
+  if (!message) return;
+  const next = feedbackStore.setReaction(message, "dislike", feedbackContext());
+  chatStore.patchMessage(messageId, { reaction: next.reaction });
+  showToast(
+    next.reaction === "dislike"
+      ? "已记录反馈，感谢帮助改进"
+      : "已取消踩",
+  );
+}
+
+function onFeedbackFavorite(messageId: string) {
+  const message = chatStore.messages.find((item) => item.id === messageId);
+  if (!message) return;
+  if (feedbackStore.isFavorited(messageId)) {
+    feedbackStore.removeFavoriteByMessageId(
+      messageId,
+      message,
+      feedbackContext(),
+    );
+    chatStore.patchMessage(messageId, { favorited: false });
+    showToast("已取消收藏");
+    return;
+  }
+  feedbackStore.addFavorite(message, feedbackContext());
+  chatStore.patchMessage(messageId, { favorited: true });
+  showToast("已收藏");
+}
+
+function resolveFeedbackRouteSource(options: {
+  usedWorkflow: boolean;
+  skillRouteSource: string;
+}): FeedbackRouteSource {
+  if (options.usedWorkflow) return "workflow";
+  if (options.skillRouteSource === "llm") return "llm";
+  if (options.skillRouteSource === "keyword") return "keyword";
+  return "general";
+}
+
 async function onStartChat(prompt?: string) {
   if (!ensureScenicSelected()) return;
   enterChatView();
@@ -1060,7 +1138,13 @@ async function onSend() {
 
       if (isAiChatPreferencePrimary(text)) {
         aiStore.beginCompose();
-        chatStore.addAssistantMessage(buildAiChatTagConfirmText(aiPrefMatch));
+        chatStore.addAssistantMessage(buildAiChatTagConfirmText(aiPrefMatch), {
+          feedbackMeta: {
+            userText: text,
+            skillId: "general",
+            routeSource: "general",
+          },
+        });
         aiStore.finish(true);
         assistantStore.setMotion("nod");
         return;
@@ -1132,6 +1216,24 @@ async function onSend() {
       },
     };
 
+    const usedWorkflow =
+      useNewGuestCouponWorkflow ||
+      useParkingPayWorkflow ||
+      useQueueRecommendWorkflow ||
+      useStarIntroWorkflow ||
+      useShowScheduleWorkflow ||
+      useProactiveMarketingWorkflow ||
+      useProjectQueryWorkflow ||
+      useMapGuideWorkflow ||
+      useWeatherSuitabilityWorkflow ||
+      useTravelGuideWorkflow ||
+      useTicketWorkflow ||
+      useMemberOfferWorkflow ||
+      useInvoiceWorkflow ||
+      useCheckinWorkflow ||
+      useReviewWorkflow ||
+      useOrderQueryWorkflow;
+
     // 明确攻略优先于购票；虚拟排队优先于宽泛园内路线；演出场次优先于游玩攻略；会员选品优先于泛查券
     const result = useNewGuestCouponWorkflow
       ? await runNewGuestCouponWorkflow(text, workflowCallbacks)
@@ -1202,16 +1304,30 @@ async function onSend() {
             aiStore.completeToolStep(toolName, success);
           },
         });
+
+    const feedbackMeta: MessageFeedbackMeta = {
+      userText: text,
+      skillId: result.skillId ?? skill?.skillId ?? undefined,
+      routeSource: resolveFeedbackRouteSource({
+        usedWorkflow,
+        skillRouteSource,
+      }),
+    };
+
     aiStore.beginCompose();
-    if (!result.content?.trim() && result.cards?.length) {
-      chatStore.addAssistantCards(result.cards);
-    } else {
-      chatStore.addAssistantReply(result.content, result.cards);
-    }
+    await chatStore.presentAssistantReply(result.content, result.cards, {
+      onItem: scrollToBottom,
+      feedbackMeta,
+    });
     if (
-      result.cards?.some(
-        (card) => card.type === "coupon" || card.type === "scene_recommend"
-      )
+      result.cards?.some((card) => {
+        if (card.type === "coupon" || card.type === "scene_recommend") return true;
+        if (card.type === "ticket") {
+          const payload = card.payload as TicketCardPayload | undefined;
+          return Boolean(payload?.offerCoupon);
+        }
+        return false;
+      })
     ) {
       await loadUserCoupons();
     }
@@ -1244,6 +1360,14 @@ async function onSend() {
       </button>
 
       <div v-if="!showWelcomePanel" class="chat-page__top-actions">
+        <button
+          class="chat-page__top-action"
+          type="button"
+          aria-label="收藏记录"
+          @click="router.push('/favorites')"
+        >
+          <van-icon name="star-o" size="20" />
+        </button>
         <button
           class="chat-page__top-action"
           type="button"
@@ -1342,12 +1466,16 @@ async function onSend() {
           :review-disabled="isReviewDisabled(msg)"
           :quiz-disabled="isQuizDisabled(msg)"
           :submitted-review-order-ids="Array.from(submittedReviewOrders)"
+          :favorited="feedbackStore.isFavorited(msg.id) || msg.favorited"
           @visitor-confirm="onVisitorConfirm"
           @ticket-confirm="onTicketConfirm"
           @review-submit="onReviewSubmit"
           @checkin-confirm="onCheckinConfirm"
           @quiz-start="onQuizStart"
           @quiz-answer="onQuizAnswer"
+          @feedback-like="onFeedbackLike"
+          @feedback-dislike="onFeedbackDislike"
+          @feedback-favorite="onFeedbackFavorite"
         />
       </div>
     </template>

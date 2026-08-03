@@ -6,6 +6,8 @@ export const llmConfig = {
   temperature: 0.7,
   toolTemperature: 0.3,
   maxTokens: 2048,
+  /** 主对话（含 Tool 轮次单次请求）超时；超时后返回兜底文案 */
+  chatTimeoutMs: 30_000,
   /** NLU 增强（购票槽位等） */
   nlu: {
     /** 购票 Workflow 内 LLM 抽槽位；可用 VITE_ENABLE_PURCHASE_NLU=false 关闭 */

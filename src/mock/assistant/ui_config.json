@@ -9,6 +9,7 @@
   "primaryColor": "#07c160",
   "primaryColorLight": "#e8f8ef",
   "primaryColorDark": "#06ad56",
+  "showExplainReasons": true,
   "motions": [
     { "actionId": "idle", "assetUrl": "/assistant/youyou_idle.png" },
     { "actionId": "thinking", "assetUrl": "/assistant/youyou_thinking.png" },

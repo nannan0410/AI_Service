@@ -17,7 +17,11 @@ const emit = defineEmits<{
   confirm: [payload: TicketCardPayload];
 }>();
 
-const purchase = computed(() => resolvePurchaseUnit(props.payload));
+const cartLines = computed(() => props.payload.items ?? []);
+const isMultiLine = computed(() => cartLines.value.length > 1);
+const purchase = computed(() =>
+  isMultiLine.value ? null : resolvePurchaseUnit(props.payload),
+);
 const payable = computed(() => payableAmount(props.payload));
 const preferential = computed(() => preferentialAmount(props.payload));
 
@@ -45,7 +49,14 @@ function onConfirm() {
       ，共 {{ totalPeople() }} 人
     </p>
 
-    <p class="ticket-confirm__unit-line">
+    <ul v-if="isMultiLine" class="ticket-confirm__lines">
+      <li v-for="line in cartLines" :key="line.productId" class="ticket-confirm__line">
+        <span>{{ line.productName }}</span>
+        <span>¥{{ line.unitPrice }} × {{ line.purchaseCount }}{{ line.purchaseUnit }}</span>
+        <span class="ticket-confirm__line-amount">¥{{ line.lineAmount }}</span>
+      </li>
+    </ul>
+    <p v-else-if="purchase" class="ticket-confirm__unit-line">
       单价 ¥{{ purchase.unitPrice }} × {{ purchase.purchaseCount }} {{ purchase.purchaseUnit }}
     </p>
 
@@ -105,6 +116,29 @@ function onConfirm() {
   margin: 0 0 6px;
   font-size: 13px;
   color: #646566;
+}
+
+.ticket-confirm__lines {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.ticket-confirm__line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px 8px;
+  font-size: 13px;
+  color: #646566;
+}
+
+.ticket-confirm__line + .ticket-confirm__line {
+  margin-top: 6px;
+}
+
+.ticket-confirm__line-amount {
+  font-weight: 600;
+  color: #323233;
 }
 
 .ticket-confirm__unit-line {

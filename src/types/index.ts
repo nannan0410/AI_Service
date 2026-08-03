@@ -71,6 +71,8 @@ export type MessageType =
   | 'star_intro'
   | 'quiz'
   | 'system'
+  | 'quiz'
+  | 'system'
 
 export type AssistantMotionId =
   | 'idle'
@@ -134,6 +136,8 @@ export interface Order {
   ticketType: TicketTypeId
   ticketName: string
   quantity: { adult: number; child: number }
+  /** 购物车行明细（多 SKU）；缺省表示历史单品订单 */
+  items?: OrderLineItem[]
   totalAmount: number
   status: OrderStatus
   source?: OrderSource
@@ -145,6 +149,18 @@ export interface Order {
   createdAt: string
   /** 门票所属景区（查单仅返回当前景区） */
   scenicId?: string
+}
+
+/** 订单/草稿行项目（购物车） */
+export interface OrderLineItem {
+  productId: string
+  productName: string
+  ticketType: TicketTypeId
+  unitPrice: number
+  purchaseCount: number
+  purchaseUnit: '张' | '套'
+  quantity: { adult: number; child: number }
+  lineAmount: number
 }
 
 export interface ReviewSubmitPayload {
@@ -296,6 +312,59 @@ export interface ChatMessage {
   content?: string
   payload?: unknown
   createdAt: string
+  /**
+   * 同框内已揭示的子卡数量（券/活动等）。
+   * undefined：全部展示（历史恢复或无需级联）。
+   */
+  revealCount?: number
+  /** 赞 / 踩（互斥）；未反馈为 undefined */
+  reaction?: 'like' | 'dislike'
+  /** 是否已收藏（可与收藏库 messageId 对齐；清聊天后以收藏库为准） */
+  favorited?: boolean
+  /** 反馈/分析用元数据（随回复写入） */
+  feedbackMeta?: MessageFeedbackMeta
+}
+
+/** 路由来源：关键词 / LLM / 闲聊 / Workflow 正则 */
+export type FeedbackRouteSource = 'keyword' | 'llm' | 'general' | 'workflow'
+
+export interface MessageFeedbackMeta {
+  skillId?: string
+  routeSource?: FeedbackRouteSource
+  /** 触发本轮回复的用户原文 */
+  userText?: string
+}
+
+export type FeedbackAction = 'like' | 'dislike' | 'favorite' | 'unfavorite'
+
+/** 结构化反馈事件（踩用于反推 Skill 关键词；非正式全量会话日志） */
+export interface FeedbackEvent {
+  eventId: string
+  action: FeedbackAction
+  createdAt: string
+  messageId: string
+  messageType: MessageType
+  userText?: string
+  assistantSnippet: string
+  skillId?: string
+  routeSource?: FeedbackRouteSource
+  scenicId?: string | null
+  personaId?: string
+}
+
+/** 收藏快照：独立于聊天时间线 */
+export interface FavoriteRecord {
+  favoriteId: string
+  messageId: string
+  createdAt: string
+  scenicId?: string | null
+  scenicName?: string
+  messageType: MessageType
+  contentSnippet: string
+  payloadSummary?: string
+  skillId?: string
+  userText?: string
+  routeSource?: FeedbackRouteSource
 }
 
 export interface TicketCardPayload {
@@ -303,9 +372,11 @@ export interface TicketCardPayload {
   ticketType: TicketTypeId
   ticketName: string
   quantity: { adult: number; child: number }
+  /** 购物车多行（套票不与单品混单；仅成人+儿童单品组合） */
+  items?: OrderLineItem[]
   /** 商品原价（未抵扣） */
   originalAmount?: number
-  /** 产品单价（来自票产品 mock） */
+  /** 产品单价（来自票产品 mock）；多行时可为汇总参考 */
   unitPrice?: number
   /** 购买数量（成人票为张数，套票为套数） */
   purchaseCount?: number
@@ -324,18 +395,16 @@ export interface TicketCardPayload {
   status: 'quote' | 'confirm' | 'pending_pay' | 'paid'
   selectable?: boolean
   sessionId?: string
+  /** 购票推荐同框营销券（与票卡合并展示，非独立气泡） */
+  offerCoupon?: CouponCardPayload
+  /** 营销券上方短说明（可选） */
+  offerCouponHint?: string
 }
 
 export interface TicketFallbackPayload {
-  kind: 'no_product' | 'multi_product'
+  kind: 'no_product'
   party: { adult: number; child: number; elderly: number }
   visitDate?: string
-  /** 多产品组合时的试算明细（仅展示） */
-  plan?: Array<{
-    productId: string
-    productName: string
-    quantity: { adult: number; child: number }
-  }>
   listPath: string
   sessionId?: string
 }
@@ -358,9 +427,11 @@ export interface OrderDraft {
   ticketType: TicketTypeId
   ticketName: string
   quantity: { adult: number; child: number }
+  /** 购物车行；缺省或单行时等同单品草稿 */
+  items?: OrderLineItem[]
   /** 商品原价（未抵扣） */
   originalAmount?: number
-  /** 产品单价 */
+  /** 产品单价（单品时）；购物车以 items[].unitPrice 为准 */
   unitPrice?: number
   purchaseCount?: number
   purchaseUnit?: '张' | '套'
@@ -820,6 +891,11 @@ export interface AssistantUiConfig {
   primaryColor: string
   primaryColorLight?: string
   primaryColorDark?: string
+  /**
+   * 是否展示推荐「解释层」文案（如「因亲子标签推荐」「歇脚推荐」、会员选品中的标签说明）。
+   * 不影响项目 tags chips、票种 recommendLabel、排队/场次/相对距离等产品信息。默认 true。
+   */
+  showExplainReasons?: boolean
   motions: AssistantMotionConfig[]
   defaultMotion: AssistantMotionId
 }

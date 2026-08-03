@@ -17,6 +17,7 @@ export type AdminUiPatch = Partial<
     | 'primaryColor'
     | 'primaryColorLight'
     | 'primaryColorDark'
+    | 'showExplainReasons'
     | 'motions'
   >
 >
@@ -68,10 +69,12 @@ export function setAdminUiOverride(patch: AdminUiPatch | null): void {
 export function mergeUiConfig(base: AssistantUiConfig): AssistantUiConfig {
   const patch = getAdminUiOverride()
   if (!patch) {
-    return resolveUiAssetUrls({
+    const copy: AssistantUiConfig = {
       ...base,
       motions: base.motions.map((m) => ({ ...m })),
-    })
+    }
+    if (copy.showExplainReasons === undefined) copy.showExplainReasons = true
+    return resolveUiAssetUrls(copy)
   }
 
   const merged: AssistantUiConfig = {
@@ -85,6 +88,9 @@ export function mergeUiConfig(base: AssistantUiConfig): AssistantUiConfig {
   merged.memberDefaultAvatarUrl =
     patch.memberDefaultAvatarUrl ?? merged.memberDefaultAvatarUrl ?? '/member/default-avatar.svg'
   merged.defaultImageUrl = patch.defaultImageUrl ?? merged.defaultImageUrl
+  if (merged.showExplainReasons === undefined) {
+    merged.showExplainReasons = true
+  }
 
   return resolveUiAssetUrls(merged)
 }

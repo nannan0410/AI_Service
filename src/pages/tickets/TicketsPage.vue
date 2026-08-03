@@ -34,8 +34,7 @@ onMounted(async () => {
     <van-nav-bar
       title="购票列表"
       left-arrow
-      fixed
-      placeholder
+      class="tickets-page__nav"
       @click-left="router.back()"
     />
 
@@ -73,6 +72,12 @@ onMounted(async () => {
 .tickets-page {
   min-height: 100vh;
   background: #f7f8fa;
+}
+
+.tickets-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .tickets-page__loading {

@@ -4,7 +4,11 @@ import { useRoute, useRouter } from "vue-router";
 import { showToast } from "vant";
 import { fetchActivities, fetchMapConfig, fetchMapPois } from "@/api/business";
 import { useScenicStore } from "@/store/scenicStore";
-import { findPoiById, hasMapGuideForScenic } from "@/utils/mapGuide";
+import {
+  findPoiById,
+  hasMapGuideForScenic,
+  parseRoutePoiIdsQuery,
+} from "@/utils/mapGuide";
 import { QUEUE_STATUS_LABELS } from "@/utils/activityDisplay";
 import { DEFAULT_SCENIC_ID } from "@/utils/scenicScope";
 import { withBaseUrl } from "@/utils/publicUrl";
@@ -44,7 +48,21 @@ const mapImageUrl = computed(() => {
   return resolved;
 });
 
-const selectedPoi = computed(() => findPoiById(pois.value, selectedPoiId.value || undefined));
+/** 今日路线等：有序高亮 poiId → 序号（1-based） */
+const routeOrderByPoiId = computed(() => {
+  const ordered = parseRoutePoiIdsQuery(route.query.poiIds);
+  const map = new Map<string, number>();
+  ordered.forEach((id, index) => {
+    if (!map.has(id)) map.set(id, index + 1);
+  });
+  return map;
+});
+
+const isRouteHighlightMode = computed(() => routeOrderByPoiId.value.size > 0);
+
+const selectedPoi = computed(() =>
+  findPoiById(pois.value, selectedPoiId.value || undefined),
+);
 
 const selectedActivity = computed(() => {
   const poi = selectedPoi.value;
@@ -54,11 +72,21 @@ const selectedActivity = computed(() => {
 
 const hasMap = computed(() => hasMapGuideForScenic(config.value));
 
+const selectedRouteIndex = computed(() => {
+  const id = selectedPoiId.value;
+  if (!id) return null;
+  return routeOrderByPoiId.value.get(id) ?? null;
+});
+
 function markerStyle(poi: MapPoi) {
   return {
     left: `${poi.mapX}%`,
     top: `${poi.mapY}%`,
   };
+}
+
+function routeIndexOf(poiId: string): number | null {
+  return routeOrderByPoiId.value.get(poiId) ?? null;
 }
 
 function onSelectPoi(poiId: string) {
@@ -70,7 +98,6 @@ function closeDetail() {
   showDetail.value = false;
 }
 
-/** Phase 3 Demo：仅提示，不做真实导航/画线 */
 function onNavigateToast() {
   showToast("请使用景区导览 App 导航");
 }
@@ -89,10 +116,22 @@ async function load() {
     pois.value = poisRes.data?.code === 200 ? poisRes.data.data ?? [] : [];
     activities.value = actRes.data?.code === 200 ? actRes.data.data ?? [] : [];
 
+    const routeIds = parseRoutePoiIdsQuery(route.query.poiIds);
     const qPoi = route.query.poiId;
-    if (typeof qPoi === "string" && qPoi && pois.value.some((p) => p.poiId === qPoi)) {
+    if (routeIds.length) {
+      const first = routeIds.find((id) => pois.value.some((p) => p.poiId === id));
+      selectedPoiId.value = first ?? null;
+      showDetail.value = false;
+    } else if (
+      typeof qPoi === "string" &&
+      qPoi &&
+      pois.value.some((p) => p.poiId === qPoi)
+    ) {
       selectedPoiId.value = qPoi;
       showDetail.value = true;
+    } else {
+      selectedPoiId.value = null;
+      showDetail.value = false;
     }
   } finally {
     loading.value = false;
@@ -100,7 +139,7 @@ async function load() {
 }
 
 watch(
-  () => [route.query.scenicId, route.query.poiId],
+  () => [route.query.scenicId, route.query.poiId, route.query.poiIds],
   () => {
     void load();
   },
@@ -115,10 +154,9 @@ onMounted(() => {
 <template>
   <div class="map-page">
     <van-nav-bar
-      :title="scenicName"
+      :title="isRouteHighlightMode ? `${scenicName} · 今日路线` : scenicName"
       left-arrow
-      fixed
-      placeholder
+      class="map-page__nav"
       @click-left="router.back()"
     />
 
@@ -132,7 +170,10 @@ onMounted(() => {
     </div>
     <template v-else>
       <div class="map-page__canvas-wrap">
-        <div class="map-page__canvas" :class="{ 'map-page__canvas--fallback': mapImageFailed }">
+        <div
+          class="map-page__canvas"
+          :class="{ 'map-page__canvas--fallback': mapImageFailed }"
+        >
           <img
             v-if="mapImageUrl && !mapImageFailed"
             class="map-page__bg"
@@ -146,18 +187,35 @@ onMounted(() => {
             :key="poi.poiId"
             type="button"
             class="map-page__marker"
-            :class="{ 'is-active': poi.poiId === selectedPoiId }"
+            :class="{
+              'is-active': poi.poiId === selectedPoiId,
+              'is-route': routeIndexOf(poi.poiId) != null,
+              'is-dimmed':
+                isRouteHighlightMode && routeIndexOf(poi.poiId) == null,
+            }"
             :style="markerStyle(poi)"
             :title="poi.name"
             @click="onSelectPoi(poi.poiId)"
           >
-            <span class="map-page__marker-dot" />
+            <span
+              v-if="routeIndexOf(poi.poiId) != null"
+              class="map-page__marker-num"
+            >
+              {{ routeIndexOf(poi.poiId) }}
+            </span>
+            <span v-else class="map-page__marker-dot" />
             <span class="map-page__marker-label">{{ poi.name }}</span>
           </button>
         </div>
       </div>
 
-      <p class="map-page__tip">点击圆点查看项目详情与排队</p>
+      <p class="map-page__tip">
+        {{
+          isRouteHighlightMode
+            ? "序号为今日推荐游玩顺序，点击查看项目详情"
+            : "点击圆点查看项目详情与排队"
+        }}
+      </p>
     </template>
 
     <van-popup
@@ -167,7 +225,15 @@ onMounted(() => {
       :style="{ maxHeight: '55%' }"
     >
       <div v-if="selectedPoi" class="map-page__detail">
-        <h3 class="map-page__detail-title">{{ selectedPoi.name }}</h3>
+        <h3 class="map-page__detail-title">
+          <span
+            v-if="selectedRouteIndex != null"
+            class="map-page__detail-num"
+          >
+            {{ selectedRouteIndex }}
+          </span>
+          {{ selectedPoi.name }}
+        </h3>
         <p v-if="selectedPoi.area" class="map-page__detail-meta">
           区域 · {{ selectedPoi.area }}
         </p>
@@ -203,7 +269,9 @@ onMounted(() => {
             场次 {{ selectedActivity.showStartTimes.join(" / ") }}
           </p>
         </template>
-        <p v-else class="map-page__detail-body">设施点位，暂无关联游乐项目详情。</p>
+        <p v-else class="map-page__detail-body">
+          设施点位，暂无关联游乐项目详情。
+        </p>
         <div class="map-page__detail-actions">
           <van-button
             type="primary"
@@ -233,6 +301,12 @@ onMounted(() => {
   min-height: 100vh;
   background: #f0f3f1;
   padding-bottom: 24px;
+}
+
+.map-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .map-page__state {
@@ -301,6 +375,19 @@ onMounted(() => {
   gap: 2px;
 }
 
+.map-page__marker.is-route {
+  z-index: 4;
+}
+
+.map-page__marker.is-dimmed {
+  z-index: 1;
+  opacity: 0.28;
+}
+
+.map-page__marker.is-dimmed .map-page__marker-label {
+  display: none;
+}
+
 .map-page__marker-dot {
   width: 14px;
   height: 14px;
@@ -310,10 +397,33 @@ onMounted(() => {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
+.map-page__marker-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #1989fa;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(25, 137, 250, 0.45);
+}
+
 .map-page__marker.is-active .map-page__marker-dot {
   width: 18px;
   height: 18px;
   background: #ee0a24;
+}
+
+.map-page__marker.is-active .map-page__marker-num,
+.map-page__marker.is-route.is-active .map-page__marker-num {
+  background: #ee0a24;
+  box-shadow: 0 2px 8px rgba(238, 10, 36, 0.4);
 }
 
 .map-page__marker-label {
@@ -330,6 +440,11 @@ onMounted(() => {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
+.map-page__marker.is-route .map-page__marker-label {
+  font-weight: 600;
+  color: #1989fa;
+}
+
 .map-page__tip {
   margin: 8px 16px 0;
   font-size: 12px;
@@ -342,10 +457,26 @@ onMounted(() => {
 }
 
 .map-page__detail-title {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #323233;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-page__detail-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #1989fa;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .map-page__detail-meta {
@@ -370,14 +501,14 @@ onMounted(() => {
 
 .map-page__tag {
   padding: 2px 8px;
-  border-radius: 4px;
-  background: #e8f8ef;
+  border-radius: 999px;
+  font-size: 11px;
   color: #07c160;
-  font-size: 12px;
+  background: rgba(7, 193, 96, 0.1);
 }
 
 .map-page__queue {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
   font-size: 13px;
   color: #323233;
 }
@@ -391,6 +522,5 @@ onMounted(() => {
 .map-page__detail-nav,
 .map-page__detail-close {
   flex: 1;
-  margin-top: 0;
 }
 </style>

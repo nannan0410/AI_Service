@@ -45,8 +45,10 @@ const originalAmount = computed(() => {
   return draft.value.originalAmount ?? draft.value.totalAmount + (draft.value.discountAmount ?? 0);
 });
 
+const cartLines = computed(() => draft.value?.items ?? []);
+const isMultiLine = computed(() => cartLines.value.length > 1);
 const purchaseDisplay = computed(() =>
-  draft.value ? resolvePurchaseUnit(draft.value) : null,
+  draft.value && !isMultiLine.value ? resolvePurchaseUnit(draft.value) : null,
 );
 
 const visitorsReady = computed(
@@ -160,8 +162,7 @@ async function onPay() {
     <van-nav-bar
       title="提交订单"
       left-arrow
-      fixed
-      placeholder
+      class="page__nav"
       @click-left="$router.back()"
     />
 
@@ -174,67 +175,78 @@ async function onPay() {
     </van-empty>
 
     <template v-else-if="draft">
-      <section class="card">
-        <h2 class="card__title">{{ draft.ticketName }}</h2>
-        <p v-if="draft.visitDate" class="card__meta">计划 {{ draft.visitDate }} 出行</p>
-        <p class="card__meta">
-          {{ draft.quantity.adult }} 成人
-          <template v-if="draft.quantity.child">
-            · {{ draft.quantity.child }} 儿童
-          </template>
-          · 共 {{ requiredCount }} 人
-        </p>
-        <p v-if="purchaseDisplay" class="card__unit">
-          单价 ¥{{ purchaseDisplay.unitPrice }} × {{ purchaseDisplay.purchaseCount }}
-          {{ purchaseDisplay.purchaseUnit }}
-        </p>
-      </section>
+      <div class="page__body">
+        <section class="card">
+          <h2 class="card__title">{{ draft.ticketName }}</h2>
+          <p v-if="draft.visitDate" class="card__meta">计划 {{ draft.visitDate }} 出行</p>
+          <p class="card__meta">
+            {{ draft.quantity.adult }} 成人
+            <template v-if="draft.quantity.child">
+              · {{ draft.quantity.child }} 儿童
+            </template>
+            · 共 {{ requiredCount }} 人
+          </p>
+          <ul v-if="isMultiLine" class="card__lines">
+            <li v-for="line in cartLines" :key="line.productId" class="card__line">
+              <span class="card__line-name">{{ line.productName }}</span>
+              <span class="card__line-meta">
+                ¥{{ line.unitPrice }} × {{ line.purchaseCount }}{{ line.purchaseUnit }}
+              </span>
+              <span class="card__line-amount">¥{{ line.lineAmount }}</span>
+            </li>
+          </ul>
+          <p v-else-if="purchaseDisplay" class="card__unit">
+            单价 ¥{{ purchaseDisplay.unitPrice }} × {{ purchaseDisplay.purchaseCount }}
+            {{ purchaseDisplay.purchaseUnit }}
+          </p>
+        </section>
 
-      <section class="card">
-        <h3 class="section-title">选择实名出行人</h3>
-        <p class="section-hint">
-          需选择 {{ requiredCount }} 位出行人（已选 {{ selected.length }}/{{ requiredCount }}）
-        </p>
-        <ul class="visitor-list">
-          <li
-            v-for="visitor in visitors"
-            :key="visitor.idNumber"
-            class="visitor-item"
-            :class="{ 'visitor-item--selected': selected.includes(visitor.idNumber) }"
-            @click="toggle(visitor.idNumber)"
-          >
-            <span class="visitor-item__check">
-              {{ selected.includes(visitor.idNumber) ? "✓" : "" }}
-            </span>
-            <div class="visitor-item__info">
-              <strong>{{ visitor.name }}</strong>
-              <span>{{ idTypeLabel[visitor.idType] }} · {{ maskId(visitor.idNumber) }}</span>
-            </div>
-          </li>
-        </ul>
-      </section>
+        <section class="card">
+          <h3 class="section-title">选择实名出行人</h3>
+          <p class="section-hint">
+            需选择 {{ requiredCount }} 位出行人（已选 {{ selected.length }}/{{ requiredCount }}）
+          </p>
+          <ul class="visitor-list">
+            <li
+              v-for="visitor in visitors"
+              :key="visitor.idNumber"
+              class="visitor-item"
+              :class="{ 'visitor-item--selected': selected.includes(visitor.idNumber) }"
+              @click="toggle(visitor.idNumber)"
+            >
+              <span class="visitor-item__check">
+                {{ selected.includes(visitor.idNumber) ? "✓" : "" }}
+              </span>
+              <div class="visitor-item__info">
+                <strong>{{ visitor.name }}</strong>
+                <span>{{ idTypeLabel[visitor.idType] }} · {{ maskId(visitor.idNumber) }}</span>
+              </div>
+            </li>
+          </ul>
+        </section>
 
-      <section class="card">
-        <h3 class="section-title">费用明细</h3>
-        <div class="fee-row">
-          <span>商品金额</span>
-          <span>¥{{ originalAmount }}</span>
-        </div>
-        <div v-if="draft.discountAmount" class="fee-row fee-row--discount">
-          <span>优惠券抵扣</span>
-          <span>-¥{{ draft.discountAmount }}</span>
-        </div>
-        <div class="fee-row fee-row--total">
-          <span>应付金额</span>
-          <strong>¥{{ draft.totalAmount }}</strong>
-        </div>
-      </section>
+        <section class="card">
+          <h3 class="section-title">费用明细</h3>
+          <div class="fee-row">
+            <span>商品金额</span>
+            <span>¥{{ originalAmount }}</span>
+          </div>
+          <div v-if="draft.discountAmount" class="fee-row fee-row--discount">
+            <span>优惠券抵扣</span>
+            <span>-¥{{ draft.discountAmount }}</span>
+          </div>
+          <div class="fee-row fee-row--total">
+            <span>应付金额</span>
+            <strong>¥{{ draft.totalAmount }}</strong>
+          </div>
+        </section>
 
-      <section class="terms">
-        <van-checkbox v-model="agreed" icon-size="16px">
-          我已阅读并同意《购票须知》与《退改规则》（演示版）
-        </van-checkbox>
-      </section>
+        <section class="terms">
+          <van-checkbox v-model="agreed" icon-size="16px">
+            我已阅读并同意《购票须知》与《退改规则》（演示版）
+          </van-checkbox>
+        </section>
+      </div>
 
       <footer class="footer">
         <div class="footer__amount">
@@ -258,9 +270,21 @@ async function onPay() {
 
 <style scoped>
 .page {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  padding-bottom: 88px;
   background: #f7f8fa;
+}
+
+.page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.page__body {
+  flex: 1;
+  padding-bottom: 12px;
 }
 
 .skeleton {
@@ -290,6 +314,40 @@ async function onPay() {
   margin: 4px 0 0;
   font-size: 13px;
   color: #323233;
+}
+
+.card__lines {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card__line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px 8px;
+  align-items: baseline;
+  font-size: 13px;
+  color: #646566;
+}
+
+.card__line + .card__line {
+  margin-top: 6px;
+}
+
+.card__line-name {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.card__line-meta {
+  white-space: nowrap;
+}
+
+.card__line-amount {
+  font-weight: 600;
+  color: #323233;
+  white-space: nowrap;
 }
 
 .section-title {
@@ -392,16 +450,18 @@ async function onPay() {
 }
 
 .footer {
-  position: fixed;
-  left: 0;
-  right: 0;
+  position: sticky;
   bottom: 0;
+  z-index: 10;
+  width: 100%;
+  margin-top: auto;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
 }
 
 .footer__amount {

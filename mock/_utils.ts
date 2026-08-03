@@ -8,6 +8,7 @@ import type {
   Coupon,
   Order,
   OrderDraft,
+  OrderLineItem,
   PersonaId,
   QuizAnswerResult,
   QuizSet,
@@ -358,14 +359,45 @@ function calcDiscount(totalAmount: number, coupon?: Coupon): number {
   return 0
 }
 
-function calcOriginalAmount(
+/** Mock 侧本地计价（勿从 src/utils 引入：vite-plugin-mock 无法解析 @/ 别名） */
+function calcTicketLineAmount(
   product: TicketProduct,
   quantity: { adult: number; child: number },
 ): number {
+  if (product.composition) {
+    return product.price
+  }
   if (product.ticketTypeId === 'adult') {
     return product.price * Math.max(quantity.adult, 1)
   }
+  if (product.ticketTypeId === 'child') {
+    return product.price * Math.max(quantity.child, 1)
+  }
   return product.price
+}
+
+function buildLineFromProduct(
+  product: TicketProduct,
+  quantity: { adult: number; child: number },
+): OrderLineItem {
+  const isAdult = product.ticketTypeId === 'adult'
+  const isChild = product.ticketTypeId === 'child'
+  const purchaseCount = isAdult
+    ? Math.max(quantity.adult, 1)
+    : isChild
+      ? Math.max(quantity.child, 1)
+      : 1
+  const purchaseUnit: '张' | '套' = isAdult || isChild ? '张' : '套'
+  return {
+    productId: product.productId,
+    productName: product.name,
+    ticketType: product.ticketTypeId ?? 'adult',
+    unitPrice: product.price,
+    purchaseCount,
+    purchaseUnit,
+    quantity: { ...quantity },
+    lineAmount: calcTicketLineAmount(product, quantity),
+  }
 }
 
 export function createOrderDraft(
@@ -379,24 +411,91 @@ export function createOrderDraft(
     quantity?: { adult: number; child: number }
     originalAmount?: number
     scenicId?: string | null
+    /** 购物车多行；有值时优先于单 productId */
+    items?: Array<{
+      productId: string
+      quantity: { adult: number; child: number }
+    }>
   },
 ): { ok: boolean; message?: string; draft?: OrderDraft } {
+  const productScenicFromId = (productId?: string) =>
+    productId
+      ? (ticketProducts as TicketProduct[]).find((p) => p.productId === productId)?.scenicId
+      : undefined
+
   const scenicId = resolveBusinessScenicId(
-    payload.scenicId || (payload.productId
-      ? (ticketProducts as TicketProduct[]).find((p) => p.productId === payload.productId)?.scenicId
-      : undefined),
+    payload.scenicId ||
+      productScenicFromId(payload.productId) ||
+      productScenicFromId(payload.items?.[0]?.productId),
   )
-  const product = findTicketProduct(payload.productId, payload.ticketType, scenicId)
-  if (!product) {
-    return { ok: false, message: '票产品不存在' }
-  }
 
   const snapshot = getMutableSnapshot(personaId)
-  const quantity = payload.quantity ?? product.composition ?? { adult: 1, child: 0 }
+  let items: OrderLineItem[] = []
+  let ticketName: string
+  let productId: string
+  let ticketType: TicketTypeId
+  let quantity: { adult: number; child: number }
+  let unitPrice: number | undefined
+  let purchaseCount: number | undefined
+  let purchaseUnit: '张' | '套' | undefined
+
+  if (payload.items?.length) {
+    const resolvedProducts = payload.items.map((raw) => {
+      const product = findTicketProduct(raw.productId, undefined, scenicId)
+      return { raw, product }
+    })
+    if (resolvedProducts.some((item) => !item.product)) {
+      const missing = resolvedProducts.find((item) => !item.product)!
+      return { ok: false, message: `票产品不存在：${missing.raw.productId}` }
+    }
+    // 套票不得与其它行混单（含套票+单品、多套票）
+    const hasBundle = resolvedProducts.some((item) => Boolean(item.product!.composition))
+    if (hasBundle && payload.items.length > 1) {
+      return { ok: false, message: '套票不能与单品合并下单' }
+    }
+    for (const { raw, product } of resolvedProducts) {
+      items.push(buildLineFromProduct(product!, raw.quantity))
+    }
+    quantity = items.reduce(
+      (acc, line) => ({
+        adult: acc.adult + line.quantity.adult,
+        child: acc.child + line.quantity.child,
+      }),
+      { adult: 0, child: 0 },
+    )
+    ticketName =
+      items.length === 1
+        ? items[0].productName
+        : items.map((line) => line.productName).join(' + ')
+    productId = items[0].productId
+    ticketType = items.length === 1 ? items[0].ticketType : 'adult'
+    if (items.length === 1) {
+      unitPrice = items[0].unitPrice
+      purchaseCount = items[0].purchaseCount
+      purchaseUnit = items[0].purchaseUnit
+    }
+  } else {
+    const product = findTicketProduct(payload.productId, payload.ticketType, scenicId)
+    if (!product) {
+      return { ok: false, message: '票产品不存在' }
+    }
+    quantity = payload.quantity ?? product.composition ?? { adult: 1, child: 0 }
+    const line = buildLineFromProduct(product, quantity)
+    items = [line]
+    ticketName = product.name
+    productId = product.productId
+    ticketType = product.ticketTypeId ?? 'adult'
+    unitPrice = line.unitPrice
+    purchaseCount = line.purchaseCount
+    purchaseUnit = line.purchaseUnit
+  }
+
   const required = quantity.adult + quantity.child
   const idNumbers = payload.visitorIdNumbers ?? []
   const visitors = idNumbers.length
-    ? snapshot.visitorState.commonVisitors.filter((item) => idNumbers.includes(item.idNumber))
+    ? snapshot.visitorState.commonVisitors.filter((item) =>
+        idNumbers.includes(item.idNumber),
+      )
     : []
 
   if (idNumbers.length > 0 && visitors.length !== required) {
@@ -406,10 +505,8 @@ export function createOrderDraft(
     }
   }
 
-  const originalAmount = payload.originalAmount ?? calcOriginalAmount(product, quantity)
-  const isAdultTicket = product.ticketTypeId === 'adult'
-  const purchaseCount = isAdultTicket ? Math.max(quantity.adult, 1) : 1
-  const purchaseUnit: '张' | '套' = isAdultTicket ? '张' : '套'
+  const computedOriginal = items.reduce((sum, line) => sum + line.lineAmount, 0)
+  const originalAmount = payload.originalAmount ?? computedOriginal
   const coupon = payload.couponId
     ? snapshot.visitorState.coupons.find((item) => item.couponId === payload.couponId)
     : undefined
@@ -417,12 +514,13 @@ export function createOrderDraft(
   const draftId = `DRF${Date.now()}`
   const draft: OrderDraft = {
     draftId,
-    productId: product.productId,
-    ticketType: product.ticketTypeId ?? 'adult',
-    ticketName: product.name,
+    productId,
+    ticketType,
+    ticketName,
     quantity,
+    items,
     originalAmount,
-    unitPrice: product.price,
+    unitPrice,
     purchaseCount,
     purchaseUnit,
     totalAmount: Math.max(originalAmount - discountAmount, 0),
@@ -433,7 +531,12 @@ export function createOrderDraft(
     visitors: cloneSnapshot(visitors),
     status: 'draft',
     createdAt: new Date().toISOString(),
-    scenicId: resolveBusinessScenicId(product.scenicId || scenicId),
+    scenicId: resolveBusinessScenicId(
+      items[0]
+        ? (ticketProducts as TicketProduct[]).find((p) => p.productId === items[0].productId)
+            ?.scenicId || scenicId
+        : scenicId,
+    ),
   }
 
   getMockRuntime().orderDrafts.set(`${personaId}:${draftId}`, draft)
@@ -667,6 +770,7 @@ export function submitOrderFromDraft(
     ticketType: draft.ticketType,
     ticketName: draft.ticketName,
     quantity: draft.quantity,
+    items: draft.items ? cloneSnapshot(draft.items) : undefined,
     totalAmount: draft.totalAmount,
     status: 'paid',
     source: 'self',

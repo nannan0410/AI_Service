@@ -6,8 +6,8 @@ const products = tickets as import('../src/types').TicketProduct[]
 const cases = [
   { label: '2大1小', party: { adult: 2, child: 1, elderly: 0 }, expect: 'single' },
   { label: '2大0小', party: { adult: 2, child: 0, elderly: 0 }, expect: 'single' },
-  { label: '3大1小', party: { adult: 3, child: 1, elderly: 0 }, expect: 'multi_product' },
-  { label: '1大1小', party: { adult: 1, child: 1, elderly: 0 }, expect: 'multi_product' },
+  { label: '3大1小', party: { adult: 3, child: 1, elderly: 0 }, expect: 'cart' },
+  { label: '1大1小', party: { adult: 1, child: 1, elderly: 0 }, expect: 'cart' },
   { label: '2大1老', party: { adult: 2, child: 0, elderly: 1 }, expect: 'no_product' },
 ] as const
 

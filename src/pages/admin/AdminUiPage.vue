@@ -36,6 +36,7 @@ const chatBackgroundUrl = ref("");
 const assistantAvatarUrl = ref("");
 const memberDefaultAvatarUrl = ref("");
 const defaultImageUrl = ref("");
+const showExplainReasons = ref(true);
 const motionImages = ref<Record<AssistantMotionId, string>>({
   idle: "",
   thinking: "",
@@ -109,6 +110,8 @@ function fillForm(cfg = assistantStore.uiConfig) {
   memberDefaultAvatarUrl.value =
     override?.memberDefaultAvatarUrl ?? cfg.memberDefaultAvatarUrl;
   defaultImageUrl.value = override?.defaultImageUrl ?? cfg.defaultImageUrl;
+  showExplainReasons.value =
+    override?.showExplainReasons ?? cfg.showExplainReasons !== false;
 
   const sourceMotions = override?.motions ?? cfg.motions;
   motionImages.value = motionItems.reduce((acc, item) => {
@@ -179,6 +182,7 @@ function buildPatch(): AdminUiPatch {
     assistantAvatarUrl: assistantAvatarUrl.value,
     memberDefaultAvatarUrl: memberDefaultAvatarUrl.value,
     defaultImageUrl: defaultImageUrl.value,
+    showExplainReasons: showExplainReasons.value,
     motions,
   };
 }
@@ -263,6 +267,15 @@ function goPreviewChat() {
           label="对话标题"
           :placeholder="assistantStore.uiConfig.dialogTitle"
         />
+        <van-cell title="展示推荐解释层" label="如「因亲子标签推荐」「歇脚推荐」；不影响项目标签、距离与票种角标">
+          <template #right-icon>
+            <van-switch
+              v-model="showExplainReasons"
+              size="20px"
+              @change="persistPatch(showExplainReasons ? '已开启解释层' : '已关闭解释层')"
+            />
+          </template>
+        </van-cell>
       </div>
     </section>
 

@@ -28,8 +28,6 @@ async function onApply(order: Order) {
     <van-nav-bar
       title="发票申请"
       left-arrow
-      fixed
-      placeholder
       class="invoice-page__nav"
       @click-left="$router.back()"
     />
@@ -57,9 +55,10 @@ async function onApply(order: Order) {
   min-height: 100vh;
   background: #f7f8fa;
 }
-.invoice-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.invoice-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .list {
   margin-top: 12px;

@@ -35,8 +35,6 @@ function openChatH5() {
     <van-nav-bar
       :title="route.path.includes('/route-check') ? '路由冲突检查' : '后台配置'"
       left-arrow
-      fixed
-      placeholder
       class="config-layout__nav"
       @click-left="
         route.path.includes('/route-check')
@@ -74,9 +72,10 @@ function openChatH5() {
   max-width: min(960px, 100%);
 }
 
-.config-layout__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: inherit;
+.config-layout__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .config-layout__h5-btn {

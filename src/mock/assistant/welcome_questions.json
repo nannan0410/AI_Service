@@ -170,6 +170,28 @@
     ]
   },
   {
+    "id": "inpark_nearby_projects",
+    "icon": "📍",
+    "text": "附近有什么好玩的",
+    "desc": "按当前位置推荐附近项目，含相对距离与在园关怀",
+    "prompt": "我现在在园区内，附近有什么好玩的项目推荐？",
+    "badgeColor": "#54c783",
+    "priority": 8,
+    "enabled": true,
+    "rules": [
+      {
+        "op": "eq",
+        "field": "inPark",
+        "value": true
+      }
+    ],
+    "scenicIds": [
+      "scenic_hlg",
+      "scenic_hy",
+      "scenic_sz_eco"
+    ]
+  },
+  {
     "id": "vip_today_route",
     "icon": "🗺",
     "text": "今日推荐路线",

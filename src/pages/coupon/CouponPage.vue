@@ -51,8 +51,6 @@ function formatValue(coupon: Coupon) {
     <van-nav-bar
       title="优惠券"
       left-arrow
-      fixed
-      placeholder
       class="coupon-page__nav"
       @click-left="$router.back()"
     />
@@ -115,9 +113,10 @@ function formatValue(coupon: Coupon) {
   background: #f7f8fa;
 }
 
-.coupon-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.coupon-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .list {

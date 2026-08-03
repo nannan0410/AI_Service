@@ -58,6 +58,11 @@ export function createOrderDraft(payload: {
   visitDate?: string
   quantity?: { adult: number; child: number }
   originalAmount?: number
+  /** 购物车多行；有值时优先于单 productId（套票不与单品混单） */
+  items?: Array<{
+    productId: string
+    quantity: { adult: number; child: number }
+  }>
 }) {
   return request.post<ApiResponse<OrderDraft>>('/api/order/draft', payload)
 }

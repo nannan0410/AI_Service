@@ -122,8 +122,6 @@ function backToSelect() {
     <van-nav-bar
       title="停车缴费"
       left-arrow
-      fixed
-      placeholder
       class="parking-page__nav"
       @click-left="$router.back()"
     />
@@ -176,9 +174,10 @@ function backToSelect() {
   min-height: 100vh;
   background: #f7f8fa;
 }
-.parking-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.parking-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .content {
   padding-top: 12px;

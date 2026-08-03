@@ -50,8 +50,6 @@ function activityLabel(act: Activity) {
     <van-nav-bar
       title="园区项目"
       left-arrow
-      fixed
-      placeholder
       class="activity-page__nav"
       @click-left="$router.back()"
     />
@@ -89,11 +87,10 @@ function activityLabel(act: Activity) {
   background: #f7f8fa;
 }
 
-.activity-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
-  left: 0;
-  right: auto;
+.activity-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .list {

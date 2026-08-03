@@ -43,8 +43,6 @@ async function afterRead() {
     <van-nav-bar
       title="小票上传"
       left-arrow
-      fixed
-      placeholder
       class="receipt-page__nav"
       @click-left="$router.back()"
     />
@@ -74,9 +72,10 @@ async function afterRead() {
   min-height: 100vh;
   background: #f7f8fa;
 }
-.receipt-page__nav:deep(.van-nav-bar) {
-  width: 100%;
-  max-width: 430px;
+.receipt-page__nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 .content {
   padding: 16px;
