@@ -237,34 +237,59 @@ src/components/config/         # 可选：可复用 EP 子组件
 | 左栏（表单） | 右栏（预览） |
 |-------------|-------------|
 | 助手名称 / 昵称 / 对话标题 | 保留现有 preview stage 逻辑 |
-| 主色 / 浅色 / 深色 | 欢迎语气泡预览 |
+| 主色 / 浅色 / 深色（色板 + 文本） | 欢迎语气泡预览 |
 | 背景图 / 头像 / 会员默认头像 | 动作图预览（可选折叠） |
 | 欢迎语（含 `{{assistantNickname}}` 占位符说明） | |
 
-**底部操作**（`el-affix` 或固定 footer）：
+**不包含**：`showExplainReasons`（推荐解释层）——演示版专用，正式后台不上。
 
-- 保存配置
-- 保存并预览 H5（保存后打开 Drawer iframe）
-- 恢复 JSON 默认
+**底部操作**（`el-affix` 或固定 footer，右下角）：
+
+- 取消
+- 提交
 
 **复用逻辑来源**：`AdminUiPage.vue` 的 script（`buildPatch`、`persistPatch`、`getAdminUiOverride` 等）。
 
 ### 5.5 ConfigBusinessPage（业务场景）
 
-**顶层 Tab**：`el-tabs` — Skill 场景 | 欢迎页入口
+**顶层 Tab**（演示迁移期可暂保留）：`el-tabs` — Skill 场景 | 欢迎页入口  
 
-#### Tab 1：Skill 场景
+**正式信息架构**（对齐 [`prototypes/ai-admin-prototype.html`](./prototypes/ai-admin-prototype.html)）：
+
+| 菜单 | 角色 | 页面职责 |
+|------|------|----------|
+| 对话与配置 → Skill关键词 | 运营 / 客户侧 | 列表、`enabled`、扩展关键字；默认关键字只读 |
+| 运维管理 → Skill 场景 | 仅技术人员 | 新增/编辑同一抽屉：SkillID（仅新增可写）、绑定工具、`promptAddon`、默认关键字、子意图 0～10 内嵌；日志独立抽屉 |
+| 运维管理 → 接口配置 | 仅技术人员 | 环境级外部接口；未来并入运维中心 |
+| 系统与反馈 → 参数配置 | 运营 | 业务阈值、规则字段只读（不含接口 URL） |
+
+运维一级菜单正式按角色隐藏，不对客户开放。
+
+#### Tab / 页：Skill关键词（运营）
 
 | 区域 | EP 组件 |
 |------|---------|
-| Skill 列表 | `el-table`：名称、skillId、状态、操作 |
+| Skill 列表 | `el-table`：名称、skillId、状态、触发关键词、操作 |
 | 行内开关 | `el-switch`（enabled） |
-| 编辑 | `el-drawer`（宽 480～560px） |
-| 触发关键词 | `el-tag` + `el-input`（子意图 locked 用 `type="info"` 不可删） |
-| 绑定工具 | `el-select` multiple |
-| 场景指令 | `el-input type="textarea"` |
+| 编辑 | `el-drawer`（宽 **1080px**，右上角 × 关闭） |
+| 触发关键词 | 两段：`默认关键字`（`el-tag` info/只读）+ `扩展关键字`（`el-tag` 可关 + `el-input` 回车添加） |
 
-**复用逻辑**：`validateSkillTriggerKeywords`、`mergeLockedKeywordsIntoTriggerKeywords`、`toolRegistry` 等。
+**不在此页**：绑定工具、场景指令、子意图工具绑定、默认关键字编辑。
+
+**复用逻辑**：`validateSkillTriggerKeywords`（对 `resolvedDefault ∪ custom`）、关键字迁移（0→1 方案 B / N→0）等。
+
+#### 运维页：Skill 场景（技术）
+
+| 区域 | EP 组件 |
+|------|---------|
+| Skill 列表 | `el-table`：SkillID、名称、**子意图数量**、状态、操作（**编辑** / 日志）；示例含有子意图与无子意图各一条 |
+| 新增 / 编辑抽屉 | **同一表单**：SkillID（仅新增）；名称；绑定工具（`+添加（X/20）`）；**默认关键字**（无子意图可编 / 有则只读合集）；**子意图区块内嵌**（`新增子意图（X/10）` + 卡片：名称/关键字/工具）；场景指令 |
+| 迁移（方案 B） | 同页 0→1：自动拷入首个子意图 + `ElMessage`；N→0：合集写回上方字段 |
+| 日志抽屉 | 占位；含默认关键字迁移、扩展关键字变更等 |
+
+保存时由 `toolBindings[]` 推导运行时 `tools[]`；**`toolBindings.length <= 20`**，**子意图数 0～10（可选）**。**不再**单独维护 `apiBindings.read` / `write` 表单项；**不再**提供独立「子意图配置」抽屉。
+
+**复用逻辑**：`toolRegistry`、后续子意图运行时白名单收窄 等。
 
 #### Tab 2：欢迎页入口
 

@@ -76,7 +76,7 @@ Skill 语义分类另有 `skillRoutingTimeoutMs`（默认 **15s**），与主对
 | **② 定向推荐类** | 按场景策略置顶/插入某一类项目，**不是**「因某某画像标签」句式 | **仅「歇脚推荐」**：在园且入园≥4h 问附近项目时，关怀文案 + 置顶冰淇淋小站（`nearbyCareTip` + `projectQuery`） | `歇脚推荐 · 美食广场` |
 | （相关但非②） | 天气 / 客流 | **问答 Workflow**「今天适合游玩吗」+ 欢迎 Hero 展示 Mock 天气/人流；**尚未**做成挂在项目卡上的「因天气/客流推荐」定向角标 | — |
 
-**解释层开关（演示 UI）**：`AssistantUiConfig.showExplainReasons`（后台「助手 UI → 展示推荐解释层」，默认开）。关闭后卡片上隐藏/剥离标签解释与歇脚角标等，**保留**项目 tags chips、相对距离、排队/场次、票种 `recommendLabel` 等产品信息。过滤集中在 `src/utils/explainReasons.ts`（展示期过滤；匹配逻辑仍可跑）。
+**解释层开关（演示专用）**：`AssistantUiConfig.showExplainReasons`（演示版简易 Admin「助手 UI」可开关，默认开）。关闭后卡片上隐藏/剥离标签解释与歇脚角标等，**保留**项目 tags chips、相对距离、排队/场次、票种 `recommendLabel` 等产品信息。过滤集中在 `src/utils/explainReasons.ts`（展示期过滤；匹配逻辑仍可跑）。**正式 PC 后台 UI 配置不提供该字段**（见原型 `ai-admin-prototype.html`），属演示调试能力，落地时勿迁入运营配置项。
 
 **代码形态说明**：解释文案目前以约定字符串 + 正则剥离为主（如 `因…推荐`、歇脚特判），**尚未**类型化为 `reasonKind: 'explain' | 'ops'`；扩展天气/客流定向推荐时建议改为显式 kind，避免再堆特判。
 

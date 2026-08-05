@@ -85,7 +85,7 @@ flowchart TB
   subgraph Config["配置域（JSON + Mock API）"]
     P[产品库：票/券/二消 + 渠道]
     UI[助手 UI：背景/头像/标题/昵称]
-    S[Skill 场景 + apiBindings 预留]
+    S[Skill 场景 + toolBindings 绑定工具]
     E[推荐操作入口 + 规则]
     CMS[独立内容：交通/入园提醒]
   end
@@ -207,11 +207,12 @@ interface AssistantSkillConfig {
     keywords?: string[]
     rules?: RuleExpression[]    // 见 §4.5
   }
-  tools: string[]               // Tool 白名单
-  apiBindings?: {               // 预留：场景级接口组（产品化后台可配）
-    read?: string[]              // 如 getOrders, getCoupons
-    write?: string[]             // 如 createOrderDraft
-  }
+  tools: string[]               // 运行时 Tool 白名单（可由 toolBindings 推导）
+  /** 运维后台编辑态：能力标识 + 读写；合并原 tools 与 apiBindings */
+  toolBindings?: {
+    name: string                // 如 getProductCatalog / createOrderDraft
+    access: 'read' | 'write'
+  }[]                           // 最多 20 项
   promptAddon: string
   linkedMotions?: {
     onStart?: AssistantMotionId
@@ -223,7 +224,11 @@ interface AssistantSkillConfig {
 
 **文件**：`mock/assistant/skills.json`
 
-**Skill 与 Tool 关系**：Skill = 场景编排；Tool = 原子能力；`apiBindings` 演示版可填 Mock 路径，未来运营后台可视化绑定真实接口。
+**Skill 与 Tool 关系**：Skill = 场景编排；Tool = 原子能力。运维后台以 **绑定工具** 统一配置「能力标识 + 只读/写入」（最多 **20** 组）。**子意图**内嵌于 Skill **新增/编辑**抽屉（**0～10，可选**）：每子意图含**默认关键字** + 多工具（须 ∈ Skill 工具池；读写不得宽于 Skill）。无子意图时默认关键字挂 Skill；有子意图时 Skill 为合集只读。**0→1 子意图按方案 B 同页自动迁入默认词**。演示数据建议同时覆盖「有子意图 / 无子意图」两种形态。
+
+**后台编辑边界**：运营侧维护 `enabled` + **扩展关键字** `customKeywords`（默认关键字只读）；运维侧在同一表单维护 `skillId`（**仅新增可写**）、`toolBindings` / 子意图（含默认关键字）/ `promptAddon` / 无子意图时的 `defaultKeywords`。列表操作：**编辑**、日志（无独立「子意图配置」）。
+
+**建议记入操作日志的动作**：Skill 新增/编辑/状态开关；子意图增删改；默认关键字迁移（0→1 / N→0）；子意图工具绑定变更；运营扩展关键字增删。
 
 ---
 
