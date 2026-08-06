@@ -33,6 +33,7 @@
       "label": "会员等级",
       "valueType": "string",
       "source": "api",
+      "computeHint": "当前账号会员主数据等级（演示 memberInfo.level）；规则 eq/in；非订单推导",
       "ruleEligible": true,
       "group": "user"
     },
@@ -41,7 +42,7 @@
       "label": "是否在园",
       "valueType": "boolean",
       "source": "computed",
-      "computeHint": "visitorState.inPark",
+      "computeHint": "正式：今日订单已核销 ∨ 票夹今日票已核销(实名倒查) ∨ GPS坐标落园区围栏；演示：visitorState.inPark。≠hasVisitToday",
       "ruleEligible": true,
       "group": "visit"
     },
@@ -61,10 +62,10 @@
     },
     {
       "fieldId": "hasPendingVisitOrder",
-      "label": "有待出行订单",
+      "label": "待出行（有待核销）",
       "valueType": "boolean",
       "source": "computed",
-      "computeHint": "orders: paid/pending 且 visitDate >= 今天",
+      "computeHint": "正式：订单待核销 ∨ 票夹待核销(实名倒查)；演示：paid/pending 且 visitDate>=今天。与inPark对偶(待核销vs已核销)，无GPS",
       "ruleEligible": true,
       "group": "order"
     },
@@ -82,7 +83,7 @@
       "label": "有可开票订单",
       "valueType": "boolean",
       "source": "computed",
-      "computeHint": "completed + invoiceStatus=none + 90天内",
+      "computeHint": "当前账号已完成 ∧ invoiceStatus=none（未开票）；演示另加完成日90天内；正式排除OTA等不可开票渠道",
       "ruleEligible": true,
       "group": "order"
     },
@@ -91,25 +92,25 @@
       "label": "有可评价订单",
       "valueType": "boolean",
       "source": "computed",
-      "computeHint": "completed + reviewStatus=none + 90天内",
+      "computeHint": "当前账号已完成 ∧ reviewStatus=none（未评价）；演示另加完成日90天内",
       "ruleEligible": true,
       "group": "order"
     },
     {
       "fieldId": "hasNewGuestCoupon",
-      "label": "已领新客专享券（可用）",
+      "label": "已有可用新客券",
       "valueType": "boolean",
       "source": "computed",
-      "computeHint": "coupons 含 title=新客专享 20 元券 且 status=available",
+      "computeHint": "coupons 含当前绑定新客券产品（演示：cp_prod_new 或 title=新客专享 20 元券）且 status=available；≠活动一次性资格",
       "ruleEligible": true,
       "group": "tag"
     },
     {
       "fieldId": "canClaimNewGuestCoupon",
-      "label": "可领取新客专享券",
+      "label": "可领取新客券（展示用）",
       "valueType": "boolean",
       "source": "computed",
-      "computeHint": "persona=demo_new 且注册 claimWindowDays 天内且未领过新客券",
+      "computeHint": "新客 ∧ 注册窗口内 ∧ 未消耗新客券活动一次性资格（与当前绑定券ID无关；演示近似：未持有cp_prod_new/同title）。入口显隐用；点击领取另校券ID限领",
       "ruleEligible": true,
       "group": "tag"
     },

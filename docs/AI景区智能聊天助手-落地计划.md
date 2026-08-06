@@ -130,27 +130,38 @@ AI：  DeepSeek / 硅基流动兼容 + Tool Calling + Skill / Workflow
 
 ### 4.1 产品库 — 票 / 券 / 二消，区分渠道
 
+> **运营后台「产品管理」（HTML 原型已定稿口径）**：维护 AI **可售/可推清单**，**必须**经供应商「来源 + 对接产品 ID」精确查询绑定，**不允许纯手工建档**（否则无法下单）。一期类型：**门票 / 卡票 / 组合产品**（餐饮、零售需门店筛选后续再开）。列表含对接状态、参考售价、标签等；详情见 [`prototypes/README.md`](./prototypes/README.md)。券模板仍在「券管理」。  
+> 下文 `channels: self|ota|ta` 与 Mock JSON 描述的是**演示数据源 / 销售渠道**；与后台「来源=对接供应商」不是同一字段。
+
 #### 渠道定义
 
 ```typescript
-type SalesChannel = 'self' | 'ota' | 'ta'  // 自销 / OTA / TA
+type SalesChannel = 'self' | 'ota' | 'ta'  // 自销 / OTA / TA（演示购票过滤）
+type AiProductType = 'ticket' | 'pass' | 'bundle'  // 一期后台合列表；dining/store/queue 预留
 ```
 
 #### 产品基础结构
 
 ```typescript
 interface ProductBase {
-  productId: string
+  productId: string              // 演示 Mock ID；正式可与 externalProductId 并存
+  externalProductId?: string     // 对接产品 ID（后台绑定主键之一）
+  supplierId?: string            // 来源：对接供应商/系统
   name: string
-  type: 'ticket' | 'coupon_product' | 'retail' | 'dining' | 'show'
-  channels: SalesChannel[]     // 该产品在哪些渠道售卖/可见
-  status: 'on' | 'off'
-  tags?: string[]
+  type: 'ticket' | 'pass' | 'bundle' | 'coupon_product' | 'retail' | 'dining' | 'show'
+  channels: SalesChannel[]       // 销售渠道（演示）；非后台「来源」下拉
+  status: 'on' | 'off'           // AI 清单上下架（列表开关）
+  syncStatus?: string            // 对接状态（如正常/停用）
+  refPrice?: number              // 参考售价（非日历实价）
+  tags?: string[]                // 标签管理多选，用于推荐（替代独立「票种类型」运营字段）
 }
 
 interface TicketProduct extends ProductBase {
   type: 'ticket'
-  price: number
+  ticketKind?: 'calendar' | 'period'  // 门票类型：日历票 / 期票（对接回写）
+  validStart?: string
+  validEnd?: string
+  playPeriod?: string
   composition?: { adult: number; child: number }
 }
 ```
@@ -159,9 +170,9 @@ interface TicketProduct extends ProductBase {
 
 | 列表 | 文件建议 | 说明 |
 |------|----------|------|
-| 票产品 | `mock/products/tickets.json` | 含自销票 + 标记 OTA/TA 专售票 |
-| 券产品（模板） | `mock/products/coupon_products.json` | 可领取的券模板 |
-| 二消/商餐/演出 | `mock/products/retail.json` | 门店、套餐、演出等 |
+| 票产品 | `mock/products/tickets.json` | 演示票数据；正式以对接绑定清单为准 |
+| 券产品（模板） | `mock/products/coupon_products.json` | 可领取的券模板（「券管理」） |
+| 二消/商餐/演出 | `mock/products/retail.json` | 门店、套餐等；餐饮进 AI 产品管理需门店筛选，非一期 |
 
 **自销 vs OTA/TA 区分**：列表 API 支持 `?channel=self|ota|ta` 筛选；对话购票 **仅引导自销渠道** 下单，OTA/TA 订单 **只读** 展示来源。
 
@@ -226,9 +237,9 @@ interface AssistantSkillConfig {
 
 **Skill 与 Tool 关系**：Skill = 场景编排；Tool = 原子能力。运维后台以 **绑定工具** 统一配置「能力标识 + 只读/写入」（最多 **20** 组）。**子意图**内嵌于 Skill **新增/编辑**抽屉（**0～10，可选**）：每子意图含**默认关键字** + 多工具（须 ∈ Skill 工具池；读写不得宽于 Skill）。无子意图时默认关键字挂 Skill；有子意图时 Skill 为合集只读。**0→1 子意图按方案 B 同页自动迁入默认词**。演示数据建议同时覆盖「有子意图 / 无子意图」两种形态。
 
-**后台编辑边界**：运营侧维护 `enabled` + **扩展关键字** `customKeywords`（默认关键字只读）；运维侧在同一表单维护 `skillId`（**仅新增可写**）、`toolBindings` / 子意图（含默认关键字）/ `promptAddon` / 无子意图时的 `defaultKeywords`。列表操作：**编辑**、日志（无独立「子意图配置」）。
+**后台编辑边界**：运营侧维护 **补充关键字** `customKeywords`（与默认同级挂载；默认/工具/指令只读；**无启停**，状态只读展示）；运维侧维护 `enabled`、`skillId`（**仅新增可写**）、`toolBindings` / 子意图（含默认关键字）/ `promptAddon` / 无子意图时的 `defaultKeywords`，并只读可见补充关键字。列表操作：运营 **编辑关键字**、日志；运维 **编辑**、日志（无独立「子意图配置」）。
 
-**建议记入操作日志的动作**：Skill 新增/编辑/状态开关；子意图增删改；默认关键字迁移（0→1 / N→0）；子意图工具绑定变更；运营扩展关键字增删。
+**建议记入操作日志的动作**：Skill 新增/编辑/状态开关（运维）；子意图增删改；默认与补充关键字迁移（0→1 / N→0）；子意图工具绑定变更；运营补充关键字增删。
 
 ---
 
@@ -396,7 +407,8 @@ WelcomePanel
 ├── chatBackgroundUrl（配置）
 ├── hero：defaultImageUrl + 能力文案（WelcomeHero）
 ├── 「快捷服务」RecommendEntry chips（recommend_entries，规则计算，最多 4）
-├── 「游游推荐」suggestedQuestions（welcome_questions + rules，默认 3 + 展开，最多 8）
+├── 推荐问题区（welcome_questions + rules，默认 3 + 展开，最多 8）
+│     └── 端上区块标题常为「游游推荐」；后台菜单名「推荐对话」
 └── 底部输入框 → onStartChat / onSend 进入对话流
 ```
 
@@ -418,7 +430,7 @@ WelcomePanel
 | 2026-07-30 | 成人票（3张） |
 | 2026-08-18 | 家庭套票（2大1小）×2套 |
 
-出行日当天游游推荐副标题显示 **「今日出行」**；攻略/规则默认绑定 **最近一笔未过期** 待出行订单。详见 [`内容数据配置说明.md`](./内容数据配置说明.md) §3.4。
+出行日当天推荐对话副标题显示 **「今日出行」**；攻略/规则默认绑定 **最近一笔未过期** 待出行订单。详见 [`内容数据配置说明.md`](./内容数据配置说明.md) §3.4。
 
 **文件**：`mock/assistant/welcome_templates.json`
 

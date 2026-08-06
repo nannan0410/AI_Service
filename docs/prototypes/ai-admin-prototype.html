@@ -219,12 +219,6 @@
       line-height: 1.4;
       display: none; /* 标题已上移到顶栏 */
     }
-    .page-head__desc {
-      margin-top: 0;
-      color: var(--text-muted);
-      font-size: 13px;
-      line-height: 1.6;
-    }
     .page-head__actions { display: flex; gap: 8px; flex-shrink: 0; }
     .page--with-foot {
       padding-bottom: 72px;
@@ -247,6 +241,60 @@
     }
     .page.active.page--with-foot .page-foot {
       display: flex;
+    }
+    /* 列表页：仅表格内容区滚动，底栏固定统计 */
+    .main:has(.page--list-scroll.active) {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 16px;
+    }
+    .page.active.page--list-scroll {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      height: 100%;
+    }
+    .page-list-chrome {
+      flex-shrink: 0;
+    }
+    .page-list-chrome .page-head {
+      margin-bottom: 12px;
+    }
+    .page-list-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .page-list-card {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0;
+      overflow: hidden;
+    }
+    .page-list-card .table-wrap {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
+    .page-list-card .table-footer {
+      flex-shrink: 0;
+      justify-content: flex-end;
+      border-top: 1px solid var(--border);
+      background: #fff;
+    }
+    .page-list-card .table-footer--stat {
+      justify-content: flex-end;
+    }
+    .page-list-card table.data thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #fafafa;
     }
     .page--ui .page-ui-chrome {
       position: sticky;
@@ -280,7 +328,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 96px;
+      box-sizing: border-box;
+      width: 160px;
       height: 32px;
       margin: 0;
       padding: 0 8px;
@@ -361,8 +410,8 @@
       padding: 0;
     }
     .color-field .input {
-      width: 160px;
-      max-width: 160px;
+      width: 120px;
+      max-width: 120px;
     }
     .toolbar {
       display: flex;
@@ -444,9 +493,17 @@
       grid-template-columns: 8em 1fr;
       column-gap: 10px;
       row-gap: 8px;
-      align-items: start;
+      align-items: center;
       margin-bottom: 16px;
       max-width: 720px;
+    }
+    /* 多行文本、上传、复合多段：标签对齐首行（顶对齐） */
+    .field-row:has(> .textarea),
+    .field-row:has(> textarea),
+    .field-row:has(> .upload-box),
+    .field-row:has(> .upload-row),
+    .field-row:has(> .chat-bg-field) {
+      align-items: start;
     }
     .field-row label {
       padding-top: 0;
@@ -482,12 +539,12 @@
       max-width: 100%;
     }
     .field-with-hint .field-hint-inline {
-      flex: 1;
-      min-width: 0;
+      flex: 0 0 auto;
       margin: 0;
       font-size: 12px;
       color: var(--text-muted);
-      line-height: 1.5;
+      line-height: 32px;
+      white-space: nowrap;
     }
     .input, .textarea {
       width: 100%;
@@ -514,8 +571,8 @@
     }
     .input-wide { max-width: 400px; }
     .input-sm {
-      width: 160px;
-      max-width: 160px;
+      width: 120px;
+      max-width: 120px;
     }
     .input-num {
       width: 120px;
@@ -596,9 +653,11 @@
       border-radius: var(--radius);
       box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08),
         0 9px 28px 8px rgba(0, 0, 0, 0.05);
-      z-index: 300;
+      z-index: 2000;
     }
-    .c-select.open .c-select__dropdown { display: block; }
+    .c-select__dropdown.is-open {
+      display: block;
+    }
     .c-select__option {
       padding: 5px 12px;
       line-height: 22px;
@@ -680,6 +739,11 @@
       max-width: 200px;
       width: 200px;
     }
+    .filter-item--status .select,
+    .filter-item--status .c-select {
+      width: 100px;
+      max-width: 100px;
+    }
     .filter-actions {
       margin-left: 0;
       display: flex;
@@ -700,10 +764,24 @@
       gap: 16px;
     }
     .sub-intent-card {
+      position: relative;
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 16px;
       background: #fafafa;
+    }
+    .sub-intent-card--editable {
+      padding-right: 96px;
+    }
+    .sub-intent-card__remove {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
     }
     .sub-intent-card .field-block {
       margin-bottom: 16px;
@@ -723,6 +801,9 @@
       width: 400px;
       max-width: 100%;
       vertical-align: middle;
+    }
+    .input-with-count.input-with-count--lg {
+      width: 480px;
     }
     .input-with-count .input {
       width: 100%;
@@ -750,6 +831,111 @@
       width: 400px;
       max-width: 100%;
       height: 32px;
+    }
+    .kw-editor--sm .kw-editor__field {
+      width: 160px;
+      max-width: 160px;
+    }
+    .kw-editor__input-row--hint-first {
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .kw-editor__input-row--hint-first .field-hint-inline {
+      flex: 0 1 auto;
+      min-width: 0;
+      line-height: 32px;
+    }
+    .kw-editor__input-row--hint-first .kw-editor__field {
+      flex: 0 0 auto;
+    }
+    .field-view-text {
+      display: inline-block;
+      line-height: 32px;
+      min-height: 32px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .field-view-text--block {
+      display: block;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      min-height: 22px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .tool-view-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .tool-view-item {
+      line-height: 22px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .tool-view-text {
+      line-height: 22px;
+      color: var(--text);
+      font-size: 14px;
+      word-break: break-all;
+    }
+    .desc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      font-size: 14px;
+      table-layout: fixed;
+    }
+    .desc-table th,
+    .desc-table td {
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      vertical-align: middle;
+      text-align: left;
+      line-height: 22px;
+    }
+    .desc-table th {
+      width: 120px;
+      background: #fafafa;
+      color: var(--text-secondary);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .desc-table td {
+      color: var(--text);
+      background: #fff;
+    }
+    .desc-table .field-view-text,
+    .desc-table .tool-view-text {
+      line-height: 22px;
+      min-height: 0;
+    }
+    .desc-table .field-view-text--block {
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .desc-table td.desc-table__cell--top {
+      vertical-align: top;
+    }
+    .kw-section {
+      margin-bottom: 20px;
+    }
+    .kw-section__title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 12px;
+      line-height: 22px;
+    }
+    .field-block--view-center {
+      align-items: center;
+    }
+    .drawer-body--keyword .field-block__toolbar[hidden],
+    .drawer-body--keyword #sub-intent-toolbar[hidden] {
+      display: none !important;
+    }
+    .drawer-body--keyword .sub-intent-list {
+      margin-top: 0;
     }
     .sub-intent-card .tool-bind__row > .c-select:first-child {
       flex: 0 0 auto;
@@ -991,6 +1177,27 @@
       font-size: 13px;
     }
     .drawer-toast.show { display: block; }
+    .proto-toast {
+      display: none;
+      position: fixed;
+      top: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3000;
+      max-width: min(480px, calc(100vw - 32px));
+      padding: 10px 16px;
+      background: #fff2f0;
+      border: 1px solid #ffccc7;
+      border-radius: var(--radius);
+      box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08);
+      color: #cf1322;
+      font-size: 14px;
+      line-height: 1.5;
+      text-align: center;
+    }
+    .proto-toast.show {
+      display: block;
+    }
 
     .upload-box {
       width: 104px;
@@ -1007,7 +1214,21 @@
       background: #fafafa;
     }
     .upload-box:hover { border-color: var(--primary); color: var(--primary); }
+    .upload-box--sm {
+      width: 60px;
+      height: 60px;
+      font-size: 11px;
+      line-height: 1.2;
+      text-align: center;
+      padding: 4px;
+    }
     .upload-row { display: flex; flex-wrap: wrap; gap: 12px; }
+    .field-row--wide {
+      max-width: none;
+    }
+    .upload-row--nowrap {
+      flex-wrap: nowrap;
+    }
 
     .alert {
       padding: 8px 15px;
@@ -1046,6 +1267,24 @@
       max-width: 100%;
     }
     .tool-bind__row .c-select { width: 96px; flex-shrink: 0; }
+    .tool-bind__access-text {
+      width: 96px;
+      flex-shrink: 0;
+      line-height: 32px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    .tool-bind__tool-text {
+      flex: 0 0 auto;
+      width: 400px;
+      max-width: 100%;
+      line-height: 32px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .status-text.is-off {
+      color: var(--text-muted);
+    }
     .tool-bind__row > .c-select:first-child {
       flex: 1;
       width: auto;
@@ -1081,7 +1320,7 @@
       stroke-linejoin: round;
     }
 
-    /* 抽屉复合字段：标签右对齐，内容区左对齐 */
+    /* 抽屉复合字段：标签右对齐；与首行操作/控件对齐（顶对齐），勿相对整块垂直居中 */
     .field-block {
       display: grid;
       grid-template-columns: 120px 1fr;
@@ -1125,6 +1364,21 @@
       max-width: 100%;
       height: 32px;
     }
+    /* 覆盖上方通用宽度，保证补充关键词短输入生效 */
+    .field-block .kw-editor--sm .kw-editor__field,
+    .sub-intent-card .kw-editor--sm .kw-editor__field {
+      width: 160px;
+      max-width: 160px;
+    }
+    /* 覆盖 .field-block 的 start，查看态标签与内容垂直居中 */
+    .field-block.field-block--view-center {
+      align-items: center;
+    }
+    .field-block.field-block--view-center .field-block__label {
+      height: auto;
+      min-height: 22px;
+      line-height: 22px;
+    }
     .field-block .tool-bind__row .input {
       width: 400px;
       max-width: 100%;
@@ -1148,6 +1402,433 @@
     .drawer .field-hint {
       margin-top: 0;
       margin-bottom: 0;
+    }
+    .field-row:has(> .click-target-field) {
+      align-items: center;
+    }
+    .click-target-field {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+    .click-target-field .seg-radio {
+      width: 400px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .drawer-form--welcome-q .click-target-field .seg-radio__item,
+    .drawer-form--service .click-target-field .seg-radio__item,
+    .click-target-field .seg-radio__item {
+      width: 100px;
+      flex: 0 0 100px;
+      padding: 0 2px;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+    /* field-row 的 display:grid 会压过原生 [hidden]，必须强制隐藏 */
+    .field-row[data-click-panel][hidden],
+    [data-click-panel][hidden] {
+      display: none !important;
+    }
+    .drawer-form--welcome-q .input-with-count {
+      width: 640px;
+      max-width: 100%;
+    }
+    .drawer-form--welcome-q .input-with-count .input {
+      max-width: none;
+    }
+    .drawer-form--welcome-q .field-row > .input:not(.input-num) {
+      width: 640px;
+      max-width: 640px;
+    }
+    .drawer-form--welcome-q .input-num {
+      width: 100px;
+      max-width: 100px;
+    }
+    .drawer-form--service .input-with-count {
+      width: 640px;
+      max-width: 100%;
+    }
+    .drawer-form--service .input-with-count .input {
+      max-width: none;
+    }
+    .drawer-form--service .field-row > .input:not(.input-num) {
+      width: 640px;
+      max-width: 640px;
+    }
+    .drawer-form--service .input-num {
+      width: 100px;
+      max-width: 100px;
+    }
+    .drawer-form--service .click-target-field .seg-radio,
+    .drawer-form--welcome-q .click-target-field .seg-radio {
+      width: 400px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .field-block--rules .field-block__toolbar {
+      margin-bottom: 0;
+    }
+    .drawer-form--welcome-q #display-rule-add,
+    .drawer-form--service #display-rule-add {
+      width: 100px;
+      min-width: 100px;
+      padding-left: 0;
+      padding-right: 0;
+      box-sizing: border-box;
+    }
+    .field-block--rules .field-block__toolbar .field-block__hint {
+      margin: 0;
+      line-height: 32px;
+    }
+    .field-block--rules .rule-list {
+      margin-top: 12px;
+      margin-bottom: 0;
+    }
+    .drawer-form--product .input-with-count {
+      width: 400px;
+      max-width: 100%;
+    }
+    .drawer-form--product .input-with-count .input {
+      width: 100%;
+    }
+    .drawer-form--product .field-row > .input:not(.input-num) {
+      width: 400px;
+      max-width: 100%;
+    }
+    .drawer-form--product .field-row > .select,
+    .drawer-form--product .field-row > .c-select {
+      width: 400px;
+      max-width: 100%;
+    }
+    .drawer-form--product .input-num {
+      width: 120px;
+    }
+    .drawer-form--product .field-row--ext-id {
+      align-items: start;
+      max-width: none;
+    }
+    .drawer-form--product .field-row--ext-id .field-control {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+      max-width: none;
+    }
+    .drawer-form--product .product-id-lookup {
+      position: relative;
+      width: 400px;
+      max-width: 100%;
+      flex-shrink: 0;
+    }
+    .drawer-form--product .product-id-lookup__input {
+      width: 100%;
+    }
+    .drawer-form--product .product-id-lookup__dropdown {
+      display: none;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 20;
+      background: #fff;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      max-height: 220px;
+      overflow: auto;
+    }
+    .drawer-form--product .product-id-lookup__dropdown.is-open {
+      display: block;
+    }
+    .drawer-form--product .product-id-lookup__option {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .drawer-form--product .product-id-lookup__option:hover,
+    .drawer-form--product .product-id-lookup__option.is-active {
+      background: var(--primary-bg);
+    }
+    .drawer-form--product .product-id-lookup__option-id {
+      font-weight: 500;
+      color: var(--text);
+    }
+    .drawer-form--product .product-id-lookup__option-name {
+      color: var(--text-secondary);
+      margin-left: 8px;
+    }
+    .drawer-form--product .product-id-lookup__empty {
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .drawer-form--product .field-hint-inline {
+      flex: 1;
+      min-width: 160px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      padding-top: 6px;
+    }
+    .drawer-form--product .product-snapshot {
+      margin: 0 0 16px;
+      padding: 12px 16px;
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 560px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .drawer-form--product .field-row--snapshot {
+      align-items: start;
+      max-width: none;
+    }
+    .drawer-form--product .field-row--snapshot > label {
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .drawer-form--product .product-snapshot[hidden] {
+      display: none;
+    }
+    .drawer-form--product .field-row--tags {
+      align-items: start;
+      max-width: none;
+    }
+    .drawer-form--product .product-tags-field {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      max-width: 560px;
+      width: 100%;
+    }
+    .drawer-form--product .product-tags-field__toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 32px;
+    }
+    .drawer-form--product .product-tags-field__toolbar .btn {
+      flex-shrink: 0;
+    }
+    .drawer-form--product .product-tags-field__hint {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      line-height: 32px;
+    }
+    .drawer-form--product .product-tags-field__selected {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 22px;
+    }
+    .drawer-form--product .product-tags-field__selected:empty::before {
+      content: "暂未选择标签";
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .drawer-form--product .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      height: 22px;
+      padding: 0 4px 0 8px;
+      border-radius: var(--radius);
+      border: 1px solid #91d5ff;
+      background: var(--primary-bg);
+      color: var(--primary);
+      font-size: 12px;
+      line-height: 20px;
+    }
+    .drawer-form--product .tag-chip__remove {
+      border: none;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    .drawer-form--product .tag-chip__remove:hover {
+      opacity: 1;
+    }
+    .drawer-form--product .c-select.is-readonly .c-select__trigger,
+    .drawer-form--product .product-id-lookup__input[readonly] {
+      background: #f5f5f5;
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .modal-mask {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.45);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-mask.open {
+      display: flex;
+    }
+    .modal {
+      width: 480px;
+      max-width: 100%;
+      max-height: min(560px, calc(100vh - 48px));
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      display: flex;
+      flex-direction: column;
+    }
+    .modal__head {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .modal__close {
+      border: none;
+      background: transparent;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 4px;
+    }
+    .modal__body {
+      padding: 16px 24px;
+      overflow: auto;
+      flex: 1;
+    }
+    .modal__foot {
+      padding: 12px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .tag-picker-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tag-picker-option {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      user-select: none;
+    }
+    .tag-picker-option.is-on {
+      border-color: var(--primary);
+      background: var(--primary-bg);
+      color: var(--primary);
+    }
+    .drawer-form--product .product-snapshot__title {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .drawer-form--product .product-snapshot__grid {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 6px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .drawer-form--product .product-snapshot__grid dt {
+      margin: 0;
+      color: var(--text-muted);
+    }
+    .drawer-form--product .product-snapshot__grid dd {
+      margin: 0;
+      color: var(--text);
+    }
+    .drawer-form--product .product-snapshot__note {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .drawer-form--product .product-type-panel {
+      margin-top: 8px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .drawer-form--product .product-type-panel__title {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .drawer-form--product .product-reserve-note {
+      padding: 12px 16px;
+      background: #fffbe6;
+      border: 1px solid #ffe58f;
+      border-radius: var(--radius);
+      color: #874d00;
+      font-size: 13px;
+      line-height: 1.6;
+      max-width: 480px;
+    }
+    table.data td .tag {
+      margin: 0 4px 4px 0;
+      display: inline-block;
+    }
+    .rule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 8px 0 12px;
+    }
+    .rule-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    .rule-row__and {
+      width: 100%;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1;
+      padding-left: 2px;
+    }
+    .rule-row .select,
+    .rule-row .c-select {
+      width: 200px;
+      max-width: 100%;
+      flex: 0 0 auto;
+    }
+    .rule-row .select--value,
+    .rule-row .c-select.select--value {
+      width: 140px;
+    }
+    .rule-row .btn-link {
+      flex: 0 0 auto;
+    }
+    .rule-empty {
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 4px 0 2px;
     }
     .readonly-block {
       padding: 12px 16px;
@@ -1179,7 +1860,7 @@
       position: fixed;
       top: 0;
       right: 0;
-      width: 1080px;
+      width: 880px;
       max-width: 100%;
       height: 100%;
       background: #fff;
@@ -1307,8 +1988,8 @@
             <button type="button" class="nav-item active" data-page="skill" data-title="Skill关键词">Skill关键词</button>
             <button type="button" class="nav-item" data-page="conflict" data-title="冲突检查">冲突检查</button>
             <button type="button" class="nav-item" data-page="ui" data-title="UI 配置">UI 配置</button>
-            <button type="button" class="nav-item" data-page="welcome-q" data-title="游游推荐">游游推荐</button>
-            <button type="button" class="nav-item" data-page="service" data-title="服务推荐">服务推荐</button>
+            <button type="button" class="nav-item" data-page="welcome-q" data-title="推荐对话">推荐对话</button>
+            <button type="button" class="nav-item" data-page="service" data-title="快捷服务">快捷服务</button>
           </div>
         </div>
         <div class="nav-submenu open">
@@ -1365,12 +2046,11 @@
     </header>
 
     <main class="main">
-      <!-- Skill关键词（运营侧：列表 / 关键词 / 启停） -->
+      <!-- Skill关键词（运营侧：列表 / 补充关键词） -->
       <section class="page active" id="page-skill">
         <div class="page-head">
           <div>
             <h1>Skill关键词</h1>
-            <p class="page-head__desc">查看 Skill 列表，维护<strong>扩展关键字</strong>，设置启用 / 禁用。默认关键字由运维维护（无子意图挂 Skill；有子意图则为子意图合集），运营侧只读。绑定工具与场景指令请到「运维管理 → Skill 场景」。</p>
           </div>
         </div>
         <div class="filter-bar">
@@ -1378,9 +2058,9 @@
             <span>名称</span>
             <input class="input" type="text" placeholder="请输入" />
           </div>
-          <div class="filter-item">
+          <div class="filter-item filter-item--status">
             <span>状态</span>
-            <select class="select">
+            <select class="select" aria-label="状态">
               <option value="">全部</option>
               <option value="1">启用</option>
               <option value="0">禁用</option>
@@ -1388,7 +2068,6 @@
           </div>
           <div class="filter-actions">
             <button type="button" class="btn btn-primary">查询</button>
-            <button type="button" class="btn">重置</button>
           </div>
         </div>
         <div class="card">
@@ -1396,21 +2075,35 @@
             <table class="data">
               <thead>
                 <tr>
-                  <th>序号</th>
+                  <th>SkillID</th>
                   <th>名称</th>
-                  <th>skillId</th>
+                  <th>子意图</th>
                   <th>状态</th>
-                  <th>触发关键词</th>
                   <th>操作</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td colspan="6">
-                    <div class="empty">
-                      <div class="empty__icon"></div>
-                      <div>没有符合条件的查询结果。</div>
-                      <button type="button" class="btn btn-primary btn-sm" style="margin-top:12px" data-open-drawer="skill" data-drawer-mode="edit" data-skill-id="ticket_purchase">打开编辑示意</button>
+                  <td><code>ticket_purchase</code></td>
+                  <td>智能购票</td>
+                  <td>1</td>
+                  <td><span class="status-text">启用</span></td>
+                  <td>
+                    <div class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="skill" data-drawer-mode="edit" data-skill-id="ticket_purchase">编辑关键字</button>
+                      <button type="button" class="btn-link" data-open-drawer="ops-log" data-skill-id="ticket_purchase">日志</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>parking_pay</code></td>
+                  <td>停车缴费</td>
+                  <td>0</td>
+                  <td><span class="status-text is-off">禁用</span></td>
+                  <td>
+                    <div class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="skill" data-drawer-mode="edit" data-skill-id="parking_pay">编辑关键字</button>
+                      <button type="button" class="btn-link" data-open-drawer="ops-log" data-skill-id="parking_pay">日志</button>
                     </div>
                   </td>
                 </tr>
@@ -1418,7 +2111,7 @@
             </table>
           </div>
           <div class="table-footer">
-            <span>共 0 条</span>
+            <span>共 2 条</span>
             <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
               <option>20条/页</option>
               <option>50条/页</option>
@@ -1436,19 +2129,43 @@
       <section class="page" id="page-conflict">
         <div class="page-head">
           <div>
-            <h1>冲突检查</h1>
-            <p class="page-head__desc"><span class="proto-badge" style="margin-left:0;margin-right:8px">只读</span>展示 Workflow / Skill 路由互斥说明，不可在此配置。对应正式口径：检查工具页不进运营后台，仅保留只读说明。</p>
+            <h1>冲突检查 <span class="proto-badge">只读</span></h1>
           </div>
         </div>
-        <div class="alert">以下为互斥说明占位区域，正式由配置中心或文档接口下发文案，不提供编辑。</div>
+        <div class="alert">跨 Skill 关键词撞词对照与路由排他说明；本 Skill 内唯一由保存校验。本页只读，不提供新增、编辑、删除。</div>
         <div class="card">
-          <div class="card__title">路由排他规则</div>
-          <div class="card__body">
-            <div class="readonly-block">
-              · 规则条目由系统维护（只读）<br />
-              · 示例结构：优先 Skill / Workflow → 被压制路径 → 说明<br />
-              · 本页不提供新增、编辑、删除
-            </div>
+          <div class="card__title">路由排他规则（示例）</div>
+          <div class="card__body--flush table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th style="width:200px">优先 Skill</th>
+                  <th style="width:200px">被压制 Skill</th>
+                  <th>触发条件</th>
+                  <th>说明</th>
+                  <th style="width:220px">示例话术</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>proactive_marketing<br /><span style="color:var(--text-muted);font-size:12px">主动营销</span></td>
+                  <td>project_query<br /><span style="color:var(--text-muted);font-size:12px">项目查询</span></td>
+                  <td>命中美食 / 餐饮 / 伴手礼 / 零售等营销意图</td>
+                  <td>避免「附近有什么推荐的美食」被「附近…推荐」抢成游乐项目</td>
+                  <td>附近有什么推荐的美食；景区里有什么美食</td>
+                </tr>
+                <tr>
+                  <td>travel_guide<br /><span style="color:var(--text-muted);font-size:12px">出行攻略</span></td>
+                  <td>ticket_purchase<br /><span style="color:var(--text-muted);font-size:12px">购票</span></td>
+                  <td>门票怎么用 / 几点入园等 FAQ</td>
+                  <td>入园 FAQ 优先于购票冷启动，避免「门票怎么用」落入购票流程</td>
+                  <td>门票怎么用；几点可以入园</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer table-footer--stat">
+            <span>共 2 条</span>
           </div>
         </div>
       </section>
@@ -1473,31 +2190,31 @@
           <div class="card__body">
             <div class="field-row">
               <label><span class="req">*</span> 助手名称</label>
-              <div class="input-with-count">
-                <input class="input" type="text" data-max-chars="40" placeholder="请输入助手名称" />
+              <div class="input-with-count input-with-count--lg">
+                <input class="input" type="text" data-max-chars="40" />
                 <span class="input-count">0/40</span>
               </div>
             </div>
             <div class="field-row">
               <label><span class="req">*</span> 助手昵称</label>
-              <div class="input-with-count">
-                <input class="input" type="text" data-max-chars="40" placeholder="请输入助手昵称" />
-                <span class="input-count">0/40</span>
+              <div class="input-with-count input-with-count--lg">
+                <input class="input" type="text" data-max-chars="10" />
+                <span class="input-count">0/10</span>
               </div>
             </div>
             <div class="field-row">
               <label>对话标题</label>
-              <div class="input-with-count">
-                <input class="input" type="text" data-max-chars="40" placeholder="请输入对话标题" />
+              <div class="input-with-count input-with-count--lg">
+                <input class="input" type="text" data-max-chars="40" />
                 <span class="input-count">0/40</span>
               </div>
             </div>
             <div class="field-row">
-              <label>主色</label>
+              <label>主题颜色</label>
               <div class="color-field" data-color-field>
                 <div class="color-field__swatch" title="选择颜色">
                   <span class="color-field__swatch-fill" style="background:#1677ff"></span>
-                  <input class="color-field__native" type="color" value="#1677ff" aria-label="主色色板" />
+                  <input class="color-field__native" type="color" value="#1677ff" aria-label="主题颜色色板" />
                 </div>
                 <input class="input" type="text" value="#1677ff" placeholder="#1677ff" spellcheck="false" />
               </div>
@@ -1522,7 +2239,7 @@
                 <input class="input" type="text" value="#0958d9" placeholder="#0958d9" spellcheck="false" />
               </div>
             </div>
-            <div class="field-row">
+            <div class="field-row field-row--wide">
               <label>聊天背景</label>
               <div class="chat-bg-field" data-chat-bg>
                 <div class="field-with-hint">
@@ -1574,15 +2291,15 @@
               <label>助手默认全身图</label>
               <div class="upload-box">+ 上传</div>
             </div>
-            <div class="field-row">
+            <div class="field-row field-row--wide">
               <label>对话形态图</label>
-              <div class="upload-row">
-                <div class="upload-box">idle</div>
-                <div class="upload-box">thinking</div>
-                <div class="upload-box">nod</div>
-                <div class="upload-box">shake</div>
-                <div class="upload-box">wave</div>
-                <div class="upload-box">point</div>
+              <div class="upload-row upload-row--nowrap">
+                <div class="upload-box">待机</div>
+                <div class="upload-box">思考</div>
+                <div class="upload-box">点头</div>
+                <div class="upload-box">摇头</div>
+                <div class="upload-box">挥手</div>
+                <div class="upload-box">指向</div>
               </div>
             </div>
           </div>
@@ -1633,83 +2350,169 @@
         </div>
       </section>
 
-      <!-- 游游推荐 -->
-      <section class="page" id="page-welcome-q">
-        <div class="page-head">
-          <div>
-            <h1>游游推荐</h1>
-            <p class="page-head__desc">欢迎页「游游推荐」问题卡片；支持规则过滤、优先级、置顶。最多展示条数以实现为准。</p>
+      <!-- 推荐对话 -->
+      <section class="page page--list-scroll" id="page-welcome-q">
+        <div class="page-list-chrome">
+          <div class="page-head">
+            <div>
+              <h1>推荐对话</h1>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span>文案 / prompt</span>
+              <input class="input" type="text" placeholder="请输入" />
+            </div>
+            <div class="filter-item filter-item--status">
+              <span>状态</span>
+              <select class="select" aria-label="状态">
+                <option value="" selected>全部</option>
+                <option value="1">启用</option>
+                <option value="0">禁用</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary">查询</button>
+              <button type="button" class="btn btn-primary" data-open-drawer="welcome-q" data-drawer-mode="create">新增</button>
+            </div>
           </div>
         </div>
-        <div class="filter-bar">
-          <div class="filter-item">
-            <span>文案 / prompt</span>
-            <input class="input" type="text" placeholder="请输入" />
-          </div>
-          <div class="filter-actions">
-            <button type="button" class="btn btn-primary">查询</button>
-            <button type="button" class="btn">重置</button>
-            <button type="button" class="btn btn-primary" data-open-drawer="welcome-q">新增</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card__body--flush table-wrap">
-            <table class="data">
-              <thead>
-                <tr>
-                  <th>展示文案</th>
-                  <th>发送 prompt</th>
-                  <th>优先级</th>
-                  <th>置顶</th>
-                  <th>规则摘要</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="6"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
-              </tbody>
-            </table>
+        <div class="page-list-body">
+          <div class="card page-list-card">
+            <div class="card__body--flush table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th style="width:88px">优先级</th>
+                    <th>展示文案</th>
+                    <th style="width:120px">点击行为</th>
+                    <th style="width:72px">置顶</th>
+                    <th>规则摘要</th>
+                    <th style="width:88px">状态</th>
+                    <th style="width:120px">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>100</td>
+                    <td>海洋公园怎么玩最划算？</td>
+                    <td>进行对话</td>
+                    <td>是</td>
+                    <td>始终展示</td>
+                    <td>
+                      <button type="button" class="switch on" aria-pressed="true" title="启用"></button>
+                    </td>
+                    <td>
+                      <div class="table-ops">
+                        <button type="button" class="btn-link" data-open-drawer="welcome-q" data-drawer-mode="edit">编辑</button>
+                        <button type="button" class="btn-link" data-open-drawer="ops-log">日志</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>10</td>
+                    <td>两大一小买什么票？</td>
+                    <td>进行对话</td>
+                    <td>否</td>
+                    <td>可领新客券 = 是</td>
+                    <td>
+                      <button type="button" class="switch" aria-pressed="false" title="禁用"></button>
+                    </td>
+                    <td>
+                      <div class="table-ops">
+                        <button type="button" class="btn-link" data-open-drawer="welcome-q" data-drawer-mode="edit">编辑</button>
+                        <button type="button" class="btn-link" data-open-drawer="ops-log">日志</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer table-footer--stat">
+              <span>共 <span id="welcome-q-total">2</span> 条</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- 服务推荐 -->
-      <section class="page" id="page-service">
-        <div class="page-head">
-          <div>
-            <h1>服务推荐</h1>
-            <p class="page-head__desc">欢迎页快捷服务入口（原 recommend_entries）。规则过滤后按优先级展示，建议最多 4 个。</p>
+      <!-- 快捷服务 -->
+      <section class="page page--list-scroll" id="page-service">
+        <div class="page-list-chrome">
+          <div class="page-head">
+            <div>
+              <h1>快捷服务</h1>
+            </div>
+          </div>
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span>标题</span>
+              <input class="input" type="text" placeholder="请输入" />
+            </div>
+            <div class="filter-item filter-item--status">
+              <span>状态</span>
+              <select class="select" aria-label="状态">
+                <option value="" selected>全部</option>
+                <option value="1">启用</option>
+                <option value="0">禁用</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary">查询</button>
+              <button type="button" class="btn btn-primary" data-open-drawer="service" data-drawer-mode="create">新增</button>
+            </div>
           </div>
         </div>
-        <div class="filter-bar">
-          <div class="filter-item">
-            <span>标题</span>
-            <input class="input" type="text" placeholder="请输入" />
-          </div>
-          <div class="filter-actions">
-            <button type="button" class="btn btn-primary">查询</button>
-            <button type="button" class="btn">重置</button>
-            <button type="button" class="btn btn-primary" data-open-drawer="service">新增</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card__body--flush table-wrap">
-            <table class="data">
-              <thead>
-                <tr>
-                  <th>标题</th>
-                  <th>图标</th>
-                  <th>跳转 / prompt</th>
-                  <th>优先级</th>
-                  <th>规则摘要</th>
-                  <th>启用</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="7"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
-              </tbody>
-            </table>
+        <div class="page-list-body">
+          <div class="card page-list-card">
+            <div class="card__body--flush table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th style="width:88px">优先级</th>
+                    <th>标题</th>
+                    <th style="width:120px">点击行为</th>
+                    <th>规则摘要</th>
+                    <th style="width:88px">状态</th>
+                    <th style="width:120px">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>9</td>
+                    <td>领取新客券</td>
+                    <td>进行对话</td>
+                    <td>可领新客券 = 是</td>
+                    <td>
+                      <button type="button" class="switch on" aria-pressed="true" title="启用"></button>
+                    </td>
+                    <td>
+                      <div class="table-ops">
+                        <button type="button" class="btn-link" data-open-drawer="service" data-drawer-mode="edit">编辑</button>
+                        <button type="button" class="btn-link" data-open-drawer="ops-log">日志</button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>7</td>
+                    <td>停车缴费</td>
+                    <td>进行对话</td>
+                    <td>是否在园 = 是</td>
+                    <td>
+                      <button type="button" class="switch on" aria-pressed="true" title="启用"></button>
+                    </td>
+                    <td>
+                      <div class="table-ops">
+                        <button type="button" class="btn-link" data-open-drawer="service" data-drawer-mode="edit">编辑</button>
+                        <button type="button" class="btn-link" data-open-drawer="ops-log">日志</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer table-footer--stat">
+              <span>共 <span id="service-total">2</span> 条</span>
+            </div>
           </div>
         </div>
       </section>
@@ -1719,7 +2522,6 @@
         <div class="page-head">
           <div>
             <h1>标签管理</h1>
-            <p class="page-head__desc">画像标签目录与规则；供欢迎推荐、选品等规则引擎使用。</p>
           </div>
         </div>
         <div class="tabs" data-tabs="tags">
@@ -1733,7 +2535,6 @@
           </div>
           <div class="filter-actions">
             <button type="button" class="btn btn-primary">查询</button>
-            <button type="button" class="btn">重置</button>
             <button type="button" class="btn btn-primary">新增标签</button>
           </div>
         </div>
@@ -1775,55 +2576,111 @@
         </div>
       </section>
 
-      <!-- 产品 -->
-      <section class="page" id="page-products">
-        <div class="page-head">
-          <div>
-            <h1>产品管理</h1>
-            <p class="page-head__desc">门票等可售产品（按景区）。字段细节以接口三分表为准。</p>
+      <!-- 产品：合列表（AI 可见清单，一期门票/卡票/组合） -->
+      <section class="page page--list-scroll" id="page-products">
+        <div class="page-list-chrome">
+          <div class="page-head">
+            <div>
+              <h1>产品管理</h1>
+            </div>
+          </div>
+          <div class="alert">
+            仅对接供应商产品（按对接产品 ID 精确查询绑定），不支持纯手工建档（否则无法下单）。一期类型：门票 / 卡票 / 组合产品；餐饮与零售需门店筛选，后续再开。券模板仍在「券管理」。
+          </div>
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span>产品名称</span>
+              <input class="input" type="text" placeholder="请输入" />
+            </div>
+            <div class="filter-item filter-item--status">
+              <span>产品类型</span>
+              <select class="select" aria-label="产品类型">
+                <option value="" selected>全部</option>
+                <option value="ticket">门票</option>
+                <option value="pass">卡票</option>
+                <option value="bundle">组合产品</option>
+              </select>
+            </div>
+            <div class="filter-item filter-item--status">
+              <span>状态</span>
+              <select class="select" aria-label="状态">
+                <option value="" selected>全部</option>
+                <option value="1">上架</option>
+                <option value="0">下架</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary">查询</button>
+              <button type="button" class="btn btn-primary" data-open-drawer="product" data-drawer-mode="create">新增产品</button>
+            </div>
           </div>
         </div>
-        <div class="filter-bar">
-          <div class="filter-item">
-            <span>产品名称</span>
-            <input class="input" type="text" placeholder="请输入" />
-          </div>
-          <div class="filter-item">
-            <span>票种类型</span>
-            <select class="select"><option value="">全部</option></select>
-          </div>
-          <div class="filter-item">
-            <span>上下架</span>
-            <select class="select">
-              <option value="">全部</option>
-              <option>上架</option>
-              <option>下架</option>
-            </select>
-          </div>
-          <div class="filter-actions">
-            <button type="button" class="btn btn-primary">查询</button>
-            <button type="button" class="btn">重置</button>
-            <button type="button" class="btn btn-primary">新增产品</button>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card__body--flush">
-            <table class="data">
-              <thead>
-                <tr>
-                  <th>产品 ID</th>
-                  <th>名称</th>
-                  <th>票种类型</th>
-                  <th>售价</th>
-                  <th>渠道</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="7"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
-              </tbody>
-            </table>
+        <div class="page-list-body">
+          <div class="card page-list-card">
+            <div class="card__body--flush table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th style="width:120px">对接产品 ID</th>
+                    <th>名称</th>
+                    <th style="width:100px">产品类型</th>
+                    <th style="width:100px">参考售价</th>
+                    <th>标签</th>
+                    <th style="width:88px">对接状态</th>
+                    <th style="width:120px">来源</th>
+                    <th style="width:88px">状态</th>
+                    <th style="width:88px">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>TK10086</td>
+                    <td>成人全日票</td>
+                    <td>门票</td>
+                    <td>¥299</td>
+                    <td><span class="tag tag-blue">成人</span></td>
+                    <td><span class="tag tag-green">正常</span></td>
+                    <td>智慧乐园票务</td>
+                    <td><button type="button" class="switch on" aria-label="上下架"></button></td>
+                    <td class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="ticket">编辑</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>PASS2001</td>
+                    <td>家庭年卡（2大1小）</td>
+                    <td>卡票</td>
+                    <td>¥2999</td>
+                    <td>
+                      <span class="tag tag-blue">亲子</span>
+                      <span class="tag tag-blue">年卡</span>
+                    </td>
+                    <td><span class="tag tag-green">正常</span></td>
+                    <td>智慧乐园票务</td>
+                    <td><button type="button" class="switch on" aria-label="上下架"></button></td>
+                    <td class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="pass">编辑</button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>BDL3008</td>
+                    <td>亲子一日畅玩组合</td>
+                    <td>组合产品</td>
+                    <td>¥668</td>
+                    <td><span class="tag tag-blue">亲子</span></td>
+                    <td><span class="tag tag-orange">停用</span></td>
+                    <td>海洋公园票务</td>
+                    <td><button type="button" class="switch on" aria-label="上下架"></button></td>
+                    <td class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="bundle">编辑</button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer table-footer--stat">
+              <span>共 3 条</span>
+            </div>
           </div>
         </div>
       </section>
@@ -1833,7 +2690,6 @@
         <div class="page-head">
           <div>
             <h1>券管理</h1>
-            <p class="page-head__desc">券产品配置（面额、条件、有效期、适用景区等）。布局对齐大系统「优惠券」列表习惯。</p>
           </div>
         </div>
         <div class="filter-bar">
@@ -1847,7 +2703,6 @@
           </div>
           <div class="filter-actions">
             <button type="button" class="btn btn-primary">查询</button>
-            <button type="button" class="btn">重置</button>
             <button type="button" class="btn btn-primary">新增券</button>
           </div>
         </div>
@@ -1878,7 +2733,6 @@
         <div class="page-head">
           <div>
             <h1>内容配置</h1>
-            <p class="page-head__desc">交通/入园等内容块、园内项目与活动等。</p>
           </div>
         </div>
         <div class="tabs" data-tabs="content">
@@ -1935,7 +2789,6 @@
         <div class="page-head">
           <div>
             <h1>参数配置</h1>
-            <p class="page-head__desc">业务阈值与规则字段说明。外部接口地址 / 标识请到「运维管理 → 接口配置」由技术人员维护。</p>
           </div>
           <div class="page-head__actions">
             <button type="button" class="btn btn-primary">保存</button>
@@ -1982,7 +2835,6 @@
         <div class="page-head">
           <div>
             <h1>接口配置 <span class="proto-badge">内部</span></h1>
-            <p class="page-head__desc">技术人员配置环境级外部接口。Skill 级能力绑定（只读/写入）在「运维管理 → Skill 场景」的「绑定工具」中维护。不对客户 / 运营开放；未来合并进运维中心。</p>
           </div>
           <div class="page-head__actions">
             <button type="button" class="btn btn-primary">保存</button>
@@ -2027,7 +2879,6 @@
         <div class="page-head">
           <div>
             <h1>Skill 场景 <span class="proto-badge">内部</span></h1>
-            <p class="page-head__desc">维护绑定工具、场景指令、默认关键词与子意图（均在新增/编辑抽屉内完成；子意图 0～10 可选）。有子意图时默认关键词为合集只读展示；后置新增子意图时将原默认值迁入第 1 条。扩展关键字由运营在「对话与配置」维护。</p>
           </div>
         </div>
         <div class="filter-bar">
@@ -2035,9 +2886,9 @@
             <span>名称</span>
             <input class="input" type="text" placeholder="请输入" />
           </div>
-          <div class="filter-item">
+          <div class="filter-item filter-item--status">
             <span>状态</span>
-            <select class="select">
+            <select class="select" aria-label="状态">
               <option value="">全部</option>
               <option value="1">启用</option>
               <option value="0">禁用</option>
@@ -2045,7 +2896,6 @@
           </div>
           <div class="filter-actions">
             <button type="button" class="btn btn-primary">查询</button>
-            <button type="button" class="btn">重置</button>
             <button type="button" class="btn btn-primary" data-open-drawer="ops-skill" data-drawer-mode="create">新增 Skill</button>
           </div>
         </div>
@@ -2078,7 +2928,7 @@
                   <td><code>parking_pay</code></td>
                   <td>停车缴费</td>
                   <td>0</td>
-                  <td><button type="button" class="switch on" aria-pressed="true" title="启用"></button></td>
+                  <td><button type="button" class="switch" aria-pressed="false" title="禁用"></button></td>
                   <td>
                     <div class="table-ops">
                       <button type="button" class="btn-link" data-open-drawer="ops-skill" data-drawer-mode="edit" data-skill-id="parking_pay">编辑</button>
@@ -2109,7 +2959,6 @@
         <div class="page-head">
           <div>
             <h1>问题记录</h1>
-            <p class="page-head__desc">踩：结构化上报明细，用于反推 Skill <strong>扩展关键字</strong>。赞：统计数据。收藏首发可不上云。</p>
           </div>
         </div>
         <div class="tabs" data-tabs="feedback">
@@ -2128,7 +2977,6 @@
             </div>
             <div class="filter-actions">
               <button type="button" class="btn btn-primary">查询</button>
-              <button type="button" class="btn">重置</button>
             </div>
           </div>
           <div class="card__body--flush">
@@ -2200,6 +3048,24 @@
     </div>
   </aside>
 
+  <div class="proto-toast" id="proto-toast" role="status" aria-live="polite"></div>
+
+  <div class="modal-mask" id="tag-picker-mask" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tag-picker-title">
+      <div class="modal__head">
+        <span id="tag-picker-title">选择标签</span>
+        <button type="button" class="modal__close" id="tag-picker-close" aria-label="关闭">×</button>
+      </div>
+      <div class="modal__body">
+        <div class="tag-picker-grid" id="tag-picker-grid"></div>
+      </div>
+      <div class="modal__foot">
+        <button type="button" class="btn" id="tag-picker-cancel">取消</button>
+        <button type="button" class="btn btn-primary" id="tag-picker-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
       /* —— 自定义下拉：增强所有 select.select —— */
@@ -2210,6 +3076,13 @@
         wrap.classList.remove("open");
         var trigger = wrap.querySelector(".c-select__trigger");
         if (trigger) trigger.setAttribute("aria-expanded", "false");
+        var dropdown = wrap._dropdown;
+        if (dropdown) {
+          dropdown.classList.remove("is-open");
+          if (dropdown.parentNode === document.body) {
+            wrap.appendChild(dropdown);
+          }
+        }
         if (openSelectWrap === wrap) openSelectWrap = null;
       }
 
@@ -2219,8 +3092,12 @@
 
       function positionSelectDropdown(wrap) {
         var trigger = wrap.querySelector(".c-select__trigger");
-        var dropdown = wrap.querySelector(".c-select__dropdown");
+        var dropdown = wrap._dropdown || wrap.querySelector(".c-select__dropdown");
         if (!trigger || !dropdown) return;
+        /* 挂到 body，避免抽屉 transform / overflow 裁切 fixed 下拉 */
+        if (dropdown.parentNode !== document.body) {
+          document.body.appendChild(dropdown);
+        }
         var rect = trigger.getBoundingClientRect();
         var spaceBelow = window.innerHeight - rect.bottom;
         var preferUp = spaceBelow < 180 && rect.top > spaceBelow;
@@ -2234,6 +3111,7 @@
           dropdown.style.bottom = "auto";
           dropdown.style.top = rect.bottom + 4 + "px";
         }
+        dropdown.classList.add("is-open");
       }
 
       function syncSelectLabel(wrap) {
@@ -2249,7 +3127,7 @@
 
       function rebuildSelectOptions(wrap) {
         var select = wrap.querySelector("select");
-        var dropdown = wrap.querySelector(".c-select__dropdown");
+        var dropdown = wrap._dropdown || wrap.querySelector(".c-select__dropdown");
         if (!select || !dropdown) return;
         dropdown.innerHTML = "";
         Array.prototype.forEach.call(select.options, function (opt, index) {
@@ -2284,9 +3162,6 @@
         // 继承原 select 的宽度等内联样式到外壳
         if (select.style.width) wrap.style.width = select.style.width;
         if (select.style.maxWidth) wrap.style.maxWidth = select.style.maxWidth;
-        if (select.getAttribute("style")) {
-          // 高度交给 trigger
-        }
 
         var parent = select.parentNode;
         parent.insertBefore(wrap, select);
@@ -2324,6 +3199,7 @@
         var dropdown = document.createElement("ul");
         dropdown.className = "c-select__dropdown";
         dropdown.setAttribute("role", "listbox");
+        wrap._dropdown = dropdown;
 
         wrap.appendChild(trigger);
         wrap.appendChild(dropdown);
@@ -2429,7 +3305,9 @@
       document.querySelectorAll(".switch").forEach(function (sw) {
         sw.addEventListener("click", function () {
           sw.classList.toggle("on");
-          sw.setAttribute("aria-pressed", sw.classList.contains("on") ? "true" : "false");
+          var on = sw.classList.contains("on");
+          sw.setAttribute("aria-pressed", on ? "true" : "false");
+          sw.setAttribute("title", on ? "启用" : "禁用");
         });
       });
 
@@ -2439,6 +3317,18 @@
       var drawerSkillName = document.getElementById("drawer-skill-name");
       var drawerMeta = document.getElementById("drawer-meta");
       var drawerBody = document.getElementById("drawer-body");
+      var protoToast = document.getElementById("proto-toast");
+      var protoToastTimer = null;
+
+      function showErrorToast(msg) {
+        if (!protoToast) return;
+        protoToast.textContent = msg;
+        protoToast.classList.add("show");
+        if (protoToastTimer) clearTimeout(protoToastTimer);
+        protoToastTimer = setTimeout(function () {
+          protoToast.classList.remove("show");
+        }, 3000);
+      }
 
       var drawerFoot = document.querySelector(".drawer__foot");
       var drawerSubmit = drawerFoot ? drawerFoot.querySelector(".btn-primary") : null;
@@ -2446,10 +3336,11 @@
       var toolBindRemoveIcon =
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5h6v2"/><path d="M8 7l1 12h6l1-12"/><path d="M10 11v5M14 11v5"/></svg>';
 
-      /** 运维 Skill 演示数据 */
+      /** 运维 / 运营共用 Skill 演示数据 */
       var DEMO_SKILLS = {
         ticket_purchase: {
           name: "智能购票",
+          enabled: true,
           tools: [
             { name: "getProductCatalog", access: "read" },
             { name: "getCoupons", access: "read" },
@@ -2458,10 +3349,12 @@
             { name: "createOrderDraft", access: "write" },
           ],
           defaultKeywords: ["购票", "买票", "门票", "订票"],
+          customKeywords: [],
           subIntents: [
             {
               name: "购票入口",
               keywords: ["购票", "买票", "门票", "订票"],
+              customKeywords: ["怎么买票", "门票多少钱"],
               tools: [
                 { name: "getProductCatalog", access: "read" },
                 { name: "createOrderDraft", access: "write" },
@@ -2471,11 +3364,13 @@
         },
         parking_pay: {
           name: "停车缴费",
+          enabled: false,
           tools: [
             { name: "getParkingFee", access: "read" },
             { name: "createParkingOrder", access: "write" },
           ],
           defaultKeywords: ["停车缴费", "停车费", "交车费", "车牌"],
+          customKeywords: ["停车场怎么缴费"],
           subIntents: [],
         },
       };
@@ -2495,11 +3390,41 @@
         parking_pay: DEMO_SKILLS.parking_pay.defaultKeywords,
       };
 
-      /** 运营扩展关键字（对话与配置可增删） */
-      var DEMO_SKILL_CUSTOM_KEYWORDS = {
-        ticket_purchase: ["怎么买票", "门票多少钱"],
-        parking_pay: ["停车场怎么缴费"],
-      };
+      var CUSTOM_KW_HINT =
+        "勿与同层默认词重复；本 Skill 内（含各子意图）唯一；跨 Skill 重复请到冲突检查对照";
+      var CUSTOM_KW_HINT_INLINE =
+        "本 Skill 内（含各子意图）唯一；跨 Skill 重复请到冲突检查对照。";
+
+      function formatToolViewLabel(name, access) {
+        return (name || "—") + "-" + (access === "write" ? "写入" : "只读");
+      }
+
+      function fillToolViewList(container, tools) {
+        if (!container) return;
+        container.innerHTML = "";
+        var list = tools || [];
+        if (!list.length) {
+          container.className = "tool-view-text";
+          container.textContent = "暂无";
+          return;
+        }
+        if (container.getAttribute("data-tool-view") === "inline") {
+          container.className = "tool-view-text";
+          container.textContent = list
+            .map(function (t) {
+              return formatToolViewLabel(t.name, t.access);
+            })
+            .join("、");
+          return;
+        }
+        container.className = "tool-view-list";
+        list.forEach(function (t) {
+          var row = document.createElement("div");
+          row.className = "tool-view-item";
+          row.textContent = formatToolViewLabel(t.name, t.access);
+          container.appendChild(row);
+        });
+      }
 
       function escapeHtml(s) {
         return String(s)
@@ -2580,7 +3505,10 @@
         options = options || {};
         var readonly = !!options.readonly;
         var wrap = document.createElement("div");
-        wrap.className = "kw-editor" + (readonly ? " kw-editor--readonly" : "");
+        wrap.className =
+          "kw-editor" +
+          (readonly ? " kw-editor--readonly" : "") +
+          (options.sm ? " kw-editor--sm" : "");
         var list = Array.isArray(keywords) ? keywords.slice() : [];
         var tagsEl = document.createElement("div");
         tagsEl.className = "kw-editor__tags";
@@ -2596,19 +3524,37 @@
             e.preventDefault();
             var v = input.value.trim();
             if (!v) return;
-            if (list.indexOf(v) === -1) list.push(v);
+            if (list.indexOf(v) !== -1) {
+              input.value = "";
+              return;
+            }
+            if (typeof options.validateAdd === "function") {
+              var err = options.validateAdd(v, list.slice());
+              if (err) {
+                if (options.onInvalid) options.onInvalid(err);
+                return;
+              }
+            }
+            list.push(v);
             input.value = "";
             renderTags();
             if (options.onChange) options.onChange(list.slice());
           });
           if (options.inlineHint) {
             var inputRow = document.createElement("div");
-            inputRow.className = "kw-editor__input-row";
-            inputRow.appendChild(input);
+            inputRow.className =
+              "kw-editor__input-row" +
+              (options.inlineHintFirst ? " kw-editor__input-row--hint-first" : "");
             var inlineHint = document.createElement("span");
             inlineHint.className = "field-hint-inline";
             inlineHint.textContent = options.inlineHint;
-            inputRow.appendChild(inlineHint);
+            if (options.inlineHintFirst) {
+              inputRow.appendChild(inlineHint);
+              inputRow.appendChild(input);
+            } else {
+              inputRow.appendChild(input);
+              inputRow.appendChild(inlineHint);
+            }
             wrap.appendChild(inputRow);
           } else {
             wrap.appendChild(input);
@@ -2679,36 +3625,251 @@
           .join("");
       }
 
+      var DISPLAY_RULE_FIELDS = [
+        { id: "inPark", label: "是否在园", type: "boolean" },
+        { id: "hasPendingVisitOrder", label: "待出行（非当日）", type: "boolean" },
+        { id: "canClaimNewGuestCoupon", label: "可领新客券", type: "boolean" },
+        { id: "hasReviewableOrders", label: "可评价订单", type: "boolean" },
+        { id: "hasInvoiceableOrders", label: "可开票订单", type: "boolean" },
+        {
+          id: "memberLevel",
+          label: "会员等级",
+          type: "enum",
+          options: [
+            { value: "普通会员", label: "普通会员" },
+            { value: "白银会员", label: "白银会员" },
+            { value: "黄金会员", label: "黄金会员" },
+          ],
+        },
+        { id: "hasVisitToday", label: "今日出行", type: "boolean" },
+        { id: "tags", label: "指定标签（预留）", type: "tags" },
+      ];
+
+      var DISPLAY_RULES_BLOCK_HTML =
+        '<div class="field-block field-block--rules">' +
+        '<div class="field-block__label">展示规则</div>' +
+        '<div class="field-block__content">' +
+        '<div class="field-block__toolbar">' +
+        '<button type="button" class="btn btn-sm" id="display-rule-add">+ 添加条件</button>' +
+        '<span class="field-block__hint">多条件为 <strong>AND</strong>；无条件则始终展示</span>' +
+        "</div>" +
+        '<div class="rule-list" id="display-rule-list"></div>' +
+        "</div></div>";
+
+      function getDisplayRuleField(fieldId) {
+        for (var i = 0; i < DISPLAY_RULE_FIELDS.length; i++) {
+          if (DISPLAY_RULE_FIELDS[i].id === fieldId) return DISPLAY_RULE_FIELDS[i];
+        }
+        return DISPLAY_RULE_FIELDS[0];
+      }
+
+      function buildDisplayRuleFieldOptionsHtml(selectedId) {
+        return DISPLAY_RULE_FIELDS.map(function (f) {
+          return (
+            '<option value="' +
+            f.id +
+            '"' +
+            (f.id === selectedId ? " selected" : "") +
+            ">" +
+            f.label +
+            "</option>"
+          );
+        }).join("");
+      }
+
+      function buildDisplayRuleValueOptionsHtml(field, selectedValue) {
+        if (field.type === "enum") {
+          return (field.options || [])
+            .map(function (opt) {
+              return (
+                '<option value="' +
+                escapeHtml(opt.value) +
+                '"' +
+                (opt.value === selectedValue ? " selected" : "") +
+                ">" +
+                escapeHtml(opt.label) +
+                "</option>"
+              );
+            })
+            .join("");
+        }
+        if (field.type === "tags") {
+          return (
+            '<option value="" selected disabled>预留，暂不可选</option>'
+          );
+        }
+        var boolVal = selectedValue === false || selectedValue === "false" ? "false" : "true";
+        return (
+          '<option value="true"' +
+          (boolVal === "true" ? " selected" : "") +
+          ">是</option>" +
+          '<option value="false"' +
+          (boolVal === "false" ? " selected" : "") +
+          ">否</option>"
+        );
+      }
+
+      function defaultValueForDisplayRuleField(field) {
+        if (field.type === "enum" && field.options && field.options.length) {
+          return field.options[0].value;
+        }
+        if (field.type === "tags") return "";
+        return true;
+      }
+
+
+      function bindClickTarget(root) {
+        var wrap = root.querySelector("[data-click-target]");
+        if (!wrap) return;
+        var firstRadio = wrap.querySelector('input[type="radio"]');
+        if (!firstRadio || !firstRadio.name) return;
+        var radioName = firstRadio.name;
+        var radios = root.querySelectorAll('input[name="' + radioName + '"]');
+        var panels = root.querySelectorAll("[data-click-panel]");
+        var items = wrap.querySelectorAll(".seg-radio__item");
+        if (!radios.length) return;
+
+        function apply(mode) {
+          items.forEach(function (item) {
+            var radio = item.querySelector('input[type="radio"]');
+            item.classList.toggle("is-active", !!(radio && radio.checked));
+          });
+          panels.forEach(function (panel) {
+            var key = panel.getAttribute("data-click-panel");
+            var show = key === mode;
+            if (show) {
+              panel.removeAttribute("hidden");
+              panel.hidden = false;
+            } else {
+              panel.setAttribute("hidden", "");
+              panel.hidden = true;
+            }
+          });
+        }
+
+        items.forEach(function (item) {
+          item.addEventListener("click", function (e) {
+            e.preventDefault();
+            var radio = item.querySelector('input[type="radio"]');
+            if (!radio) return;
+            radio.checked = true;
+            apply(radio.value);
+          });
+        });
+
+        var checked = root.querySelector('input[name="' + radioName + '"]:checked');
+        apply(checked ? checked.value : "chat");
+      }
+
+      function bindWelcomeClickTarget(root) {
+        bindClickTarget(root);
+      }
+
+      function bindDisplayRulesEditor(root) {
+        var listEl = root.querySelector("#display-rule-list");
+        var addBtn = root.querySelector("#display-rule-add");
+        if (!listEl || !addBtn) return;
+
+        var rules = [];
+
+        function refreshSelectEnhancements() {
+          enhanceSelects(listEl);
+        }
+
+        function render() {
+          listEl.innerHTML = "";
+          if (!rules.length) {
+            var empty = document.createElement("div");
+            empty.className = "rule-empty";
+            empty.textContent = "暂无条件（始终展示）";
+            listEl.appendChild(empty);
+            return;
+          }
+          rules.forEach(function (rule, index) {
+            var field = getDisplayRuleField(rule.fieldId);
+            var row = document.createElement("div");
+            row.className = "rule-row";
+            row.setAttribute("data-rule-index", String(index));
+            if (index > 0) {
+              var andEl = document.createElement("div");
+              andEl.className = "rule-row__and";
+              andEl.textContent = "且 AND";
+              row.appendChild(andEl);
+            }
+            var fieldSelect = document.createElement("select");
+            fieldSelect.className = "select select--field";
+            fieldSelect.setAttribute("aria-label", "条件字段");
+            fieldSelect.innerHTML = buildDisplayRuleFieldOptionsHtml(rule.fieldId);
+            fieldSelect.addEventListener("change", function () {
+              var nextField = getDisplayRuleField(fieldSelect.value);
+              rules[index] = {
+                fieldId: nextField.id,
+                value: defaultValueForDisplayRuleField(nextField),
+              };
+              render();
+              refreshSelectEnhancements();
+            });
+            row.appendChild(fieldSelect);
+
+            var valueSelect = document.createElement("select");
+            valueSelect.className = "select select--value";
+            valueSelect.setAttribute("aria-label", "条件值");
+            valueSelect.innerHTML = buildDisplayRuleValueOptionsHtml(field, rule.value);
+            valueSelect.disabled = field.type === "tags";
+            valueSelect.addEventListener("change", function () {
+              var raw = valueSelect.value;
+              if (field.type === "boolean") {
+                rules[index].value = raw === "true";
+              } else {
+                rules[index].value = raw;
+              }
+            });
+            row.appendChild(valueSelect);
+
+            var removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.className = "btn-link";
+            removeBtn.textContent = "删除";
+            removeBtn.addEventListener("click", function () {
+              rules.splice(index, 1);
+              render();
+              refreshSelectEnhancements();
+            });
+            row.appendChild(removeBtn);
+
+            listEl.appendChild(row);
+          });
+          refreshSelectEnhancements();
+        }
+
+        addBtn.addEventListener("click", function () {
+          var field = DISPLAY_RULE_FIELDS[0];
+          rules.push({
+            fieldId: field.id,
+            value: defaultValueForDisplayRuleField(field),
+          });
+          render();
+        });
+
+        render();
+      }
+
       var templates = {
-        skill:
-          '<div class="field-row"><label>名称</label>' +
-          '<input class="input" type="text" value="智能购票" disabled /></div>' +
-          '<div class="field-block">' +
-          '<div class="field-block__label">默认关键词</div>' +
-          '<div class="field-block__content">' +
-          '<div class="kw-editor kw-editor--readonly" id="skill-kw-default"></div>' +
-          '<p class="field-block__hint" style="margin-top:8px">来自运维：无子意图时为 Skill 默认词；有子意图时为各子意图默认词合集。运营不可删改。</p>' +
-          "</div></div>" +
-          '<div class="field-block">' +
-          '<div class="field-block__label">扩展关键词</div>' +
-          '<div class="field-block__content">' +
-          '<div id="skill-kw-custom-mount"></div>' +
-          '<p class="field-block__hint" style="margin-top:8px">运营可添加 / 移除；路由匹配 = 默认 ∪ 扩展；全局唯一；勿与默认词重复</p>' +
-          "</div></div>",
         "ops-log":
           '<div class="log-placeholder">' +
             '<strong>日志（占位）</strong>：对接统一日志展示模板，按 skillId 过滤。<br />' +
             '建议记入日志的动作：' +
             '<ul>' +
-              '<li>Skill：新增 / 编辑提交 / 状态启用·禁用</li>' +
+              '<li>Skill：新增 / 编辑提交 / 状态启用·禁用（运维）</li>' +
               '<li>子意图：在 Skill 编辑内增删改（含默认关键字）</li>' +
-              '<li>默认关键字迁移：0→1 子意图自动迁入；N→0 迁回 Skill</li>' +
+              '<li>默认 / 补充关键字迁移：0→1 子意图自动迁入；N→0 迁回 Skill</li>' +
               '<li>子意图工具绑定：增删改（含读写变更）</li>' +
-              '<li>运营扩展关键字：增删</li>' +
+              '<li>运营补充关键字：增删（Skill 或子意图级）</li>' +
             '</ul>' +
             '正式环境由统一日志组件渲染时间线，本原型仅定义范围。' +
           '</div>',
         "welcome-q":
+          '<div class="drawer-form drawer-form--welcome-q">' +
           '<div class="field-row">' +
           '<label><span class="req">*</span> 展示文案</label>' +
           '<div class="input-with-count">' +
@@ -2716,61 +3877,179 @@
           '<span class="input-count">0/40</span>' +
           "</div></div>" +
           '<div class="field-row">' +
-          '<label><span class="req">*</span> prompt</label>' +
+          '<label><span class="req">*</span> 辅助文案</label>' +
           '<div class="input-with-count">' +
-          '<input class="input" type="text" data-max-chars="40" placeholder="点击后发送的用户话术" />' +
-          '<span class="input-count">0/40</span>' +
+          '<input class="input" type="text" data-max-chars="100" placeholder="请输入" />' +
+          '<span class="input-count">0/100</span>' +
           "</div></div>" +
           '<div class="field-row">' +
-          '<label>优先级</label>' +
-          '<input class="input input-num" type="text" placeholder="数字" />' +
+          '<label><span class="req">*</span> 点击行为</label>' +
+          '<div class="click-target-field" data-click-target>' +
+          '<div class="seg-radio" role="radiogroup" aria-label="点击行为">' +
+          '<label class="seg-radio__item is-active">' +
+          '<input type="radio" name="welcome-click-target" value="chat" checked />' +
+          "进行对话</label>" +
+          '<label class="seg-radio__item">' +
+          '<input type="radio" name="welcome-click-target" value="mini" />' +
+          "小程序链接</label>" +
+          '<label class="seg-radio__item">' +
+          '<input type="radio" name="welcome-click-target" value="h5" />' +
+          "H5链接</label>" +
+          '<label class="seg-radio__item">' +
+          '<input type="radio" name="welcome-click-target" value="mp_page" />' +
+          "小程序页面</label>" +
+          "</div></div></div>" +
+          '<div class="field-row" data-click-panel="chat">' +
+          '<label><span class="req">*</span> prompt</label>' +
+          '<div class="input-with-count">' +
+          '<input class="input" type="text" data-max-chars="100" placeholder="点击后发送的用户话术" />' +
+          '<span class="input-count">0/100</span>' +
+          "</div></div>" +
+          '<div class="field-row" data-click-panel="mini" hidden>' +
+          '<label><span class="req">*</span> 小程序链接</label>' +
+          '<input class="input" type="text" placeholder="小程序页面路径或链接" />' +
+          "</div>" +
+          '<div class="field-row" data-click-panel="h5" hidden>' +
+          '<label><span class="req">*</span> H5链接</label>' +
+          '<input class="input" type="text" placeholder="https://" />' +
+          "</div>" +
+          '<div class="field-row" data-click-panel="mp_page" hidden>' +
+          '<label><span class="req">*</span> 跳转页面</label>' +
+          '<select class="select" aria-label="跳转页面">' +
+          '<option value="" selected disabled>加载自有小程序的菜单页面</option>' +
+          "</select>" +
+          "</div>" +
+          '<div class="field-row">' +
+          "<label>图标</label>" +
+          '<div class="upload-box upload-box--sm" role="button" tabindex="0" title="上传图标">上传</div>' +
           "</div>" +
           '<div class="field-row"><label>置顶</label><button type="button" class="switch"></button></div>' +
           '<div class="field-row">' +
-          '<label>展示规则</label>' +
-          '<select class="select"><option value="">无规则（始终展示）</option></select>' +
+          '<label>优先级</label>' +
+          '<input class="input input-num" type="text" placeholder="数字" />' +
           "</div>" +
-          '<p class="field-hint">规则字段对接后配置；支持多条件 AND</p>',
+          DISPLAY_RULES_BLOCK_HTML +
+          "</div>",
+        product:
+          '<div class="drawer-form drawer-form--product">' +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 产品类型</label>' +
+          '<select class="select" id="product-type-select" aria-label="产品类型">' +
+          '<option value="ticket" selected>门票</option>' +
+          '<option value="pass">卡票</option>' +
+          '<option value="bundle">组合产品</option>' +
+          "</select>" +
+          "</div>" +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 来源</label>' +
+          '<select class="select" id="product-supplier-select" aria-label="来源">' +
+          '<option value="" selected disabled>请选择对接系统</option>' +
+          '<option value="park_ticket">智慧乐园票务</option>' +
+          '<option value="ocean_ticket">海洋公园票务</option>' +
+          "</select>" +
+          "</div>" +
+          '<div class="field-row field-row--ext-id">' +
+          '<label><span class="req">*</span> 对接产品 ID</label>' +
+          '<div class="field-control">' +
+          '<div class="product-id-lookup" id="product-id-lookup">' +
+          '<input class="input product-id-lookup__input" id="product-id-input" type="text" autocomplete="off" aria-autocomplete="list" aria-expanded="false" />' +
+          '<div class="product-id-lookup__dropdown" id="product-id-dropdown" role="listbox"></div>' +
+          "</div>" +
+          '<span class="field-hint-inline" id="product-id-hint">请输入对接系统的产品 ID，不可重复提交。</span>' +
+          "</div></div>" +
+          '<div class="field-row field-row--snapshot" id="product-snapshot-row" hidden>' +
+          '<label aria-hidden="true">&nbsp;</label>' +
+          '<div class="product-snapshot" id="product-snapshot" hidden></div>' +
+          "</div>" +
+          '<div class="field-row field-row--tags">' +
+          "<label>标签</label>" +
+          '<div class="product-tags-field">' +
+          '<div class="product-tags-field__toolbar">' +
+          '<button type="button" class="btn btn-sm" id="product-tag-add">选择标签</button>' +
+          '<span class="product-tags-field__hint">推荐用标签表达人群/场景（如成人、亲子、年卡）</span>' +
+          "</div>" +
+          '<div class="product-tags-field__selected" id="product-tags-selected"></div>' +
+          "</div>" +
+          "</div>" +
+          "</div>",
         service:
+          '<div class="drawer-form drawer-form--service">' +
           '<div class="field-row">' +
           '<label><span class="req">*</span> 标题</label>' +
           '<div class="input-with-count">' +
-          '<input class="input" type="text" data-max-chars="40" placeholder="请输入" />' +
-          '<span class="input-count">0/40</span>' +
+          '<input class="input" type="text" data-max-chars="10" placeholder="请输入" />' +
+          '<span class="input-count">0/10</span>' +
           "</div></div>" +
           '<div class="field-row">' +
-          '<label>图标</label>' +
-          '<input class="input" type="text" placeholder="图标 key / URL" />' +
-          "</div>" +
-          '<div class="field-row">' +
-          '<label>目标类型</label>' +
-          '<select class="select"><option>发送 prompt</option><option>跳转页面</option></select>' +
-          "</div>" +
-          '<div class="field-row">' +
-          '<label><span class="req">*</span> prompt / 路径</label>' +
+          '<label><span class="req">*</span> 点击行为</label>' +
+          '<div class="click-target-field" data-click-target>' +
+          '<div class="seg-radio" role="radiogroup" aria-label="点击行为">' +
+          '<label class="seg-radio__item is-active">' +
+          '<input type="radio" name="service-click-target" value="chat" checked />' +
+          "进行对话</label>" +
+          '<label class="seg-radio__item">' +
+          '<input type="radio" name="service-click-target" value="mini" />' +
+          "小程序链接</label>" +
+          '<label class="seg-radio__item">' +
+          '<input type="radio" name="service-click-target" value="h5" />' +
+          "H5链接</label>" +
+          '<label class="seg-radio__item">' +
+          '<input type="radio" name="service-click-target" value="mp_page" />' +
+          "小程序页面</label>" +
+          "</div></div></div>" +
+          '<div class="field-row" data-click-panel="chat">' +
+          '<label><span class="req">*</span> prompt</label>' +
           '<div class="input-with-count">' +
-          '<input class="input" type="text" data-max-chars="40" placeholder="请输入" />' +
-          '<span class="input-count">0/40</span>' +
+          '<input class="input" type="text" data-max-chars="100" placeholder="点击后发送的用户话术" />' +
+          '<span class="input-count">0/100</span>' +
           "</div></div>" +
+          '<div class="field-row" data-click-panel="mini" hidden>' +
+          '<label><span class="req">*</span> 小程序链接</label>' +
+          '<input class="input" type="text" placeholder="小程序页面路径或链接" />' +
+          "</div>" +
+          '<div class="field-row" data-click-panel="h5" hidden>' +
+          '<label><span class="req">*</span> H5链接</label>' +
+          '<input class="input" type="text" placeholder="https://" />' +
+          "</div>" +
+          '<div class="field-row" data-click-panel="mp_page" hidden>' +
+          '<label><span class="req">*</span> 跳转页面</label>' +
+          '<select class="select" aria-label="跳转页面">' +
+          '<option value="" selected disabled>加载自有小程序的菜单页面</option>' +
+          "</select>" +
+          "</div>" +
+          '<div class="field-row">' +
+          "<label>图标</label>" +
+          '<div class="upload-box upload-box--sm" role="button" tabindex="0" title="上传图标">上传</div>' +
+          "</div>" +
           '<div class="field-row">' +
           '<label>优先级</label>' +
           '<input class="input input-num" type="text" placeholder="数字" />' +
           "</div>" +
-          '<div class="field-row">' +
-          '<label>展示规则</label>' +
-          '<select class="select"><option value="">无规则（始终展示）</option></select>' +
+          DISPLAY_RULES_BLOCK_HTML +
           "</div>",
       };
 
       var TOOL_BIND_MAX = 20;
       var SUB_INTENT_MAX = 10;
 
-      function createToolBindRow(name, access, onChange) {
+      function createToolBindRow(name, access, onChange, options) {
+        options = options || {};
+        var readonly = !!options.readonly;
         var row = document.createElement("div");
         row.className = "tool-bind__row";
+        if (readonly) {
+          row.innerHTML =
+            '<span class="tool-bind__tool-text">' +
+            escapeHtml(name || "—") +
+            "</span>" +
+            '<span class="tool-bind__access-text">' +
+            (access === "write" ? "写入" : "只读") +
+            "</span>";
+          return row;
+        }
         row.innerHTML =
           '<input class="input" type="text" placeholder="能力标识，如 getProductCatalog" value="' +
-          (name || "") +
+          escapeHtml(name || "") +
           '" />' +
           '<select class="select" aria-label="读写">' +
           '<option value="read"' +
@@ -2791,10 +4070,24 @@
         return row;
       }
 
-      function bindToolBindEditor(root, initialTools) {
+      function bindToolBindEditor(root, initialTools, options) {
+        options = options || {};
+        var readonly = !!options.readonly;
         var list = root.querySelector("#tool-bind-list");
         var addBtn = root.querySelector("#tool-bind-add");
-        if (!list || !addBtn) return;
+        var toolbar = root.querySelector("#tool-bind-toolbar");
+        if (!list) return;
+
+        if (readonly) {
+          if (toolbar) toolbar.hidden = true;
+          if (addBtn) addBtn.hidden = true;
+          (initialTools || []).forEach(function (t) {
+            list.appendChild(createToolBindRow(t.name, t.access, null, { readonly: true }));
+          });
+          return;
+        }
+
+        if (!addBtn) return;
 
         function syncToolBindAddBtn() {
           var count = list.querySelectorAll(".tool-bind__row").length;
@@ -2820,9 +4113,18 @@
         root.querySelectorAll("#tool-bind-list .tool-bind__row").forEach(function (row) {
           var input = row.querySelector("input.input");
           var sel = row.querySelector("select");
-          var name = input ? input.value.trim() : "";
-          if (!name) return;
-          pool.push({ name: name, access: sel && sel.value === "write" ? "write" : "read" });
+          var text = row.querySelector(".tool-bind__tool-text");
+          var accessText = row.querySelector(".tool-bind__access-text");
+          var name = input
+            ? input.value.trim()
+            : text
+              ? text.textContent.trim()
+              : "";
+          if (!name || name === "—") return;
+          var access = "read";
+          if (sel) access = sel.value === "write" ? "write" : "read";
+          else if (accessText && accessText.textContent.indexOf("写入") !== -1) access = "write";
+          pool.push({ name: name, access: access });
         });
         return pool;
       }
@@ -2879,7 +4181,9 @@
         }
       }
 
-      function createSubIntentToolRow(pool, toolName, access, onChange) {
+      function createSubIntentToolRow(pool, toolName, access, onChange, options) {
+        options = options || {};
+        var readonly = !!options.readonly;
         var row = document.createElement("div");
         row.className = "tool-bind__row";
         var initial = toolName || (pool[0] && pool[0].name) || "";
@@ -2888,6 +4192,16 @@
           if (t.name === initial) skillAccess = t.access;
         });
         var preferred = skillAccess === "read" ? "read" : access || "write";
+        if (readonly) {
+          row.innerHTML =
+            '<span class="tool-bind__tool-text">' +
+            escapeHtml(initial || "—") +
+            "</span>" +
+            '<span class="tool-bind__access-text">' +
+            (preferred === "write" ? "写入" : "只读") +
+            "</span>";
+          return row;
+        }
         row.innerHTML =
           '<select class="select sub-intent-tool" aria-label="绑定工具">' +
           skillToolOptionsHtml(pool, initial) +
@@ -2923,11 +4237,67 @@
         return row;
       }
 
-      function createSubIntentCard(pool, data, onListChange, onKwChange) {
+      function createSubIntentCard(pool, data, onListChange, onKwChange, options) {
         data = data || {};
+        options = options || {};
+        var audience = options.audience || "ops";
+        var isKeyword = audience === "keyword";
         var card = document.createElement("div");
         card.className = "sub-intent-card";
+
+        if (isKeyword) {
+          card.innerHTML =
+            '<div class="field-block">' +
+            '<div class="field-block__label">子意图名称</div>' +
+            '<div class="field-block__content">' +
+            '<span class="field-view-text">' +
+            escapeHtml(data.name || "—") +
+            "</span></div></div>" +
+            '<div class="field-block field-block--view-center">' +
+            '<div class="field-block__label">绑定工具</div>' +
+            '<div class="field-block__content">' +
+            '<div class="sub-intent-tool-list" data-tool-view="inline"></div>' +
+            "</div></div>" +
+            '<div class="field-block field-block--view-center">' +
+            '<div class="field-block__label">关键词</div>' +
+            '<div class="field-block__content">' +
+            '<div class="sub-intent-kw-mount"></div>' +
+            "</div></div>" +
+            '<div class="field-block">' +
+            '<div class="field-block__label">补充关键词</div>' +
+            '<div class="field-block__content">' +
+            '<div class="sub-intent-custom-kw-mount"></div>' +
+            "</div></div>";
+
+          var kwMount = card.querySelector(".sub-intent-kw-mount");
+          var customMount = card.querySelector(".sub-intent-custom-kw-mount");
+          var kwEditor = createKwEditor(data.keywords || [], { readonly: true });
+          kwMount.appendChild(kwEditor);
+          card._kwEditor = kwEditor;
+
+          var customEditor = createKwEditor(data.customKeywords || [], {
+            sm: true,
+            placeholder: "输入后回车添加",
+            inlineHint: CUSTOM_KW_HINT_INLINE,
+            validateAdd: function (v) {
+              return options.validateCustomAdd
+                ? options.validateCustomAdd(v, card)
+                : null;
+            },
+            onInvalid: options.onInvalid,
+            onChange: function () {
+              if (onKwChange) onKwChange();
+            },
+          });
+          customMount.appendChild(customEditor);
+          card._customKwEditor = customEditor;
+
+          fillToolViewList(card.querySelector(".sub-intent-tool-list"), data.tools || []);
+          return card;
+        }
+
         card.innerHTML =
+          '<button type="button" class="btn btn-sm sub-intent-remove sub-intent-card__remove">移除整组</button>' +
           '<div class="field-block">' +
           '<div class="field-block__label"><span class="req">*</span> 子意图名称</div>' +
           '<div class="field-block__content">' +
@@ -2938,12 +4308,17 @@
           '" />' +
           '<span class="input-count">0/40</span>' +
           "</div>" +
-          '<button type="button" class="btn btn-sm sub-intent-remove">移除整组</button>' +
           "</div></div></div>" +
           '<div class="field-block">' +
           '<div class="field-block__label"><span class="req">*</span> 关键词</div>' +
           '<div class="field-block__content">' +
           '<div class="sub-intent-kw-mount"></div>' +
+          "</div></div>" +
+          '<div class="field-block">' +
+          '<div class="field-block__label">补充关键词</div>' +
+          '<div class="field-block__content">' +
+          '<p class="field-block__hint field-block__hint--label-align">运营维护；只读展示。0→1 / N→0 与默认词同迁</p>' +
+          '<div class="sub-intent-custom-kw-mount"></div>' +
           "</div></div>" +
           '<div class="field-block">' +
           '<div class="field-block__label"><span class="req">*</span> 绑定工具</div>' +
@@ -2954,21 +4329,33 @@
           "</div>" +
           '<div class="tool-bind__list sub-intent-tool-list"></div>' +
           "</div></div>";
-        var kwMount = card.querySelector(".sub-intent-kw-mount");
-        var kwEditor = createKwEditor(data.keywords || [], {
-          placeholder: "输入后回车添加关键词",
+        card.classList.add("sub-intent-card--editable");
+        var kwMountOps = card.querySelector(".sub-intent-kw-mount");
+        var customMountOps = card.querySelector(".sub-intent-custom-kw-mount");
+        var kwEditorOps = createKwEditor(data.keywords || [], {
+          placeholder: "输入后回车添加",
           onChange: function () {
             if (onKwChange) onKwChange();
           },
         });
-        kwMount.appendChild(kwEditor);
-        card._kwEditor = kwEditor;
+        kwMountOps.appendChild(kwEditorOps);
+        card._kwEditor = kwEditorOps;
+
+        var customEditorOps = createKwEditor(data.customKeywords || [], {
+          readonly: true,
+          onChange: function () {
+            if (onKwChange) onKwChange();
+          },
+        });
+        customMountOps.appendChild(customEditorOps);
+        card._customKwEditor = customEditorOps;
+
         bindCharCount(card.querySelector(".sub-intent-name"), 40);
 
         var toolList = card.querySelector(".sub-intent-tool-list");
         var addToolBtn = card.querySelector(".sub-intent-tool-add");
         function syncToolAdd() {
-          addToolBtn.disabled = !pool.length;
+          if (addToolBtn) addToolBtn.disabled = !pool.length;
         }
         var tools = data.tools || [];
         if (!tools.length && pool.length) {
@@ -2977,36 +4364,92 @@
         tools.forEach(function (t) {
           toolList.appendChild(createSubIntentToolRow(pool, t.name, t.access, syncToolAdd));
         });
-        syncToolAdd();
-        addToolBtn.addEventListener("click", function () {
-          if (!pool.length) return;
-          toolList.appendChild(createSubIntentToolRow(pool, "", "write", syncToolAdd));
+        if (addToolBtn) {
           syncToolAdd();
-        });
-        card.querySelector(".sub-intent-remove").addEventListener("click", function () {
-          var parent = card.parentElement;
-          var union = [];
-          if (parent) {
-            parent.querySelectorAll(".sub-intent-card").forEach(function (c) {
-              if (!c._kwEditor) return;
-              c._kwEditor.getKeywords().forEach(function (k) {
-                if (union.indexOf(k) === -1) union.push(k);
+          addToolBtn.addEventListener("click", function () {
+            if (!pool.length) return;
+            toolList.appendChild(createSubIntentToolRow(pool, "", "write", syncToolAdd));
+            syncToolAdd();
+          });
+        }
+        var removeBtn = card.querySelector(".sub-intent-remove");
+        if (removeBtn) {
+          removeBtn.addEventListener("click", function () {
+            var parent = card.parentElement;
+            var union = [];
+            var unionCustom = [];
+            if (parent) {
+              parent.querySelectorAll(".sub-intent-card").forEach(function (c) {
+                if (c._kwEditor) {
+                  c._kwEditor.getKeywords().forEach(function (k) {
+                    if (union.indexOf(k) === -1) union.push(k);
+                  });
+                }
+                if (c._customKwEditor) {
+                  c._customKwEditor.getKeywords().forEach(function (k) {
+                    if (unionCustom.indexOf(k) === -1) unionCustom.push(k);
+                  });
+                }
               });
-            });
-          }
-          card.remove();
-          var left = parent ? parent.querySelectorAll(".sub-intent-card").length : 0;
-          if (onListChange) {
-            onListChange(left === 0 ? { removedKeywords: union } : undefined);
-          }
-        });
+            }
+            card.remove();
+            var left = parent ? parent.querySelectorAll(".sub-intent-card").length : 0;
+            if (onListChange) {
+              onListChange(
+                left === 0
+                  ? { removedKeywords: union, removedCustomKeywords: unionCustom }
+                  : undefined
+              );
+            }
+          });
+        }
         return card;
       }
 
-      function buildOpsSkillForm(mode, skillId) {
-        var isCreate = mode === "create";
+      function buildOpsSkillForm(mode, skillId, audience) {
+        audience = audience || "ops";
+        var isKeyword = audience === "keyword";
+        var isCreate = mode === "create" && !isKeyword;
         var demo = !isCreate ? DEMO_SKILLS[skillId] || DEMO_SKILLS.ticket_purchase : null;
         var nameValue = demo ? demo.name : "";
+
+        if (isKeyword) {
+          var promptText = (demo && demo.promptAddon) || "";
+          return (
+            '<div class="drawer-toast" id="sub-intent-toast"></div>' +
+            '<table class="desc-table">' +
+            "<tbody>" +
+            "<tr><th>名称</th><td>" +
+            escapeHtml(nameValue || "—") +
+            "</td></tr>" +
+            '<tr><th>绑定工具</th><td><div id="tool-bind-list" data-tool-view="inline"></div></td></tr>' +
+            "<tr><th>场景指令</th><td" +
+            (promptText ? ' class="desc-table__cell--top"' : "") +
+            ">" +
+            (promptText
+              ? '<div class="field-view-text field-view-text--block">' +
+                escapeHtml(promptText) +
+                "</div>"
+              : "暂无") +
+            "</td></tr>" +
+            "</tbody></table>" +
+            '<div class="kw-section">' +
+            '<div class="kw-section__title">子意图</div>' +
+            '<div class="sub-intent-list" id="sub-intent-list"></div>' +
+            "</div>" +
+            '<div class="field-block field-block--view-center">' +
+            '<div class="field-block__label" id="ops-skill-kw-label">默认关键词</div>' +
+            '<div class="field-block__content">' +
+            '<div id="ops-skill-kw-slot"></div>' +
+            "</div></div>" +
+            '<div class="field-block" id="ops-skill-custom-kw-block">' +
+            '<div class="field-block__label">补充关键词</div>' +
+            '<div class="field-block__content">' +
+            '<div id="ops-skill-custom-kw-slot"></div>' +
+            "</div></div>"
+          );
+        }
+
         var html = "";
         if (isCreate) {
           html +=
@@ -3028,23 +4471,23 @@
           '" />' +
           '<span class="input-count">0/40</span>' +
           "</div></div>" +
+          '<div class="drawer-toast" id="sub-intent-toast"></div>' +
           '<div class="field-block">' +
           '<div class="field-block__label"><span class="req">*</span> 绑定工具</div>' +
           '<div class="field-block__content">' +
-          '<div class="field-block__toolbar">' +
+          '<div class="field-block__toolbar" id="tool-bind-toolbar">' +
           '<button type="button" class="btn btn-sm btn-primary" id="tool-bind-add">添加工具（0/20）</button>' +
           '<span class="field-block__hint">每组：能力标识 + 只读/写入；最多 20 组。子意图只能从本列表选择工具。</span>' +
           "</div>" +
           '<div class="tool-bind"><div class="tool-bind__list" id="tool-bind-list"></div></div>' +
           "</div></div>" +
-          '<div class="drawer-toast" id="sub-intent-toast"></div>' +
           '<div class="field-block">' +
           '<div class="field-block__label">子意图</div>' +
           '<div class="field-block__content">' +
           '<div class="alert" id="sub-intent-migrate-banner" hidden style="margin-bottom:10px"></div>' +
-          '<div class="field-block__toolbar">' +
+          '<div class="field-block__toolbar" id="sub-intent-toolbar">' +
           '<button type="button" class="btn btn-sm btn-primary" id="sub-intent-add">新增子意图（0/10）</button>' +
-          '<span class="field-block__hint">子意图需独立维护关键词，如后置新增子意图，则将原默认值迁入第1条子意图</span>' +
+          '<span class="field-block__hint">后置新增第 1 条子意图时，默认与补充关键词一并迁入；删光子意图时对称迁回</span>' +
           "</div>" +
           '<div class="sub-intent-list" id="sub-intent-list"></div>' +
           "</div></div>" +
@@ -3054,38 +4497,65 @@
           '<p class="field-block__hint field-block__hint--label-align" id="ops-skill-kw-hint-top" hidden>无子意图时需必填当前字段，有子意图时不支持手动输入</p>' +
           '<div id="ops-skill-kw-slot"></div>' +
           "</div></div>" +
+          '<div class="field-block" id="ops-skill-custom-kw-block">' +
+          '<div class="field-block__label">补充关键词</div>' +
+          '<div class="field-block__content">' +
+          '<div id="ops-skill-custom-kw-slot"></div>' +
+          '<p class="field-block__hint" id="ops-skill-custom-kw-hint" style="margin-top:8px"></p>' +
+          "</div></div>" +
           '<div class="field-block">' +
           '<div class="field-block__label">场景指令</div>' +
           '<div class="field-block__content">' +
           '<div class="field-block__toolbar">' +
           '<span class="field-block__hint">写入 promptAddon，指导本 Skill 下 LLM 行为</span>' +
           "</div>" +
-          '<textarea class="textarea" placeholder="请输入场景指令"></textarea>' +
+          '<textarea class="textarea" id="ops-skill-prompt" placeholder="请输入场景指令"></textarea>' +
           "</div></div>";
         return html;
       }
 
-      function bindOpsSkillForm(root, mode, skillId) {
-        var isCreate = mode === "create";
+      function bindOpsSkillForm(root, mode, skillId, audience) {
+        audience = audience || "ops";
+        var isKeyword = audience === "keyword";
+        var isCreate = mode === "create" && !isKeyword;
         var demo = !isCreate
           ? DEMO_SKILLS[skillId] || DEMO_SKILLS.ticket_purchase
-          : { tools: [], defaultKeywords: [], subIntents: [] };
+          : { tools: [], defaultKeywords: [], customKeywords: [], subIntents: [] };
 
-        bindToolBindEditor(root, demo.tools || []);
-        bindCharCount(root.querySelector("#ops-skill-name"), 40);
-        bindCharCount(root.querySelector("#ops-skill-id"), 40);
+        if (isKeyword) {
+          fillToolViewList(root.querySelector("#tool-bind-list"), demo.tools || []);
+          root.classList.add("drawer-body--keyword");
+        } else {
+          bindToolBindEditor(root, demo.tools || []);
+          bindCharCount(root.querySelector("#ops-skill-name"), 40);
+          bindCharCount(root.querySelector("#ops-skill-id"), 40);
+        }
 
         var list = root.querySelector("#sub-intent-list");
         var addBtn = root.querySelector("#sub-intent-add");
+        var subToolbar = root.querySelector("#sub-intent-toolbar");
         var kwSlot = root.querySelector("#ops-skill-kw-slot");
+        var customSlot = root.querySelector("#ops-skill-custom-kw-slot");
+        var customBlock = root.querySelector("#ops-skill-custom-kw-block");
+        var customHint = root.querySelector("#ops-skill-custom-kw-hint");
         var kwHintTop = root.querySelector("#ops-skill-kw-hint-top");
         var kwReq = root.querySelector("#ops-skill-kw-req");
+        var kwLabelBlock = root.querySelector("#ops-skill-kw-label");
+        if (kwLabelBlock && kwLabelBlock.closest) {
+          var kwFieldBlock = kwLabelBlock.closest(".field-block");
+          if (kwFieldBlock && isKeyword) kwFieldBlock.classList.add("field-block--view-center");
+        }
         var banner = root.querySelector("#sub-intent-migrate-banner");
         var toast = root.querySelector("#sub-intent-toast");
-        if (!list || !addBtn || !kwSlot) return;
+        if (!list || !kwSlot) return;
+
+        if (isKeyword && subToolbar) subToolbar.hidden = true;
+        if (isKeyword && addBtn) addBtn.hidden = true;
 
         var pendingDefaults = (demo.defaultKeywords || []).slice();
+        var pendingCustoms = (demo.customKeywords || []).slice();
         var skillKwEditor = null;
+        var skillCustomEditor = null;
         var KW_HINT = "无子意图时需必填当前字段，有子意图时不支持手动输入";
 
         function showToast(msg) {
@@ -3095,6 +4565,10 @@
           setTimeout(function () {
             toast.classList.remove("show");
           }, 5000);
+        }
+
+        function showInvalidToast(msg) {
+          showErrorToast(msg);
         }
 
         function collectUnionFromCards() {
@@ -3108,26 +4582,104 @@
           return union;
         }
 
+        function collectCustomUnionFromCards() {
+          var union = [];
+          list.querySelectorAll(".sub-intent-card").forEach(function (c) {
+            if (!c._customKwEditor) return;
+            c._customKwEditor.getKeywords().forEach(function (k) {
+              if (union.indexOf(k) === -1) union.push(k);
+            });
+          });
+          return union;
+        }
+
+        function allSkillKeywordsExcept(excludeCard) {
+          var set = [];
+          function pushAll(arr) {
+            (arr || []).forEach(function (k) {
+              if (set.indexOf(k) === -1) set.push(k);
+            });
+          }
+          var count = list.querySelectorAll(".sub-intent-card").length;
+          if (count === 0) {
+            pushAll(skillKwEditor ? skillKwEditor.getKeywords() : pendingDefaults);
+            pushAll(skillCustomEditor ? skillCustomEditor.getKeywords() : pendingCustoms);
+          } else {
+            list.querySelectorAll(".sub-intent-card").forEach(function (c) {
+              if (c === excludeCard) return;
+              if (c._kwEditor) pushAll(c._kwEditor.getKeywords());
+              if (c._customKwEditor) pushAll(c._customKwEditor.getKeywords());
+            });
+          }
+          return set;
+        }
+
+        function validateCustomAdd(v, card) {
+          var layerDefaults = [];
+          if (card && card._kwEditor) layerDefaults = card._kwEditor.getKeywords();
+          else if (skillKwEditor) layerDefaults = skillKwEditor.getKeywords();
+          else layerDefaults = pendingDefaults;
+          if (layerDefaults.indexOf(v) !== -1) {
+            return "不可与同层默认关键词重复";
+          }
+          var others = allSkillKeywordsExcept(card || null);
+          if (others.indexOf(v) !== -1) {
+            return "本 Skill 内关键词须唯一（含各子意图）";
+          }
+          return null;
+        }
+
         function refreshSkillDefaultSlot() {
           var count = list.querySelectorAll(".sub-intent-card").length;
           kwSlot.innerHTML = "";
           skillKwEditor = null;
+          if (customSlot) customSlot.innerHTML = "";
+          skillCustomEditor = null;
           if (kwReq) kwReq.hidden = count > 0;
+          if (customBlock) customBlock.hidden = count > 0;
+
           if (count === 0) {
             if (kwHintTop) kwHintTop.hidden = true;
             skillKwEditor = createKwEditor(pendingDefaults, {
+              readonly: isKeyword,
               placeholder: "输入后回车添加默认关键词",
-              inlineHint: KW_HINT,
+              inlineHint: isKeyword ? "" : KW_HINT,
               onChange: function (kws) {
                 pendingDefaults = kws.slice();
                 syncBanner();
               },
             });
             kwSlot.appendChild(skillKwEditor);
+
+            if (customSlot) {
+              skillCustomEditor = createKwEditor(pendingCustoms, {
+                readonly: !isKeyword,
+                sm: isKeyword,
+                placeholder: "输入后回车添加",
+                inlineHint: isKeyword ? CUSTOM_KW_HINT_INLINE : "",
+                validateAdd: isKeyword
+                  ? function (v) {
+                      return validateCustomAdd(v, null);
+                    }
+                  : null,
+                onInvalid: showInvalidToast,
+                onChange: function (kws) {
+                  pendingCustoms = kws.slice();
+                  syncBanner();
+                },
+              });
+              customSlot.appendChild(skillCustomEditor);
+            }
+            if (customHint) {
+              customHint.textContent = isKeyword
+                ? ""
+                : "运营维护；只读展示。后置新增子意图时与默认词一并迁入第 1 条";
+              customHint.hidden = !!isKeyword;
+            }
           } else {
             if (kwHintTop) {
-              kwHintTop.hidden = false;
-              kwHintTop.textContent = KW_HINT;
+              kwHintTop.hidden = isKeyword ? true : false;
+              if (!isKeyword) kwHintTop.textContent = KW_HINT;
             }
             var box = document.createElement("div");
             box.className = "kw-editor kw-editor--readonly";
@@ -3142,17 +4694,27 @@
 
         function syncBanner() {
           var count = list.querySelectorAll(".sub-intent-card").length;
-          if (!banner) return;
+          if (!banner || isKeyword) {
+            if (banner) banner.hidden = true;
+            return;
+          }
           if (count === 0) {
             var kws = skillKwEditor ? skillKwEditor.getKeywords() : pendingDefaults;
-            if (kws.length) {
-              banner.hidden = false;
+            var cws = skillCustomEditor ? skillCustomEditor.getKeywords() : pendingCustoms;
+            banner.hidden = false;
+            if (kws.length || cws.length) {
               banner.innerHTML =
-                "当前无子意图。后置新增子意图时，将把默认关键词（<strong>" +
-                kws.map(escapeHtml).join("、") +
-                "</strong>）迁入第 1 条子意图。";
+                "当前无子意图。后置新增子意图时，将把默认关键词" +
+                (kws.length
+                  ? "（<strong>" + kws.map(escapeHtml).join("、") + "</strong>）"
+                  : "") +
+                (cws.length
+                  ? "与补充关键词（<strong>" +
+                    cws.map(escapeHtml).join("、") +
+                    "</strong>）"
+                  : "") +
+                "迁入第 1 条子意图。";
             } else {
-              banner.hidden = false;
               banner.innerHTML =
                 "当前无子意图。可先填写下方默认关键词，或新增子意图后在卡片内维护关键词。";
             }
@@ -3164,13 +4726,20 @@
 
         function syncAddBtn(info) {
           var count = list.querySelectorAll(".sub-intent-card").length;
-          if (count === 0 && info && info.removedKeywords) {
-            pendingDefaults = info.removedKeywords.slice();
-            showToast("已删光子意图，默认关键词写权已恢复（示意）。");
+          if (count === 0 && info) {
+            if (info.removedKeywords) pendingDefaults = info.removedKeywords.slice();
+            if (info.removedCustomKeywords) {
+              pendingCustoms = info.removedCustomKeywords.slice();
+            }
+            if (!isKeyword) {
+              showToast("已删光子意图，默认与补充关键词已迁回 Skill（示意）。");
+            }
           }
-          addBtn.textContent = "新增子意图（" + count + "/" + SUB_INTENT_MAX + "）";
-          addBtn.disabled = count >= SUB_INTENT_MAX;
-          addBtn.title = count >= SUB_INTENT_MAX ? "最多 10 个子意图" : "";
+          if (addBtn && !isKeyword) {
+            addBtn.textContent = "新增子意图（" + count + "/" + SUB_INTENT_MAX + "）";
+            addBtn.disabled = count >= SUB_INTENT_MAX;
+            addBtn.title = count >= SUB_INTENT_MAX ? "最多 10 个子意图" : "";
+          }
           refreshSkillDefaultSlot();
         }
 
@@ -3180,67 +4749,68 @@
           }
         }
 
+        var cardOpts = {
+          audience: audience,
+          validateCustomAdd: validateCustomAdd,
+          onInvalid: showInvalidToast,
+        };
+
         (demo.subIntents || []).forEach(function (si) {
           list.appendChild(
-            createSubIntentCard(
-              demo.tools || [],
-              si,
-              syncAddBtn,
-              onKwChange
-            )
+            createSubIntentCard(demo.tools || [], si, syncAddBtn, onKwChange, cardOpts)
           );
         });
         if ((demo.subIntents || []).length > 0) {
           pendingDefaults = [];
+          pendingCustoms = [];
         }
         syncAddBtn();
 
-        addBtn.addEventListener("click", function () {
-          var count = list.querySelectorAll(".sub-intent-card").length;
-          if (count >= SUB_INTENT_MAX) return;
-          var pool = getPoolFromToolBind(root);
-          if (!pool.length) pool = (demo.tools || []).slice();
-          var cardData = { name: "", keywords: [], tools: [] };
-          if (count === 0) {
-            var fromSkill = skillKwEditor ? skillKwEditor.getKeywords() : pendingDefaults;
-            if (fromSkill.length) {
-              cardData.keywords = fromSkill.slice();
-              pendingDefaults = [];
-              showToast(
-                "已将默认关键词迁入第 1 条子意图，可再编辑。之后默认关键词仅为各子意图合集展示。"
-              );
-            }
-          }
-          list.appendChild(createSubIntentCard(pool, cardData, syncAddBtn, onKwChange));
-          syncAddBtn();
-        });
-      }
-
-      function bindSkillKeywordEditor(root, skillId) {
-        var sid = skillId || "ticket_purchase";
-        var demo = DEMO_SKILLS[sid] || DEMO_SKILLS.ticket_purchase;
-        var defaultEl = root.querySelector("#skill-kw-default");
-        var customMount = root.querySelector("#skill-kw-custom-mount");
-        var resolved = demo.subIntents && demo.subIntents.length
-          ? (function () {
-              var u = [];
-              demo.subIntents.forEach(function (si) {
-                (si.keywords || []).forEach(function (k) {
-                  if (u.indexOf(k) === -1) u.push(k);
-                });
-              });
-              return u;
-            })()
-          : demo.defaultKeywords || [];
-        if (defaultEl) {
-          defaultEl.innerHTML = kwTagsHtml(resolved, true);
+        if (isKeyword && list && !(demo.subIntents || []).length) {
+          list.innerHTML = '<div class="kw-empty">暂无子意图</div>';
         }
-        if (customMount) {
-          customMount.appendChild(
-            createKwEditor(DEMO_SKILL_CUSTOM_KEYWORDS[sid] || [], {
-              placeholder: "输入后回车添加扩展关键词",
-            })
-          );
+
+        if (addBtn && !isKeyword) {
+          addBtn.addEventListener("click", function () {
+            var count = list.querySelectorAll(".sub-intent-card").length;
+            if (count >= SUB_INTENT_MAX) return;
+            var pool = getPoolFromToolBind(root);
+            if (!pool.length) pool = (demo.tools || []).slice();
+            var cardData = {
+              name: "",
+              keywords: [],
+              customKeywords: [],
+              tools: [],
+            };
+            if (count === 0) {
+              var fromSkill = skillKwEditor
+                ? skillKwEditor.getKeywords()
+                : pendingDefaults;
+              var fromCustom = skillCustomEditor
+                ? skillCustomEditor.getKeywords()
+                : pendingCustoms;
+              var migrated = false;
+              if (fromSkill.length) {
+                cardData.keywords = fromSkill.slice();
+                pendingDefaults = [];
+                migrated = true;
+              }
+              if (fromCustom.length) {
+                cardData.customKeywords = fromCustom.slice();
+                pendingCustoms = [];
+                migrated = true;
+              }
+              if (migrated) {
+                showToast(
+                  "已将默认与补充关键词迁入第 1 条子意图，可再编辑。之后二者均为各子意图合集展示。"
+                );
+              }
+            }
+            list.appendChild(
+              createSubIntentCard(pool, cardData, syncAddBtn, onKwChange, cardOpts)
+            );
+            syncAddBtn();
+          });
         }
       }
 
@@ -3269,11 +4839,13 @@
         var mode = options.mode || "edit";
         var skillId = options.skillId || "";
         var titles = {
-          skill: "编辑 Skill关键词",
+          skill: "编辑关键字",
           "ops-skill": mode === "create" ? "新增 Skill" : "编辑 Skill",
           "ops-log": "操作日志",
-          "welcome-q": "新增游游推荐",
-          service: "新增服务推荐",
+          "welcome-q":
+            mode === "edit" ? "编辑推荐对话" : "新增推荐对话",
+          service: mode === "edit" ? "编辑快捷服务" : "新增快捷服务",
+          product: mode === "edit" ? "编辑产品" : "新增产品",
         };
         drawerTitle.textContent = titles[type] || "编辑";
         if (
@@ -3286,8 +4858,13 @@
         } else {
           setDrawerMeta("", "");
         }
-        if (type === "ops-skill") {
-          drawerBody.innerHTML = buildOpsSkillForm(mode, skillId || "ticket_purchase");
+        drawerBody.classList.remove("drawer-body--keyword");
+        if (type === "ops-skill" || type === "skill") {
+          drawerBody.innerHTML = buildOpsSkillForm(
+            mode,
+            skillId || "ticket_purchase",
+            type === "skill" ? "keyword" : "ops"
+          );
         } else {
           drawerBody.innerHTML = templates[type] || "";
         }
@@ -3301,17 +4878,466 @@
           });
         });
         if (type === "ops-skill") {
-          bindOpsSkillForm(drawerBody, mode, skillId || "ticket_purchase");
+          bindOpsSkillForm(drawerBody, mode, skillId || "ticket_purchase", "ops");
         }
-        if (type === "skill") bindSkillKeywordEditor(drawerBody, skillId || "ticket_purchase");
+        if (type === "skill") {
+          bindOpsSkillForm(drawerBody, "edit", skillId || "ticket_purchase", "keyword");
+        }
+        if (type === "welcome-q" || type === "service") {
+          bindDisplayRulesEditor(drawerBody);
+        }
+        if (type === "product") {
+          prepProductForm(drawerBody, mode, options.productType || "ticket");
+        }
         enhanceCharCounts(drawerBody);
         enhanceSelects(drawerBody);
+        if (type === "welcome-q" || type === "service") {
+          bindClickTarget(drawerBody);
+        }
+        if (type === "product") {
+          bindProductForm(drawerBody, mode);
+        }
         mask.classList.add("open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
       }
 
+      var DEMO_SUPPLIER_PRODUCTS = {
+        park_ticket: {
+          TK10086: {
+            id: "TK10086",
+            name: "成人全日票",
+            type: "ticket",
+            ticketKind: "日历票",
+            refPrice: "¥299",
+            playPeriod: "选定游玩日当日有效",
+            validStart: "2026-01-01",
+            validEnd: "2026-12-31",
+            syncStatus: "正常",
+          },
+          TK10087: {
+            id: "TK10087",
+            name: "儿童期票（7日）",
+            type: "ticket",
+            ticketKind: "期票",
+            refPrice: "¥159",
+            playPeriod: "激活后 7 日内任选 1 天",
+            validStart: "2026-03-01",
+            validEnd: "2026-09-30",
+            syncStatus: "正常",
+          },
+          PASS2001: {
+            id: "PASS2001",
+            name: "家庭年卡（2大1小）",
+            type: "pass",
+            passKind: "年卡",
+            refPrice: "¥2999",
+            syncStatus: "正常",
+          },
+          PASS2002: {
+            id: "PASS2002",
+            name: "个人月卡",
+            type: "pass",
+            passKind: "月卡",
+            refPrice: "¥399",
+            syncStatus: "正常",
+          },
+        },
+        ocean_ticket: {
+          BDL3008: {
+            id: "BDL3008",
+            name: "亲子一日畅玩组合",
+            type: "bundle",
+            refPrice: "¥668",
+            children: "成人全日票 ×1 + 儿童票 ×1",
+            syncStatus: "停用",
+          },
+          PASS2101: {
+            id: "PASS2101",
+            name: "海洋次卡（5次）",
+            type: "pass",
+            passKind: "次卡",
+            refPrice: "¥899",
+            syncStatus: "正常",
+          },
+        },
+      };
+
+      var DEMO_EDIT_PRODUCTS = {
+        ticket: {
+          supplier: "park_ticket",
+          product: DEMO_SUPPLIER_PRODUCTS.park_ticket.TK10086,
+        },
+        pass: {
+          supplier: "park_ticket",
+          product: DEMO_SUPPLIER_PRODUCTS.park_ticket.PASS2001,
+        },
+        bundle: {
+          supplier: "ocean_ticket",
+          product: DEMO_SUPPLIER_PRODUCTS.ocean_ticket.BDL3008,
+        },
+      };
+
+      function renderProductSnapshot(el, product) {
+        var row = el
+          ? el.closest(".field-row--snapshot") ||
+            document.getElementById("product-snapshot-row")
+          : document.getElementById("product-snapshot-row");
+        if (!el || !product) {
+          if (el) {
+            el.hidden = true;
+            el.innerHTML = "";
+          }
+          if (row) row.hidden = true;
+          return;
+        }
+        var rows = [
+          ["对接产品 ID", product.id],
+          ["产品名称", product.name],
+        ];
+        if (product.type === "ticket") {
+          rows.push(["门票类型", product.ticketKind || "—"]);
+          rows.push(["参考售价", product.refPrice || "—"]);
+          rows.push(["游玩期限", product.playPeriod || "—"]);
+          rows.push(["有效开始日期", product.validStart || "—"]);
+          rows.push(["有效结束日期", product.validEnd || "—"]);
+          rows.push(["对接状态", product.syncStatus || "—"]);
+        } else if (product.type === "pass") {
+          rows.push(["卡票类型", product.passKind || "—"]);
+          rows.push(["参考售价", product.refPrice || "—"]);
+        } else if (product.type === "bundle") {
+          rows.push(["组合内容", product.children || "—"]);
+          rows.push(["参考售价", product.refPrice || "—"]);
+        }
+        var html =
+          '<div class="product-snapshot__title">对接产品信息</div><dl class="product-snapshot__grid">';
+        rows.forEach(function (r) {
+          html += "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>";
+        });
+        html +=
+          "</dl><p class=\"product-snapshot__note\">参考售价非日历实价；实际价格以选定日期为准。</p>";
+        el.innerHTML = html;
+        el.hidden = false;
+        if (row) row.hidden = false;
+      }
+
+      function prepProductForm(root, mode, initialType) {
+        var typeSelect = root.querySelector("#product-type-select");
+        if (
+          typeSelect &&
+          initialType &&
+          typeSelect.querySelector('option[value="' + initialType + '"]')
+        ) {
+          typeSelect.value = initialType;
+        }
+        root._productFormMode = mode;
+        root._productFormType = (typeSelect && typeSelect.value) || initialType || "ticket";
+      }
+
+      function bindProductForm(root, mode) {
+        var typeSelect = root.querySelector("#product-type-select");
+        var supplierSelect = root.querySelector("#product-supplier-select");
+        var idInput = root.querySelector("#product-id-input");
+        var dropdown = root.querySelector("#product-id-dropdown");
+        var snapshot = root.querySelector("#product-snapshot");
+        var lookup = root.querySelector("#product-id-lookup");
+        var selected = null;
+        var timer = null;
+
+        function closeDropdown() {
+          if (!dropdown) return;
+          dropdown.classList.remove("is-open");
+          if (idInput) idInput.setAttribute("aria-expanded", "false");
+        }
+
+        function openDropdown(html) {
+          if (!dropdown) return;
+          dropdown.innerHTML = html;
+          dropdown.classList.add("is-open");
+          if (idInput) idInput.setAttribute("aria-expanded", "true");
+        }
+
+        function clearSelection() {
+          selected = null;
+          renderProductSnapshot(snapshot, null);
+        }
+
+        function applySelection(product) {
+          selected = product;
+          if (idInput) idInput.value = product.id;
+          if (typeSelect && product.type && typeSelect.querySelector('option[value="' + product.type + '"]')) {
+            typeSelect.value = product.type;
+            var wrap = typeSelect.closest(".c-select");
+            if (wrap) {
+              var valueEl = wrap.querySelector(".c-select__value");
+              var opt = typeSelect.options[typeSelect.selectedIndex];
+              if (valueEl && opt) {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove("is-placeholder");
+              }
+            }
+          }
+          renderProductSnapshot(snapshot, product);
+          closeDropdown();
+        }
+
+        function exactQuery() {
+          var supplier = supplierSelect && supplierSelect.value;
+          var q = (idInput && idInput.value.trim()) || "";
+          if (!supplier) {
+            openDropdown(
+              '<div class="product-id-lookup__empty">请先选择来源（对接系统）</div>'
+            );
+            return;
+          }
+          if (!q) {
+            closeDropdown();
+            return;
+          }
+          var catalog = DEMO_SUPPLIER_PRODUCTS[supplier] || {};
+          var product = catalog[q];
+          if (!product) {
+            openDropdown(
+              '<div class="product-id-lookup__empty">未查到该对接产品 ID</div>'
+            );
+            return;
+          }
+          var expectedType = typeSelect ? typeSelect.value : "";
+          if (expectedType && product.type !== expectedType) {
+            openDropdown(
+              '<div class="product-id-lookup__empty">该 ID 属于「' +
+                ({ ticket: "门票", pass: "卡票", bundle: "组合产品" }[product.type] ||
+                  product.type) +
+                "」，与当前产品类型不一致</div>"
+            );
+            return;
+          }
+          openDropdown(
+            '<div class="product-id-lookup__option is-active" data-ext-id="' +
+              product.id +
+              '" role="option">' +
+              '<span class="product-id-lookup__option-id">' +
+              product.id +
+              "</span>" +
+              '<span class="product-id-lookup__option-name">' +
+              product.name +
+              "</span></div>"
+          );
+        }
+
+        if (mode === "edit") {
+          var demo =
+            DEMO_EDIT_PRODUCTS[(typeSelect && typeSelect.value) || "ticket"] ||
+            DEMO_EDIT_PRODUCTS.ticket;
+          root.classList.add("is-readonly-bind");
+          if (supplierSelect) {
+            supplierSelect.value = demo.supplier;
+            var sw = supplierSelect.closest(".c-select");
+            if (sw) {
+              var sve = sw.querySelector(".c-select__value");
+              var sopt = supplierSelect.options[supplierSelect.selectedIndex];
+              if (sve && sopt) {
+                sve.textContent = sopt.textContent;
+                sve.classList.remove("is-placeholder");
+              }
+              var sbtn = sw.querySelector(".c-select__trigger");
+              if (sbtn) {
+                sbtn.disabled = true;
+                sbtn.setAttribute("aria-disabled", "true");
+              }
+              sw.classList.add("is-readonly");
+            }
+            supplierSelect.disabled = true;
+          }
+          if (typeSelect) {
+            typeSelect.disabled = true;
+            var tw = typeSelect.closest(".c-select");
+            if (tw) {
+              var tbtn = tw.querySelector(".c-select__trigger");
+              if (tbtn) {
+                tbtn.disabled = true;
+                tbtn.setAttribute("aria-disabled", "true");
+              }
+              tw.classList.add("is-readonly");
+            }
+          }
+          if (idInput) {
+            idInput.value = demo.product.id;
+            idInput.readOnly = true;
+            idInput.tabIndex = -1;
+          }
+          var idHint = root.querySelector("#product-id-hint");
+          if (idHint) idHint.hidden = true;
+          applySelection(demo.product);
+        }
+
+        if (typeSelect && mode !== "edit") {
+          typeSelect.addEventListener("change", function () {
+            clearSelection();
+            if (idInput) idInput.value = "";
+            closeDropdown();
+          });
+        }
+
+        if (supplierSelect && mode !== "edit") {
+          supplierSelect.addEventListener("change", function () {
+            clearSelection();
+            if (idInput) idInput.value = "";
+            closeDropdown();
+          });
+        }
+
+        if (idInput && mode !== "edit") {
+          idInput.addEventListener("input", function () {
+            clearSelection();
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(exactQuery, 280);
+          });
+          idInput.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              exactQuery();
+            }
+            if (e.key === "Escape") closeDropdown();
+          });
+          idInput.addEventListener("focus", function () {
+            if (idInput.value.trim()) exactQuery();
+          });
+        }
+
+        if (dropdown) {
+          dropdown.addEventListener("click", function (e) {
+            var opt = e.target.closest(".product-id-lookup__option");
+            if (!opt) return;
+            var sid = supplierSelect && supplierSelect.value;
+            var catalog = DEMO_SUPPLIER_PRODUCTS[sid] || {};
+            var product = catalog[opt.getAttribute("data-ext-id")];
+            if (product) applySelection(product);
+          });
+        }
+
+        document.addEventListener("click", function onDocClick(e) {
+          if (!lookup) return;
+          if (!root.isConnected) {
+            document.removeEventListener("click", onDocClick);
+            return;
+          }
+          if (!lookup.contains(e.target)) closeDropdown();
+        });
+
+        bindProductTagsField(
+          root,
+          mode === "edit"
+            ? typeSelect && typeSelect.value === "pass"
+              ? ["亲子", "年卡"]
+              : typeSelect && typeSelect.value === "bundle"
+                ? ["亲子"]
+                : ["成人"]
+            : []
+        );
+      }
+
+      var DEMO_TAG_CATALOG = [
+        "成人",
+        "儿童",
+        "亲子",
+        "年卡",
+        "会员",
+        "日历票",
+        "期票",
+        "次卡",
+      ];
+
+      function bindProductTagsField(root, initialTags) {
+        var selectedWrap = root.querySelector("#product-tags-selected");
+        var tagAdd = root.querySelector("#product-tag-add");
+        var maskEl = document.getElementById("tag-picker-mask");
+        var gridEl = document.getElementById("tag-picker-grid");
+        var selected = (initialTags || []).slice();
+        var draft = [];
+
+        function renderSelected() {
+          if (!selectedWrap) return;
+          selectedWrap.innerHTML = "";
+          selected.forEach(function (name) {
+            var chip = document.createElement("span");
+            chip.className = "tag-chip";
+            chip.innerHTML =
+              '<span class="tag-chip__text"></span>' +
+              '<button type="button" class="tag-chip__remove" aria-label="移除">×</button>';
+            chip.querySelector(".tag-chip__text").textContent = name;
+            chip
+              .querySelector(".tag-chip__remove")
+              .addEventListener("click", function () {
+                selected = selected.filter(function (t) {
+                  return t !== name;
+                });
+                renderSelected();
+              });
+            selectedWrap.appendChild(chip);
+          });
+        }
+
+        function renderPickerOptions() {
+          if (!gridEl) return;
+          gridEl.innerHTML = "";
+          DEMO_TAG_CATALOG.forEach(function (name) {
+            var opt = document.createElement("button");
+            opt.type = "button";
+            opt.className =
+              "tag-picker-option" + (draft.indexOf(name) >= 0 ? " is-on" : "");
+            opt.textContent = name;
+            opt.addEventListener("click", function () {
+              var i = draft.indexOf(name);
+              if (i >= 0) draft.splice(i, 1);
+              else draft.push(name);
+              opt.classList.toggle("is-on", draft.indexOf(name) >= 0);
+            });
+            gridEl.appendChild(opt);
+          });
+        }
+
+        function openPicker() {
+          draft = selected.slice();
+          renderPickerOptions();
+          if (maskEl) {
+            maskEl.classList.add("open");
+            maskEl.setAttribute("aria-hidden", "false");
+          }
+        }
+
+        function closePicker() {
+          if (maskEl) {
+            maskEl.classList.remove("open");
+            maskEl.setAttribute("aria-hidden", "true");
+          }
+        }
+
+        if (tagAdd) tagAdd.addEventListener("click", openPicker);
+
+        var closeBtn = document.getElementById("tag-picker-close");
+        var cancelBtn = document.getElementById("tag-picker-cancel");
+        var okBtn = document.getElementById("tag-picker-ok");
+        if (closeBtn) closeBtn.onclick = closePicker;
+        if (cancelBtn) cancelBtn.onclick = closePicker;
+        if (okBtn) {
+          okBtn.onclick = function () {
+            selected = draft.slice();
+            renderSelected();
+            closePicker();
+          };
+        }
+        if (maskEl) {
+          maskEl.onclick = function (e) {
+            if (e.target === maskEl) closePicker();
+          };
+        }
+
+        renderSelected();
+      }
+
       function closeDrawer() {
+        closeAllCustomSelects();
         mask.classList.remove("open");
         drawer.classList.remove("open");
         drawer.setAttribute("aria-hidden", "true");
@@ -3324,7 +5350,13 @@
           openDrawer(btn.getAttribute("data-open-drawer"), {
             mode: btn.getAttribute("data-drawer-mode") || "edit",
             skillId: btn.getAttribute("data-skill-id") || "",
+            productType: btn.getAttribute("data-product-type") || "",
           });
+        });
+      });
+      document.querySelectorAll("#page-products .switch").forEach(function (sw) {
+        sw.addEventListener("click", function () {
+          sw.classList.toggle("on");
         });
       });
       mask.addEventListener("click", closeDrawer);

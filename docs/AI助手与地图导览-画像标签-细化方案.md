@@ -785,7 +785,7 @@ flowchart LR
 | **景区与城市** | 景区/城市列表 API（现有或补统一 GET） | scenicId、名称、是否启用、底图字段（有则显示） |
 | **园区项目** | `GET /api/activities` | activityId、名称、区域、排队、`mapPoiId`、`quizId`（有则显示） |
 | **海洋明星** | `GET /api/stars` | starId、名称、物种、`quizId`、别名；按景区过滤 |
-| **票商品** | `GET /api/products/tickets` 等 | 票种、标签、价格、scenicId |
+| **票商品** | `GET /api/products/tickets` 等；正式后台以「对接产品 ID」绑定清单为准 | 名称、标签、参考售价、对接状态、scenicId；运营侧见原型「产品管理」 |
 | **券商品** | `GET /api/products/coupons` | 券产品、用途 |
 | **内容块** | `GET /api/content/blocks` | traffic / entry / guide 等 |
 | **用户快照 · 订单** | 订单列表类 API（按 persona） | 订单字段 +（有规则后）本单标签 |

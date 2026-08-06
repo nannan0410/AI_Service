@@ -951,7 +951,7 @@ function confirmQuestionEditor() {
     (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
   );
   closeQuestionEditor();
-  void persistQuestionsOnly("游游推荐已保存，请用对应演示账号打开聊天欢迎页验证");
+  void persistQuestionsOnly("推荐对话已保存，请用对应演示账号打开聊天欢迎页验证");
 }
 
 function onToggleQuestionEnabled(questionId: string, enabled: boolean) {
@@ -1017,7 +1017,7 @@ async function onReset() {
     await showConfirmDialog({
       title: "恢复默认配置？",
       message:
-        "将删除本机 LocalStorage 键 scenic_admin_business_override，并重新加载仓库里的 JSON 默认项（Skill / 快捷服务 / 游游推荐）。",
+        "将删除本机 LocalStorage 键 scenic_admin_business_override，并重新加载仓库里的 JSON 默认项（Skill / 快捷服务 / 推荐对话）。",
     });
   } catch {
     return;
@@ -1269,7 +1269,7 @@ function goPreviewChat() {
 
           <van-collapse-item
             name="welcomeRecommend"
-            :title="`游游推荐（${displayWorkingQuestions.length}/${workingQuestions.length}，每账号最多 ${MAX_WELCOME_RECOMMEND} 条）`"
+            :title="`推荐对话（${displayWorkingQuestions.length}/${workingQuestions.length}，每账号最多 ${MAX_WELCOME_RECOMMEND} 条）`"
           >
             <div class="admin-ui__panel admin-ui__panel--card">
               <van-cell
@@ -1826,7 +1826,7 @@ function goPreviewChat() {
             label="卡片副标题"
             placeholder="如：首次入园游客最常咨询的问题"
           />
-          <van-cell title="强制置顶（游游推荐第一位）">
+          <van-cell title="强制置顶（推荐对话第一位）">
             <template #value>
               <van-switch v-model="editQuestionForm.pinTop" size="20px" />
             </template>
