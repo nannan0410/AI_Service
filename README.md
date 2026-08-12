@@ -2,10 +2,7 @@
 
 基于 Vue 3 + Vant 4 + 硅基流动（OpenAI 兼容）+ vite-plugin-mock 的移动端演示项目。
 
-**版本说明**：
-- [v0.2.2](./docs/版本变动说明-v0.2.2.md)（当前）
-- [v0.2.1](./docs/版本变动说明-v0.2.1.md)
-- [v0.2.0](./docs/版本变动说明-v0.2.0.md)
+**版本说明**：见 [CHANGELOG](./docs/CHANGELOG.md)（当前 package **v0.2.2**）
 
 ## 快速开始
 
@@ -94,7 +91,6 @@ $env:VITE_BASE_PATH="/"; npm run build
 - **Tool Calling**：`getOrders`、`getProductCatalog`、`generateTravelGuide` 等 10 个 Tool，步骤可在 `ToolProcessPanel` 查看
 - Skill 关键词路由 + 语义补全（含 `ticket_purchase` / `travel_guide` / `member_offer` / `order_query` 等）
 - NLU 增强说明见 [对话意图识别与LLM分工](./docs/对话意图识别与LLM分工.md)
-- 意图与 LLM 分工说明：[`docs/对话意图识别与LLM分工.md`](./docs/对话意图识别与LLM分工.md)
 - **业务卡片**：TicketCard、CouponCard、OrderCard、ContentCard、ActivityCard、GuideCard、VisitorPicker、QuizCard、StarIntroCard
 - **欢迎页**：Hero 介绍气泡含 **当日景区天气**（本地 Mock）；底部**快捷服务**（`recommend_entries`，最多 4）+ **游游推荐**（`welcome_questions` + rules，最多 8；含 VIP 奇趣乐园「会员专属怎么买最划算？」）；均来自 `businessConfigStore`（JSON + `/config/business` LocalStorage）
 
@@ -179,6 +175,7 @@ config/
 └── llm.config.ts # LLM 配置（不含密钥）
 mock/             # vite-plugin-mock 处理器
 docs/
+├── CHANGELOG.md                           # 版本变更摘要
 ├── AI景区智能聊天助手-落地计划.md      # 目标/决策/架构（进度以项目现状为准）
 ├── AI助手与地图导览-画像标签-细化方案.md
 ├── 项目现状.md
@@ -191,9 +188,8 @@ docs/
 ├── 演示剥离清单.md                     # 正式上线：演示壳 vs 正式能力
 ├── 数据与接口-契约对照.html            # 内部只读契约（客户包已隐藏 /config/data）
 ├── 后台配置-ElementPlus落地计划.md    # 规划未实施
-├── 汇报串讲词-演示版.md
 ├── mini-program-routes.md
-└── 版本变动说明-v0.2.*.md              # 历史 changelog
+└── prototypes/                            # PC 后台 HTML 原型
 ```
 
 ## 已知问题与改进
@@ -221,9 +217,9 @@ docs/
 | 地图 / 画像标签方案 | [细化方案](./docs/AI助手与地图导览-画像标签-细化方案.md) |
 | 多景区口径（演示交互） | [多景区模式](./docs/多景区模式-落地计划.md) |
 | 正式上线：演示壳剥离 | [演示剥离清单](./docs/演示剥离清单.md)（含正式「一园一小程序、无游客切换」口径） |
-| 演示串讲 | [汇报串讲词-演示版](./docs/汇报串讲词-演示版.md) |
+| 演示验收步骤 | [项目现状 · 演示脚本](./docs/项目现状.md) |
 | 小程序路径契约 | [mini-program-routes](./docs/mini-program-routes.md) |
 | PC 后台 Element Plus 规划 | [后台配置-ElementPlus落地计划](./docs/后台配置-ElementPlus落地计划.md)（未实施） |
 | PC 后台 HTML 原型（无 Mock） | [docs/prototypes](./docs/prototypes/README.md) |
 | 数据与接口契约（内部只读 HTML） | [数据与接口-契约对照.html](./docs/数据与接口-契约对照.html)（客户包已隐藏 `/config/data`） |
-| 历史版本变更 | [v0.2.2](./docs/版本变动说明-v0.2.2.md) / [v0.2.1](./docs/版本变动说明-v0.2.1.md) / [v0.2.0](./docs/版本变动说明-v0.2.0.md) |
+| 历史版本变更 | [CHANGELOG](./docs/CHANGELOG.md) |

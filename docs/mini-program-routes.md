@@ -57,7 +57,7 @@ H5 演示版与微信小程序的路径对照，供产品化对接参考。
 |----|----------------|
 | `/invoice/batch` | `/pages/invoice/batch` |
 
-**行为**：展示 30 天内已完成且 `invoiceStatus=none` 的订单；多选后 `POST /api/invoice/batch`（body: `{ orderIds: string[] }`），Mock 将订单标为 `applied`，成功后回 `/invoice`。顶栏/底栏与 H5 内容同宽。
+**行为**：展示 **90 天内**已完成且 `invoiceStatus=none` 的订单（与 `invoiceableOrders.ts` / 规则字段 `hasInvoiceableOrders` 同窗）；多选后 `POST /api/invoice/batch`（body: `{ orderIds: string[] }`），Mock 将订单标为 `applied`，成功后回 `/invoice`。顶栏/底栏与 H5 内容同宽。
 
 **入口**：
 
@@ -79,15 +79,19 @@ H5 演示版与微信小程序的路径对照，供产品化对接参考。
 |----|----------------|
 | `/review` | `/pages/review/index` |
 
-**Query 参数**
+**行为（游园日景区点评，去订单强绑定）**：
 
-| H5 | 说明 |
-|----|------|
-| `orderId` | 待评价订单号（对话引导卡跳转使用） |
+- 准入 OR：已核销订单 ∨ 已核销票夹（演示≈completed）∨ 在园（含自报）；日限 1 次（`canScenicReviewToday`）
+- 表单：**不选订单**；星级 + 标签 + 文案（≤200）+ 图；可选推荐游玩项目（热门优先，演示上限 5）
+- 「帮我写评价」：LLM / 离线模板草稿，填入后可改再提交
+- `POST /api/reviews/submit`：**不发券**；返回 `qualityEligible`
+- 提交后四渠道 Mock 分享 → `POST /api/reviews/share`；达优质门槛（>20 字 + ≥2 图）且当日未发过奖励才发券
 
-**行为**：展示 90 天内已完成且 `reviewStatus=none` 的订单；1～5 星 + 可选标签 + 文案（≤200 字）；支持 **「帮我写评价」**（LLM 或离线模板生成约 50 字草稿，填入后可改再提交）；`POST /api/reviews/submit`（body: `{ orderId?, rating, tags?, content? }`），Mock 将订单标为 `reviewStatus=submitted`，成功后跳转 `/orders?tab=1`。
+完整规格见 [`景区点评优化规格.md`](./景区点评优化规格.md)。
 
-**入口**：对话「我要点评」→ ReviewCard；快捷推荐 `review_service`。
+**入口**：对话「我要点评」→ `ReviewCard`（主路径）；RecommendEntry `review_service`（规则 `canScenicReviewToday=true`）；`/review` 为兜底假页。
+
+**实现**：`src/utils/generateReviewDraft.ts`、`src/utils/scenicReviewAccess.ts`。
 
 ## 园区打卡 ✅
 
@@ -118,9 +122,7 @@ H5 演示版与微信小程序的路径对照，供产品化对接参考。
 2. 付费单：「快速排队」→ 极限过山车 +「¥10元快速排队」  
 3. 点名项目名 → 单卡 + 对应 CTA  
 
-**入口**：RecommendEntry `review_service`（规则 `hasReviewableOrders=true`，demo_vip）；对话「我要点评」→ `review_service` Workflow → 对话内 `ReviewCard`（主路径）；`/review` 为兜底假页（同样支持 AI 草稿）。
-
-**实现**：`src/utils/generateReviewDraft.ts`（输入：星级、标签、票种、景区名 + 关键词）。
+**入口**：RecommendEntry `review_service`（规则 `canScenicReviewToday=true`）；对话「我要点评」→ `review_service` Workflow → 对话内 `ReviewCard`（主路径）；`/review` 为兜底假页。详见上文「服务点评」与 [`景区点评优化规格.md`](./景区点评优化规格.md)。
 
 ## AI 助手 / 多景区入口（P0）
 

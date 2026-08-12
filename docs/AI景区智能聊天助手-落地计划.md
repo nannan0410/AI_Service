@@ -3,7 +3,7 @@
 > **文档角色**：**目标 / 已拍板决策 / 架构与分期意图**（规划底稿）  
 > **版本**：v0.7.6  
 > **更新日期**：2026-07-29  
-> **依据**：[AI景区智能聊天助手PRD & Cursor开发文档](./AI景区智能聊天助手PRD%20&%20Cursor开发文档.docx)
+> **依据**：早期 Word PRD（业务能力与演示重点）；本文件为落地决策 / 架构底稿。进度以 [`项目现状.md`](./项目现状.md) 为准。
 
 ### 阅读指引（进度不在此维护）
 
@@ -13,7 +13,7 @@
 | **游前中后场景 × Skill 对照** | [`场景实现对照表.md`](./场景实现对照表.md) |
 | **配置与购票/推券规格** | [`业务场景配置与实现.md`](./业务场景配置与实现.md) |
 | **Workflow vs LLM** | [`对话意图识别与LLM分工.md`](./对话意图识别与LLM分工.md) |
-| **演示串讲** | [`汇报串讲词-演示版.md`](./汇报串讲词-演示版.md) |
+| **演示串讲** | [`项目现状.md`](./项目现状.md) 演示矩阵 |
 
 下文中的 ✅/❌ 勾选与「进度快照」仅为**分期意图与历史记录**，可能滞后；**以实现代码 + 项目现状为准**，勿在本文重复改状态。
 
@@ -53,7 +53,7 @@
 | 项 | 决策 |
 |---|---|
 | 业务后台 | 不接真实业务后台；数据 **独立 JSON 管理** + vite-plugin-mock |
-| 配置后台 | **简易 Admin** ✅ `/admin/ui` + `/admin/business`（LocalStorage 覆盖 JSON）；产品库仍 JSON 源 |
+| 配置后台 | **简易 Admin** ✅ `/config/ui` + `/config/business`（LocalStorage 覆盖 JSON；旧 `/admin/*` redirect）；产品库仍 JSON 源 |
 | 终端形态 | 移动端 H5（Vant 4）；跳转契约按 **小程序语义** 文档化 |
 | 用户体系 | 强制微信 Mock 登录；3 演示账号 |
 | LLM | DeepSeek V4 Flash，独立配置文件 |
@@ -518,7 +518,7 @@ type MessageType =
 | 二消/商餐推荐 + 券 | `retail_recommend` | **P1** |
 | 虚拟排队推荐 | `queue_recommend` | **P2**（2 项目 Mock） |
 | 演出/游玩项目推荐 | `scenic_recommend` | **P1** |
-| 失物招领 | `lost_found` | P3 |
+| 失物招领 | `lost_found` | **不做** |
 | **答题互动** | `quiz_interact` | **P2**（Q5：1 个 Demo） |
 | 知识图谱/明星/抽奖 | 预留 Skill | P3 不做 |
 | 一键路线 + 打卡 + 券奖励 | `route_plan` | **P2** · **打卡单独立项 ②**，路线可后接 |
@@ -614,7 +614,7 @@ type MessageType =
 |------|--------|------|
 | `/api/auth/*` | — | 同 v0.5 |
 | `/api/assistant/ui` | GET | 助手 UI 全套配置（含主色） |
-| `/admin/ui` | 页面 | **简易配置后台**（背景/头像/主色，LocalStorage 覆盖） |
+| `/config/ui` | 页面 | **简易配置后台**（背景/头像/主色，LocalStorage 覆盖；旧 `/admin/ui` redirect） |
 | `/api/assistant/skills` | GET | Skill 列表 |
 | `/api/assistant/recommend-entries` | GET | 推荐入口（服务端按规则过滤） |
 | `/api/assistant/welcome` | GET | persona 欢迎页模板 |
@@ -683,7 +683,7 @@ type MessageType =
 
 ## 十四、演示脚本
 
-> **现行演示话术与步骤**见 [`汇报串讲词-演示版.md`](./汇报串讲词-演示版.md)、[`项目现状.md`](./项目现状.md) 演示矩阵。下表为早期脚本摘要，可能滞后。
+> **现行演示话术与步骤**见 [`项目现状.md`](./项目现状.md) 演示矩阵。下表为早期脚本摘要，可能滞后。
 
 | # | 账号 | 操作 | 预期（历史） |
 |---|------|------|------|
@@ -703,7 +703,8 @@ type MessageType =
 | H5 | 游中地理围栏 / 离园推券 | **P3 预留** |
 | OCR-1 | 小票 OCR 积分对话接入（`receipt_points`） | **P3 预留**（页保留） |
 | MINI-1 | 小程序真实路径与参数 | 📝 以 §7.2 为准，联调时替换 |
-| P3-* | 失物 / 抽奖 / 推荐好友 | 方案预留，本期不做 |
+| P3-* | 推荐好友 / 抽奖 | 方案预留，本期不做 |
+| — | **失物招领（`lost_found`）** | **不做** |
 | — | **快递周边发券** | **不做** |
 
 ---
@@ -744,20 +745,25 @@ type MessageType =
 
 | 维度 | 计划 |
 |------|------|
-| **Skill** | `review_service`（`skills.json` 新增，`enabled: true`，`phase: post_later`） |
+| **Skill** | `review_service`（`skills.json`，`enabled: true`） |
 | **触发词** | 点评、评价、服务怎么样、写评价、满意度 |
-| **Workflow** | `runReviewServiceWorkflow`：`getOrders` 取可评价订单 → 文案 + 对话内 `ReviewCard` |
+| **现行规格** | 游园日景区点评（去订单）：见 [`景区点评优化规格.md`](./景区点评优化规格.md)；入口字段 `canScenicReviewToday` |
+| **Workflow** | `runReviewServiceWorkflow` → 对话内 `ReviewCard`（无选订单；可选推荐项目；分享后发券） |
 | **意图** | `shouldRunReviewWorkflow`（正则）；P0-2 映射 `review_service` |
-| **假页** | `/review`：1–5 星、可选标签、文本框（≤200 字）、**帮我写评价**、提交 Mock |
-| **AI 草稿** | `src/utils/generateReviewDraft.ts`；输入星级/标签/`ticketName`/`scenic.json` 名 + 关键词 |
-| **API** | `POST /api/reviews/submit` `{ orderId?, rating, tags?, content }` → 写入 persona Mock / LocalStorage |
-| **RecommendEntry** | 可选 `review_entry`：`visitorPhase=post_later` 或规则「近 30 天有 completed 订单」；demo_vip 欢迎快捷服务 |
-| **卡片** | 对话内 `ReviewCard`（主路径）；`/review` 兜底 |
-| **推送（可选）** | 离园当日气泡：「游玩愉快吗？欢迎为本次行程点评」→ 同上 Workflow（阶段五后期） |
+| **假页** | `/review` 兜底（同主路径能力） |
+| **AI 草稿** | `generateReviewDraft`；帮写评价 |
+| **API** | `GET/POST /api/reviews/*`（eligibility / submit / share / admin） |
+| **RecommendEntry** | `review_service`：`canScenicReviewToday=true` |
+| **推送（可选）** | 离园气泡 → P3 |
 
-**演示脚本**：demo_vip 登录 → `/chat` 说「我要点评」→ ReviewCard →（可选）选星级/标签 →「帮我写评价」→ 修改草稿 → 提交 → Toast 成功。
+**演示脚本**：demo_vip →「我要点评」→ ReviewCard（无订单选择）→ 帮写 → 提交 → 分享（达标才发券）。
 
-**验收**：不编造订单；无已完成订单时提示「暂无可点评行程」；AI 草稿需用户确认后提交。
+**验收**：见 [`景区点评优化规格.md`](./景区点评优化规格.md) §9；进度以 [`项目现状.md`](./项目现状.md) 为准。
+
+> 以下旧描述（按订单评价）已废止，仅作分期意图留档。
+
+~~**Workflow** | `getOrders` 取可评价订单 → ReviewCard~~  
+~~**验收**：无已完成订单时提示「暂无可点评行程」~~
 
 ---
 
@@ -855,7 +861,7 @@ type MessageType =
 
 | 环境 | 地址 |
 |------|------|
-| 开发 | **`http://localhost:5172/admin/ui`** |
+| 开发 | **`http://localhost:5172/config/ui`**（旧 `/admin/ui` 仍 redirect） |
 | 入口 | 「我的」→ **助手 UI 配置**；无需登录（`meta.public`） |
 
 ### 可配置项
@@ -911,7 +917,7 @@ type MessageType =
 | 购票 | 对话内 Mock 下单 | 对话 + **H5 提交假页** |
 | 订单 | 仅本系统 | **+ OTA/TA 只读** |
 | 新增 | — | 标签、虚拟排队、攻略、答题、批量开票 |
-| 后台 | 无 Admin | **简易 Admin `/admin/ui`**（仅助手 UI） |
+| 后台 | 无 Admin | **简易 Admin `/config/ui`**（仅助手 UI；业务场景见 `/config/business`） |
 
 ---
 

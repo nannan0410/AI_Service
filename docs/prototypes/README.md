@@ -34,7 +34,7 @@
 | 点击行为 | 进行对话 / 小程序链接 / H5 链接 / 小程序页面；联动：对话 prompt≤100 / 链接输入 / 页面下拉（占位「加载自有小程序的菜单页面」） | 同左 |
 | 展示规则 | 多条件 **AND**；可用字段见下表；标签「展示规则」与「+ 添加条件」同行 | 同左 |
 
-**展示规则可选字段（原型）：** `inPark`（是否在园）、`hasPendingVisitOrder`（待出行·非当日）、`canClaimNewGuestCoupon`（可领新客券）、`hasReviewableOrders`（可评价订单）、`hasInvoiceableOrders`（可开票订单）、`memberLevel`（会员等级）、`hasVisitToday`（今日出行）、`tags`（标签，预留）。
+**展示规则可选字段（原型）：** `inPark`（是否在园）、`hasPendingVisitOrder`（待出行·非当日）、`canClaimNewGuestCoupon`（可领新客券）、`canScenicReviewToday`（今日可景区点评）、`hasReviewableOrders`（可评价订单，兼容旧规则）、`hasInvoiceableOrders`（可开票订单）、`memberLevel`（会员等级）、`hasVisitToday`（今日出行）、`tags`（标签，预留）。
 
 > **命名：** 后台菜单与配置页称「推荐对话」；游客端欢迎区区块标题目前仍可能显示「游游推荐」（端上文案可另配）。二者数据同源 `welcome_questions`。
 

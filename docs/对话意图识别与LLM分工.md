@@ -170,8 +170,10 @@ Skill 语义分类另有 `skillRoutingTimeoutMs`（默认 **15s**），与主对
 | 入口正则 | `shouldRunTicketWorkflow`：买票、两大一小、首次购票、买/购/订+门票等；**不含**裸门票 FAQ；**不含**人数/日期启发式冷启动 |
 | 会话内 | `parsePartyFromMessage`、`parseVisitDateFromMessage`；确认靠推荐卡按钮 |
 | 会话打断 | `shouldInterruptPurchaseSession`：明确攻略 / 营销 / **会员选品** / 停车 / 订单 / 演出 / 发票 / 点评 / 领券 |
-| 状态机 | `ask_party` → `ask_date` → `recommend` → `confirm` |
-| 文件 | `src/ai/workflow/ticketPurchase.ts`、`src/store/purchaseStore.ts` |
+| 状态机 | `ask_party` → `ask_date` →（含儿童）`ask_child_height` →（含老人）`ask_elder_age` → `recommend` → `confirm` |
+| 文件 | `src/ai/workflow/ticketPurchase.ts`、`src/store/purchaseStore.ts`、`ticketEligibility.ts` |
+
+资格确认详见 §1.4；选品与推券规格见 [`业务场景配置与实现.md`](./业务场景配置与实现.md) §12。
 
 **会话进行中**：后续「3人，下周末」「确认」等只依赖 Workflow 正则，**不再依赖 Skill 关键词**。
 
@@ -307,8 +309,7 @@ Skill 语义分类另有 `skillRoutingTimeoutMs`（默认 **15s**），与主对
 典型走 LLM 的情况：
 
 - Skill 关键词命中，但 Workflow 二级正则未命中（如「门票有什么优惠」未进购票状态机）
-- 未启用 Skill 的场景（主动营销、园区推荐等）
-- 泛聊、兜底
+- 泛聊、兜底（寒暄本地秒回见 §1.1）
 
 ---
 
@@ -346,13 +347,16 @@ Skill 语义分类另有 `skillRoutingTimeoutMs`（默认 **15s**），与主对
 购票是 **有状态多轮**（`purchaseStore.session.step`）：
 
 ```
-ask_party → ask_date → recommend → confirm
+ask_party → ask_date → ask_child_height? → ask_elder_age? → recommend → confirm
 ```
+
+（含儿童 / 老人时插入资格步；详见 §1.4 / §3.2。）
 
 LLM 每轮独立生成，**不天然记住**「已问过人数、还差日期」 unless 额外做结构化会话状态；当前实现用 **显式状态机** 保证：
 
 - 人数未齐 → 只问人数
 - 人数齐且同条含日期 → 跳过问日期（`advanceAfterPartyComplete`）
+- 含儿童/老人且未确认资格 → 出是/否卡（`ask_child_height` / `ask_elder_age`）
 - 已在推荐阶段 → 「确认」走确认卡，而非重新闲聊
 
 状态机在代码里 **单一真相源**，比让 LLM「自己记得流程」更稳。
