@@ -19,6 +19,7 @@ import {
   runNewGuestCouponWorkflow,
   runTicketPurchaseWorkflow,
   continueTicketPurchaseWorkflow,
+  answerTicketEligibility,
   runTravelGuideWorkflow,
   runParkingPayWorkflow,
   runShowScheduleWorkflow,
@@ -73,7 +74,13 @@ import {
   postAiChatTag,
   submitCheckin,
   submitReview,
+  shareScenicReview,
 } from "@/api/business";
+import {
+  REVIEW_SHARE_DEMO_TOAST,
+  scenicDayKey,
+} from "@/utils/scenicReviewAccess";
+import { markScenicReviewedToday } from "@/utils/scenicReviewClient";
 import {
   buildAiChatTagConfirmText,
   isAiChatPreferencePrimary,
@@ -85,7 +92,6 @@ import {
   buildCouponCardPayload,
   buildMergedCouponMessage,
 } from "@/utils/couponRecommend";
-import { qualifiesReviewReward } from "@/utils/reviewForm";
 import { usePurchaseStore } from "@/store/purchaseStore";
 import { useFeedbackStore } from "@/store/feedbackStore";
 import MessageBubble from "@/components/chat/MessageBubble.vue";
@@ -112,6 +118,8 @@ import {
   pickRandomCrowdLevel,
   type CrowdLevel,
 } from "@/utils/scenicCrowd";
+import { detectDeviceCoords } from "@/utils/scenicCity";
+import { shouldShowInParkSelfReport } from "@/utils/inParkSelfReport";
 import type {
   ChatMessageDraft,
   Coupon,
@@ -126,8 +134,10 @@ import type {
   QuizCardPayload,
   RecommendEntry,
   ReviewCardPayload,
+  ReviewShareChannel,
   ReviewSubmitDraft,
   TicketCardPayload,
+  TicketEligibilityCardPayload,
   VisitorPickPayload,
 } from "@/types";
 import type { WelcomeQuestionConfig } from "@/types/businessConfig";
@@ -152,7 +162,18 @@ const listRef = ref<HTMLElement | null>(null);
 const pendingPrompt = ref<string | null>(null);
 const confirmedVisitorSessions = ref(new Set<string>());
 const submittedReviewOrders = ref(new Set<string>());
+const completedScenicReviews = ref<
+  Record<
+    string,
+    {
+      reviewId: string;
+      shareHint?: string;
+      sharedChannels: ReviewShareChannel[];
+    }
+  >
+>({});
 const answeredQuizMessageIds = ref(new Set<string>());
+const answeredEligibilityMessageIds = ref(new Set<string>());
 const userCoupons = ref<Coupon[]>([]);
 const userOrders = ref<Order[]>([]);
 const memberInfo = ref<MemberInfo | null>(null);
@@ -160,6 +181,10 @@ const memberInfo = ref<MemberInfo | null>(null);
 const showWelcomePanel = ref(true);
 const scenicPickerVisible = ref(false);
 const scenicPickerRequired = ref(false);
+/** null=探测中；true=定位成功；false=未授权/失败 */
+const locationAuthorized = ref<boolean | null>(null);
+/** null=未答；true/false=自报在园/未到园 */
+const selfReportedInPark = ref<boolean | null>(null);
 
 const pageStyle = computed(() => {
   const bg = assistantStore.uiConfig?.chatBackgroundUrl;
@@ -344,9 +369,11 @@ function ensureScenicSelected(): boolean {
 }
 const welcomeTemplateContext = computed(() => ({
   nickname: memberInfo.value?.nickname ?? authStore.userInfo?.nickname ?? "",
-  orders: userOrders.value.length > 0 ? userOrders.value : undefined,
+  orders: userOrders.value,
   scenicId: scenicStore.currentScenicId,
   scenicName: scenicStore.currentScenicName || undefined,
+  inPark:
+    selfReportedInPark.value === null ? undefined : selfReportedInPark.value,
 }));
 const resolvedWelcomeTemplate = computed(() => {
   const personaId = (authStore.personaId || "demo_new") as PersonaId;
@@ -381,10 +408,36 @@ const recommendEntries = computed(() => {
       nickname: memberInfo.value?.nickname,
       memberLevel: memberInfo.value?.level,
       scenicId: scenicStore.currentScenicId,
+      inPark:
+        selfReportedInPark.value === null
+          ? undefined
+          : selfReportedInPark.value,
     })
     .slice(0, MAX_QUICK_SERVICES);
 });
 
+const showInParkAsk = computed(() =>
+  shouldShowInParkSelfReport({
+    scenicOrderCount: userOrders.value.length,
+    locationAuthorized: locationAuthorized.value,
+    answered: selfReportedInPark.value !== null,
+  })
+);
+
+async function refreshLocationAuth() {
+  locationAuthorized.value = null;
+  const coords = await detectDeviceCoords();
+  locationAuthorized.value = coords != null;
+}
+
+function resetInParkSelfReport() {
+  selfReportedInPark.value = null;
+}
+
+function onInParkSelfReport(inPark: boolean) {
+  selfReportedInPark.value = inPark;
+  showToast(inPark ? "已切换为在园推荐" : "好的，先为您保留出行前推荐");
+}
 function onRecommendEntryClick(entry: RecommendEntry) {
   if (!ensureScenicSelected()) return;
   if (entry.target === "page" && entry.targetPath) {
@@ -462,6 +515,7 @@ onMounted(async () => {
   }
   showWelcomePanel.value = true;
   refreshCrowdStatus();
+  void refreshLocationAuth();
   assistantStore.setMotion("wave", 2200);
 });
 
@@ -474,8 +528,10 @@ watch(
   async (personaId) => {
     if (!personaId) return;
     applyScenicFromEntry();
+    resetInParkSelfReport();
     await businessConfigStore.loadRecommendEntries(true);
     await loadUserCoupons();
+    void refreshLocationAuth();
   }
 );
 
@@ -483,14 +539,17 @@ watch(showWelcomePanel, (visible) => {
   if (visible) {
     refreshCrowdStatus();
     loadUserCoupons();
+    void refreshLocationAuth();
   }
 });
 
 watch(
   () => scenicStore.currentScenicId,
   () => {
+    resetInParkSelfReport();
     if (showWelcomePanel.value) refreshCrowdStatus();
     void loadUserCoupons();
+    void refreshLocationAuth();
   }
 );
 
@@ -546,6 +605,7 @@ function clearChatAndReturnWelcome() {
   pendingPrompt.value = null;
   confirmedVisitorSessions.value = new Set();
   submittedReviewOrders.value = new Set();
+  completedScenicReviews.value = {};
   purchaseStore.clearSession();
   chatStore.sending = false;
   chatStore.clearMessages(assistantNickname.value);
@@ -583,14 +643,119 @@ function isTicketConfirmDisabled(message: { type: string; payload?: unknown }) {
   return false;
 }
 
-function isReviewDisabled(message: { type: string; payload?: unknown }) {
+function isReviewDisabled(message: { type: string; id?: string }) {
   if (message.type !== "review") return false;
-  const payload = message.payload as ReviewCardPayload | undefined;
-  if (!payload?.orders.length) return true;
-  return payload.orders.every((order) =>
-    submittedReviewOrders.value.has(order.orderId)
-  );
+  if (message.id && completedScenicReviews.value[message.id]) return true;
+  return false;
 }
+
+function getReviewCompleted(messageId: string) {
+  return completedScenicReviews.value[messageId] ?? null;
+}
+
+async function onReviewSubmit(draft: ReviewSubmitDraft, messageId: string) {
+  if (chatStore.sending || completedScenicReviews.value[messageId]) {
+    showToast("今日点评已提交");
+    return;
+  }
+
+  chatStore.sending = true;
+  assistantStore.setMotion("thinking");
+
+  try {
+    const { data: res } = await submitReview({
+      rating: draft.rating,
+      tags: draft.tags.length ? draft.tags : undefined,
+      content: draft.content || undefined,
+      imageIds: draft.imageIds.length ? draft.imageIds : undefined,
+      recommendedActivityIds: draft.recommendedActivityIds?.length
+        ? draft.recommendedActivityIds
+        : undefined,
+      inParkOverride:
+        selfReportedInPark.value === true
+          ? true
+          : selfReportedInPark.value === false
+            ? false
+            : undefined,
+    });
+
+    if (res.code !== 200 || !res.data) {
+      throw new Error(res.message || "提交评价失败");
+    }
+
+    completedScenicReviews.value = {
+      ...completedScenicReviews.value,
+      [messageId]: {
+        reviewId: res.data.reviewId,
+        shareHint: res.data.shareHint,
+        sharedChannels: [],
+      },
+    };
+
+    const memberId = authStore.memberId || memberInfo.value?.memberId;
+    const scenicId = scenicStore.currentScenicId;
+    if (memberId && scenicId) {
+      markScenicReviewedToday({
+        memberId,
+        scenicId,
+        dayKey: scenicDayKey(),
+      });
+    }
+
+    assistantStore.setMotion("nod");
+    showToast("评价已提交");
+    scrollToBottom();
+  } catch (e) {
+    assistantStore.setMotion("shake");
+    showToast(e instanceof Error ? e.message : "提交评价失败");
+  } finally {
+    chatStore.sending = false;
+  }
+}
+
+async function onReviewShare(channel: ReviewShareChannel, messageId: string) {
+  const completed = completedScenicReviews.value[messageId];
+  if (!completed?.reviewId || chatStore.sending) return;
+
+  chatStore.sending = true;
+  try {
+    const { data: res } = await shareScenicReview({
+      reviewId: completed.reviewId,
+      channel,
+    });
+    if (res.code !== 200 || !res.data) {
+      throw new Error(res.message || "分享失败");
+    }
+
+    showToast(res.data.message || REVIEW_SHARE_DEMO_TOAST);
+
+    const channels = new Set(completed.sharedChannels);
+    channels.add(channel);
+    completedScenicReviews.value = {
+      ...completedScenicReviews.value,
+      [messageId]: {
+        ...completed,
+        sharedChannels: Array.from(channels),
+      },
+    };
+
+    if (res.data.rewardIssued && res.data.rewardCoupons?.length) {
+      await loadUserCoupons();
+      chatStore.addAssistantCards([
+        buildMergedCouponMessage(
+          "分享成功！已为您发放餐饮折扣券（3 个月有效）和当日停车券。",
+          res.data.rewardCoupons,
+        ),
+      ]);
+    }
+    scrollToBottom();
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : "分享失败");
+  } finally {
+    chatStore.sending = false;
+  }
+}
+
 
 function isQuizDisabled(message: {
   type: string;
@@ -741,62 +906,6 @@ async function onQuizAnswer(
   }
 }
 
-async function onReviewSubmit(draft: ReviewSubmitDraft) {
-  if (chatStore.sending || submittedReviewOrders.value.has(draft.orderId)) {
-    showToast("该订单已评价");
-    return;
-  }
-
-  chatStore.sending = true;
-  assistantStore.setMotion("thinking");
-
-  try {
-    const { data: res } = await submitReview({
-      orderId: draft.orderId,
-      rating: draft.rating,
-      tags: draft.tags.length ? draft.tags : undefined,
-      content: draft.content || undefined,
-      imageIds: draft.imageIds.length ? draft.imageIds : undefined,
-    });
-
-    if (res.code !== 200 || !res.data) {
-      throw new Error(res.message || "提交评价失败");
-    }
-
-    submittedReviewOrders.value.add(res.data.orderId);
-    await loadUserCoupons();
-
-    const rewardCoupons = res.data.rewardCoupons ?? [];
-    const hadRewardHint = qualifiesReviewReward(
-      draft.content,
-      draft.imageIds.length
-    );
-
-    let successText = "感谢您的评价，我们已收到反馈。";
-    if (res.data.rewardIssued && rewardCoupons.length) {
-      successText =
-        "感谢您的优质评价！已为您发放餐饮折扣券（3 个月有效）和当日停车券。";
-      chatStore.addAssistantCards([
-        buildMergedCouponMessage(successText, rewardCoupons),
-      ]);
-    } else {
-      if (hadRewardHint && !res.data.rewardIssued) {
-        successText =
-          "评价已提交。优质赠券需文案超过 20 字且上传至少 2 张图片。";
-      }
-      chatStore.addAssistantMessage(successText);
-    }
-    assistantStore.setMotion("nod");
-    showToast("评价已提交");
-    scrollToBottom();
-  } catch (e) {
-    assistantStore.setMotion("shake");
-    showToast(e instanceof Error ? e.message : "提交评价失败");
-  } finally {
-    chatStore.sending = false;
-  }
-}
-
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -943,6 +1052,111 @@ async function onTicketConfirm(payload: TicketCardPayload) {
   } catch (e) {
     assistantStore.setMotion("shake");
     showToast(e instanceof Error ? e.message : "创建订单失败");
+  } finally {
+    chatStore.sending = false;
+    scrollToBottom();
+  }
+}
+
+function isTicketEligibilityDisabled(message: {
+  type: string;
+  id?: string;
+  payload?: unknown;
+}) {
+  if (message.type !== "ticket_eligibility") return false;
+  if (message.id && answeredEligibilityMessageIds.value.has(message.id)) {
+    return true;
+  }
+  const payload = message.payload as TicketEligibilityCardPayload | undefined;
+  if (!payload || payload.status !== "active") return true;
+  const active = purchaseStore.session;
+  if (!active || active.sessionId !== payload.sessionId) return true;
+  return false;
+}
+
+async function onTicketEligibilityAnswer(
+  payload: TicketEligibilityCardPayload,
+  ok: boolean,
+  messageId: string
+) {
+  if (
+    chatStore.sending ||
+    payload.status !== "active" ||
+    answeredEligibilityMessageIds.value.has(messageId)
+  ) {
+    return;
+  }
+  if (!purchaseStore.session || purchaseStore.session.sessionId !== payload.sessionId) {
+    showToast("购票会话已结束，请重新发起购票");
+    return;
+  }
+
+  chatStore.sending = true;
+  answeredEligibilityMessageIds.value.add(messageId);
+  assistantStore.setMotion("thinking");
+  aiStore.startPipeline();
+  aiStore.markIntentDone();
+  aiStore.addSkillStep("智能购票");
+
+  chatStore.patchMessage(messageId, {
+    payload: {
+      ...payload,
+      status: "answered",
+      selected: ok,
+    } satisfies TicketEligibilityCardPayload,
+  });
+
+  chatStore.addUserMessage(ok ? payload.yesLabel : payload.noLabel);
+
+  const personaId = (authStore.personaId || "demo_new") as PersonaId;
+  const workflowCallbacks = {
+    onToolStart: (toolName: string, label: string) => {
+      aiStore.addToolStep(toolName, label);
+    },
+    onToolDone: (toolName: string, success: boolean) => {
+      aiStore.completeToolStep(toolName, success);
+    },
+  };
+
+  try {
+    const result = await answerTicketEligibility(
+      purchaseStore.session,
+      payload.kind,
+      ok,
+      personaId,
+      workflowCallbacks
+    );
+    aiStore.beginCompose();
+    await chatStore.presentAssistantReply(result.content, result.cards, {
+      onItem: scrollToBottom,
+      feedbackMeta: {
+        userText: ok ? payload.yesLabel : payload.noLabel,
+        skillId: "ticket_purchase",
+        routeSource: "workflow" as FeedbackRouteSource,
+      },
+    });
+    if (
+      result.cards?.some((card) => {
+        if (card.type === "coupon" || card.type === "scene_recommend") return true;
+        if (card.type === "ticket") {
+          const p = card.payload as TicketCardPayload | undefined;
+          return Boolean(p?.offerCoupon);
+        }
+        return false;
+      })
+    ) {
+      await loadUserCoupons();
+    }
+    aiStore.finish(true);
+    assistantStore.setMotion("nod");
+  } catch (e) {
+    answeredEligibilityMessageIds.value.delete(messageId);
+    chatStore.patchMessage(messageId, {
+      payload: { ...payload, status: "active", selected: undefined },
+    });
+    aiStore.finish(false);
+    assistantStore.setMotion("shake");
+    showToast(e instanceof Error ? e.message : "确认失败，请重试");
   } finally {
     chatStore.sending = false;
     scrollToBottom();
@@ -1286,7 +1500,9 @@ async function onSend() {
       : useCheckinWorkflow
       ? await runCheckinWorkflow(text, workflowCallbacks)
       : useReviewWorkflow
-      ? await runReviewServiceWorkflow(text, workflowCallbacks)
+      ? await runReviewServiceWorkflow(text, workflowCallbacks, {
+          inPark: selfReportedInPark.value === true ? true : undefined,
+        })
       : useOrderQueryWorkflow
       ? await runOrderQueryWorkflow(text, workflowCallbacks)
       : await sendChatMessage(buildHistory(), text, assistantStore.uiConfig, {
@@ -1449,7 +1665,9 @@ async function onSend() {
       <WelcomeRecommendList
         :questions="suggestedQuestions"
         :subtitle="welcomeRecommendSubtitle"
+        :show-in-park-ask="showInParkAsk"
         @select="onWelcomeRecommendSelect"
+        @in-park-answer="onInParkSelfReport"
       />
     </main>
 
@@ -1464,12 +1682,15 @@ async function onSend() {
           :visitor-pick-disabled="isVisitorPickDisabled(msg)"
           :ticket-confirm-disabled="isTicketConfirmDisabled(msg)"
           :review-disabled="isReviewDisabled(msg)"
+          :review-completed="getReviewCompleted(msg.id)"
           :quiz-disabled="isQuizDisabled(msg)"
-          :submitted-review-order-ids="Array.from(submittedReviewOrders)"
+          :ticket-eligibility-disabled="isTicketEligibilityDisabled(msg)"
           :favorited="feedbackStore.isFavorited(msg.id) || msg.favorited"
           @visitor-confirm="onVisitorConfirm"
           @ticket-confirm="onTicketConfirm"
+          @ticket-eligibility-answer="onTicketEligibilityAnswer"
           @review-submit="onReviewSubmit"
+          @review-share="onReviewShare"
           @checkin-confirm="onCheckinConfirm"
           @quiz-start="onQuizStart"
           @quiz-answer="onQuizAnswer"

@@ -2,6 +2,7 @@ export {
   shouldRunTicketWorkflow,
   runTicketPurchaseWorkflow,
   continueTicketPurchaseWorkflow,
+  answerTicketEligibility,
   isTicketPurchaseIntent,
 } from './ticketPurchase'
 export { shouldRunTravelGuideWorkflow, runTravelGuideWorkflow } from './travelGuide'

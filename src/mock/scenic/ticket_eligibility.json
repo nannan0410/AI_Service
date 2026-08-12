@@ -1,0 +1,22 @@
+[
+  {
+    "scenicId": "scenic_hlg",
+    "childMaxHeightCm": 120,
+    "elderMinAgeYears": 60
+  },
+  {
+    "scenicId": "scenic_hy",
+    "childMaxHeightCm": 120,
+    "elderMinAgeYears": 60
+  },
+  {
+    "scenicId": "scenic_sz_wt",
+    "childMaxHeightCm": 120,
+    "elderMinAgeYears": 60
+  },
+  {
+    "scenicId": "scenic_sz_eco",
+    "childMaxHeightCm": 120,
+    "elderMinAgeYears": 60
+  }
+]

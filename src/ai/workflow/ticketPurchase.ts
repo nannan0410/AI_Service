@@ -16,6 +16,7 @@ import type {
   OrderLineItem,
   PersonaId,
   TicketCardPayload,
+  TicketEligibilityCardPayload,
   TicketFallbackPayload,
   ToolExecutionCallbacks,
 } from '@/types'
@@ -45,6 +46,15 @@ import {
   FALLBACK_PURCHASE_COUPON_PRODUCT_ID,
   findFallbackPurchaseCoupon,
 } from '@/utils/purchaseFallbackCoupon'
+import {
+  applyPartyEligibility,
+  buildChildHeightQuestion,
+  buildElderAgeQuestion,
+  CHILD_OVER_LIMIT_CAPTION,
+  ELDER_UNDER_AGE_CAPTION,
+  resolveTicketEligibilityConfig,
+} from '@/utils/ticketEligibility'
+import { useScenicStore } from '@/store/scenicStore'
 
 export {
   isTicketPurchaseIntent,
@@ -81,12 +91,16 @@ function buildTicketCardPayload(
 ): TicketCardPayload {
   const isAdultTicket = recommendation.product.ticketTypeId === 'adult'
   const isChildTicket = recommendation.product.ticketTypeId === 'child'
+  const isElderTicket = recommendation.product.ticketTypeId === 'elderly'
   const purchaseCount = isAdultTicket
     ? Math.max(recommendation.quantity.adult, 1)
     : isChildTicket
       ? Math.max(recommendation.quantity.child, 1)
-      : 1
-  const purchaseUnit: '张' | '套' = isAdultTicket || isChildTicket ? '张' : '套'
+      : isElderTicket
+        ? Math.max(recommendation.quantity.adult, 1)
+        : 1
+  const purchaseUnit: '张' | '套' =
+    isAdultTicket || isChildTicket || isElderTicket ? '张' : '套'
 
   return {
     productId: recommendation.product.productId,
@@ -387,7 +401,11 @@ async function buildRecommendationResult(
   toolRecords.push({ name: 'getProductCatalog', result: { success: true, data: products } })
   callbacks?.onToolDone?.('getProductCatalog', true)
 
-  const match = matchPartyToProducts(products, session.party)
+  const effectiveParty = applyPartyEligibility(session.party, {
+    childHeightOk: session.childHeightOk,
+    elderAgeOk: session.elderAgeOk,
+  })
+  const match = matchPartyToProducts(products, effectiveParty)
   if (match.kind === 'no_product') {
     return buildPurchaseFallbackResult(session, match, callbacks, captionPrefix)
   }
@@ -418,7 +436,16 @@ async function buildRecommendationResult(
     match.kind === 'single'
       ? buildTicketCardPayload(match.recommendation, session, pricing)
       : buildCartTicketCardPayload(match.recommendation, session, pricing)
-  const intro = buildTicketRecommendIntro(session, captionPrefix)
+
+  const rewriteBits: string[] = []
+  if (session.party.child > 0 && session.childHeightOk === false) {
+    rewriteBits.push(CHILD_OVER_LIMIT_CAPTION)
+  }
+  if (session.party.elderly > 0 && session.elderAgeOk === false) {
+    rewriteBits.push(ELDER_UNDER_AGE_CAPTION)
+  }
+  const introBase = buildTicketRecommendIntro(session, captionPrefix)
+  const intro = [...rewriteBits, introBase].filter(Boolean).join('\n')
 
   if (marketing.marketingCard?.payload) {
     ticketPayload.offerCoupon = marketing.marketingCard.payload as CouponCardPayload
@@ -467,6 +494,90 @@ function toSlotSessionContext(session: PurchaseSession) {
 const TICKET_FALLBACK_HINT =
   '如需调整人数或日期请直接说明；也可点击「去购票列表选购」自行搭配。'
 
+function parseEligibilityYesNo(message: string): boolean | null {
+  const text = message.trim()
+  if (!text) return null
+  if (
+    /^(是|对|符合|可以|满龄|已满|yes|ok)\b/i.test(text) ||
+    /符合|不超过|已满|满\s*\d+|可以买/.test(text)
+  ) {
+    return true
+  }
+  if (
+    /^(否|不|没|超了|未满|no)\b/i.test(text) ||
+    /超过|未满|不满|不够|不行/.test(text)
+  ) {
+    return false
+  }
+  return null
+}
+
+function needsChildHeightAsk(session: PurchaseSession): boolean {
+  return session.party.child > 0 && session.childHeightOk == null
+}
+
+function needsElderAgeAsk(session: PurchaseSession): boolean {
+  return session.party.elderly > 0 && session.elderAgeOk == null
+}
+
+function buildEligibilityAskResult(
+  session: PurchaseSession,
+  kind: 'child_height' | 'elder_age',
+): LlmChatResult {
+  const scenicId = useScenicStore().currentScenicId
+  const config = resolveTicketEligibilityConfig(scenicId)
+  const payload: TicketEligibilityCardPayload =
+    kind === 'child_height'
+      ? {
+          kind: 'child_height',
+          sessionId: session.sessionId,
+          question: buildChildHeightQuestion(config.childMaxHeightCm),
+          yesLabel: `是，不超过 ${config.childMaxHeightCm} cm`,
+          noLabel: '否，已超过',
+          status: 'active',
+        }
+      : {
+          kind: 'elder_age',
+          sessionId: session.sessionId,
+          question: buildElderAgeQuestion(config.elderMinAgeYears),
+          yesLabel: `是，已满 ${config.elderMinAgeYears} 周岁`,
+          noLabel: '否，未满',
+          status: 'active',
+        }
+
+  session.step = kind === 'child_height' ? 'ask_child_height' : 'ask_elder_age'
+
+  return {
+    content: '',
+    skillId: 'ticket_purchase',
+    toolCallsUsed: [],
+    cards: [
+      {
+        type: 'ticket_eligibility',
+        role: 'assistant',
+        content: '购票前请确认一下优惠票资格～',
+        payload,
+      },
+    ],
+  }
+}
+
+/** 卡片点选资格答覆后继续流程 */
+export async function answerTicketEligibility(
+  session: PurchaseSession,
+  kind: 'child_height' | 'elder_age',
+  ok: boolean,
+  personaId: PersonaId,
+  callbacks?: ToolExecutionCallbacks,
+): Promise<LlmChatResult> {
+  if (kind === 'child_height') {
+    session.childHeightOk = ok
+  } else {
+    session.elderAgeOk = ok
+  }
+  return runTicketPurchaseWorkflow('', personaId, callbacks, session)
+}
+
 export async function runTicketPurchaseWorkflow(
   message: string,
   personaId: PersonaId,
@@ -480,6 +591,8 @@ export async function runTicketPurchaseWorkflow(
       party: { adult: 0, child: 0, elderly: 0 },
       marketingIssued: false,
       fallbackCouponIssued: false,
+      childHeightOk: null,
+      elderAgeOk: null,
     }
 
   if (session.step === 'recommend' && isTicketConfirmIntent(message)) {
@@ -487,6 +600,18 @@ export async function runTicketPurchaseWorkflow(
       content: TICKET_CONFIRM_BUTTON_HINT,
       skillId: 'ticket_purchase',
       toolCallsUsed: [],
+    }
+  }
+
+  // 资格确认步：优先解析是/否；空消息（卡片回调）则继续往下问/出票
+  if (
+    (session.step === 'ask_child_height' || session.step === 'ask_elder_age') &&
+    message.trim()
+  ) {
+    const yn = parseEligibilityYesNo(message)
+    if (yn != null) {
+      if (session.step === 'ask_child_height') session.childHeightOk = yn
+      else session.elderAgeOk = yn
     }
   }
 
@@ -500,7 +625,9 @@ export async function runTicketPurchaseWorkflow(
   const slotsChanged = partyUpdated || dateUpdated
 
   if (partyUpdated) {
-    session.party = mergeParty(session.party, slots.partyPatch)
+    session.party = mergeParty(session.party, slots.partyPatch, message)
+    session.childHeightOk = null
+    session.elderAgeOk = null
   }
   if (dateUpdated) {
     session.visitDate = slots.visitDate!
@@ -528,6 +655,13 @@ export async function runTicketPurchaseWorkflow(
       )
     }
     return replyWithEarlyMarketingCoupon(session, askDateMessage(session), callbacks)
+  }
+
+  if (needsChildHeightAsk(session)) {
+    return buildEligibilityAskResult(session, 'child_height')
+  }
+  if (needsElderAgeAsk(session)) {
+    return buildEligibilityAskResult(session, 'elder_age')
   }
 
   if (session.step === 'recommend' && !slotsChanged) {

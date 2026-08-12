@@ -51,8 +51,9 @@ ${buildSessionBlock(session)}
 3. adult / child / elderly 为非负整数；老人单独计数写入 elderly。
 4. 「两大一小」「2大1小」→ adult:2, child:1, elderly:0。
 5. 「N人」且无儿童/老人说明 → adult:N, child:0, elderly:0。
-6. visitDate 输出 YYYY-MM-DD，必须是参考日期之后（不可今天或过去）；无法确定则 null。
-7. 相对/模糊日期请换算为具体 ISO 日期：
+6. 用户重报完整出行构成时（如「1个成人1个老人」「2大1小」），未提到的角色必须显式为 0（不要留 null 以免沿用旧会话儿童数）。
+7. visitDate 输出 YYYY-MM-DD，必须是参考日期之后（不可今天或过去）；无法确定则 null。
+8. 相对/模糊日期请换算为具体 ISO 日期：
    - 这周末/下周末/下周/明天/后天 等按字面含义换算；
    - 「N月上旬」→ 该月 10 日；「N月中旬」→ 15 日；「N月下旬」→ 25 日（月份为公历）。
 

@@ -3,7 +3,13 @@ import { ref } from 'vue'
 import type { ParsedParty } from '@/utils/ticketPartyParser'
 import { emptyParty } from '@/utils/ticketPartyParser'
 
-export type PurchaseStep = 'ask_party' | 'ask_date' | 'recommend' | 'fallback'
+export type PurchaseStep =
+  | 'ask_party'
+  | 'ask_date'
+  | 'ask_child_height'
+  | 'ask_elder_age'
+  | 'recommend'
+  | 'fallback'
 
 export interface PurchaseSession {
   sessionId: string
@@ -14,6 +20,10 @@ export interface PurchaseSession {
   couponId?: string
   marketingIssued: boolean
   fallbackCouponIssued: boolean
+  /** 儿童身高是否 ≤ 景区阈值；null/undefined = 未答 */
+  childHeightOk?: boolean | null
+  /** 老人是否已满景区周岁阈值；null/undefined = 未答 */
+  elderAgeOk?: boolean | null
   /** 当前有效推荐版本，用于禁用历史推荐卡上的确认按钮 */
   quoteToken?: string
 }
@@ -29,6 +39,8 @@ export const usePurchaseStore = defineStore('purchase', () => {
       party: emptyParty(),
       marketingIssued: false,
       fallbackCouponIssued: false,
+      childHeightOk: null,
+      elderAgeOk: null,
     }
     session.value = next
     return next

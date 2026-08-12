@@ -85,12 +85,76 @@ export function parsePartyFromMessage(message: string): Partial<ParsedParty> {
   return result
 }
 
-export function mergeParty(base: ParsedParty, patch: Partial<ParsedParty>): ParsedParty {
+export function mergeParty(
+  base: ParsedParty,
+  patch: Partial<ParsedParty>,
+  message = '',
+): ParsedParty {
+  const normalized = normalizePartyRestatement(patch, message)
   return {
-    adult: patch.adult ?? base.adult,
-    child: patch.child ?? base.child,
-    elderly: patch.elderly ?? base.elderly,
+    adult: normalized.adult ?? base.adult,
+    child: normalized.child ?? base.child,
+    elderly: normalized.elderly ?? base.elderly,
   }
+}
+
+function hasAnyPartyField(patch: Partial<ParsedParty>): boolean {
+  return patch.adult != null || patch.child != null || patch.elderly != null
+}
+
+/**
+ * 用户重报出行构成时，未点名的角色应清零，避免上一轮儿童/老人粘滞。
+ * 例：「1个成人1个老人」不得保留上一轮的 child=1。
+ */
+export function normalizePartyRestatement(
+  patch: Partial<ParsedParty>,
+  message: string,
+): Partial<ParsedParty> {
+  if (!hasAnyPartyField(patch)) return patch
+
+  const next: Partial<ParsedParty> = { ...patch }
+  const text = message.trim()
+  const touchedAdult = patch.adult != null
+  const touchedChild = patch.child != null
+  const touchedElderly = patch.elderly != null
+  const roleTouches = [touchedAdult, touchedChild, touchedElderly].filter(Boolean).length
+
+  const mentionsChildWord =
+    /小孩|儿童|孩子|小朋友|\d+\s*小|没有小孩|无儿童|没小孩|不带小孩/.test(text)
+  const mentionsElderlyWord = /老人|长辈|父母|爸妈|没有老人|无老人|不带老人/.test(text)
+
+  // 本轮点名 ≥2 类人数：未写入的角色视为 0
+  if (roleTouches >= 2) {
+    if (!touchedAdult) next.adult = 0
+    if (!touchedChild) next.child = 0
+    if (!touchedElderly) next.elderly = 0
+    return next
+  }
+
+  // 仅报成人且未提儿童/老人 → 清儿童与老人（「3个成人」）
+  if (
+    touchedAdult &&
+    !touchedChild &&
+    !touchedElderly &&
+    !mentionsChildWord &&
+    !mentionsElderlyWord
+  ) {
+    next.child = 0
+    next.elderly = 0
+  }
+
+  // 仅报老人 → 清儿童；未提成人则成人归零
+  if (touchedElderly && !touchedChild && !mentionsChildWord) {
+    next.child = 0
+    if (!touchedAdult) next.adult = 0
+  }
+
+  // 仅报儿童 → 清老人
+  if (touchedChild && !touchedElderly && !mentionsElderlyWord) {
+    next.elderly = 0
+  }
+
+  return next
 }
 
 export function isPartyComplete(party: ParsedParty): boolean {

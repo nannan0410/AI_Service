@@ -48,10 +48,19 @@ import {
 } from '../src/utils/newGuestCoupon'
 import { qualifiesReviewReward } from '../src/utils/reviewForm'
 import {
+  canAccessScenicReview,
+  REVIEW_SHARE_DEMO_TOAST,
+  scenicDayKey,
+  type ReviewShareChannelKey,
+} from '../src/utils/scenicReviewAccess'
+import type { ReviewShareChannel, ScenicReviewRecord } from '../src/types/index'
+import {
   filterByBusinessScenicId,
   matchesBusinessScenicId,
   resolveBusinessScenicId,
 } from '../src/utils/scenicScope'
+import { isNearCheckinSpot } from '../src/utils/checkinLocation'
+import { pickNearestUpcomingVisitOrder } from '../src/utils/upcomingVisitOrder'
 
 const REVIEW_DINING_PRODUCT_ID = 'cp_prod_review_dining'
 const REVIEW_PARKING_PRODUCT_ID = 'cp_prod_review_parking'
@@ -107,8 +116,6 @@ function issueReviewRewardCoupons(personaId: PersonaId): Coupon[] {
 
   return issued
 }
-import { isNearCheckinSpot } from '../src/utils/checkinLocation'
-import { pickNearestUpcomingVisitOrder } from '../src/utils/upcomingVisitOrder'
 
 export type IssueCouponPurpose = 'claim' | 'purchase'
 
@@ -163,6 +170,11 @@ type MockRuntime = {
   orderDrafts: Map<string, OrderDraft>
   /** `${personaId}:${quizId}` → 下一题下标 */
   quizSessions: Map<string, number>
+  scenicReviewsByPersona: Record<PersonaId, ScenicReviewRecord[]>
+  /** `${personaId}:${scenicId}` → dayKey 已发点评奖励 */
+  reviewRewardDayByKey: Record<string, string>
+  /** `${personaId}:${scenicId}:${channel}:${dayKey}` → 1 */
+  reviewShareKeys: Record<string, 1>
 }
 
 function createMockRuntime(): MockRuntime {
@@ -187,6 +199,13 @@ function createMockRuntime(): MockRuntime {
     plateOverrides: {},
     orderDrafts: new Map(),
     quizSessions: new Map(),
+    scenicReviewsByPersona: {
+      demo_new: [],
+      demo_mid: [],
+      demo_vip: [],
+    },
+    reviewRewardDayByKey: {},
+    reviewShareKeys: {},
   }
 }
 
@@ -201,6 +220,15 @@ function getMockRuntime(): MockRuntime {
   if (!runtime.quizSessions) {
     runtime.quizSessions = new Map()
   }
+  if (!runtime.scenicReviewsByPersona) {
+    runtime.scenicReviewsByPersona = {
+      demo_new: [],
+      demo_mid: [],
+      demo_vip: [],
+    }
+  }
+  if (!runtime.reviewRewardDayByKey) runtime.reviewRewardDayByKey = {}
+  if (!runtime.reviewShareKeys) runtime.reviewShareKeys = {}
   return runtime
 }
 
@@ -821,6 +849,64 @@ export function applyBatchInvoice(
   }
 }
 
+export function getReviewEligibility(
+  personaId: PersonaId,
+  scenicId?: string | null,
+  inParkOverride?: boolean,
+): {
+  canReview: boolean
+  reviewedToday: boolean
+  reason?: string
+  scenicId: string
+} {
+  const resolvedScenicId = resolveBusinessScenicId(scenicId)
+  const snapshot = getSnapshot(personaId)
+  const orders = filterByBusinessScenicId(snapshot.orders, resolvedScenicId)
+  const inPark =
+    inParkOverride !== undefined
+      ? inParkOverride
+      : snapshot.visitorState.inPark === true
+  const day = scenicDayKey()
+  const reviewedToday = (getMockRuntime().scenicReviewsByPersona[personaId] ?? []).some(
+    (item) => item.scenicId === resolvedScenicId && item.dayKey === day,
+  )
+  const access = canAccessScenicReview({ orders, inPark })
+  if (!access) {
+    return {
+      canReview: false,
+      reviewedToday,
+      reason: '需有已核销订单/票，或当前在园（含自报）后才能点评',
+      scenicId: resolvedScenicId,
+    }
+  }
+  if (reviewedToday) {
+    return {
+      canReview: false,
+      reviewedToday: true,
+      reason: '今天已经点评过啦，明天再来分享体验吧～',
+      scenicId: resolvedScenicId,
+    }
+  }
+  return { canReview: true, reviewedToday: false, scenicId: resolvedScenicId }
+}
+
+export function listRecommendActivitiesForReview(scenicId?: string | null): Array<{
+  activityId: string
+  name: string
+  hot?: boolean
+}> {
+  const resolved = resolveBusinessScenicId(scenicId)
+  const list = filterByBusinessScenicId(activities as Activity[], resolved)
+  return list
+    .filter((item) => item.category === 'ride' || item.category === 'show' || !item.category)
+    .map((item) => ({
+      activityId: item.activityId,
+      name: item.name,
+      hot: (item.tags ?? []).includes('热门'),
+    }))
+    .sort((a, b) => Number(Boolean(b.hot)) - Number(Boolean(a.hot)))
+}
+
 export function submitReview(
   personaId: PersonaId,
   body: {
@@ -829,10 +915,20 @@ export function submitReview(
     tags?: string[]
     content?: string
     imageIds?: string[]
+    recommendedActivityIds?: string[]
     scenicId?: string | null
+    inParkOverride?: boolean
   },
 ):
-  | { ok: true; reviewId: string; orderId: string; rewardIssued: boolean; rewardCoupons: Coupon[] }
+  | {
+      ok: true
+      reviewId: string
+      orderId?: string
+      rewardIssued: boolean
+      rewardCoupons: Coupon[]
+      qualityEligible: boolean
+      shareHint: string
+    }
   | { ok: false; message: string } {
   const rating = body.rating
   if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
@@ -844,57 +940,169 @@ export function submitReview(
     return { ok: false, message: '评价内容不超过 200 字' }
   }
 
-  const snapshot = getMutableSnapshot(personaId)
-  const scenicId = body.scenicId ?? null
-  const now = Date.now()
-  const ninetyDays = 90 * 24 * 60 * 60 * 1000
-  const scopedOrders = filterByBusinessScenicId(snapshot.orders, scenicId)
+  const eligibility = getReviewEligibility(
+    personaId,
+    body.scenicId,
+    body.inParkOverride,
+  )
+  if (!eligibility.canReview) {
+    return { ok: false, message: eligibility.reason || '当前不可点评' }
+  }
 
-  let orderId = body.orderId?.trim()
+  const scenicId = eligibility.scenicId
+  const imageIds = body.imageIds ?? []
+  const qualityEligible = qualifiesReviewReward(content, imageIds.length)
+  const reviewId = `rev_${Date.now()}`
+  const day = scenicDayKey()
+  const record: ScenicReviewRecord = {
+    reviewId,
+    scenicId,
+    personaId,
+    rating,
+    tags: body.tags ?? [],
+    content,
+    imageIds,
+    recommendedActivityIds: body.recommendedActivityIds ?? [],
+    submittedAt: new Date().toISOString(),
+    dayKey: day,
+    qualityEligible,
+    showOnMiniProgram: false,
+    sharedChannels: [],
+    rewardIssued: false,
+  }
+
+  const runtime = getMockRuntime()
+  const list = runtime.scenicReviewsByPersona[personaId] ?? []
+  list.unshift(record)
+  runtime.scenicReviewsByPersona[personaId] = list
+
+  // 兼容：若仍传入 orderId，标记该单已评（旧数据路径）
+  const orderId = body.orderId?.trim()
   if (orderId) {
-    const order = scopedOrders.find((item) => item.orderId === orderId)
-    if (!order || order.status !== 'completed' || (order.reviewStatus ?? 'none') !== 'none') {
-      return { ok: false, message: '该订单不可评价' }
-    }
-    const completed = order.completedAt ? new Date(order.completedAt).getTime() : 0
-    if (!completed || now - completed > ninetyDays) {
-      return { ok: false, message: '该订单已超过评价期限' }
-    }
-  } else {
-    const candidates = scopedOrders
-      .filter((order) => {
-        if (order.status !== 'completed' || (order.reviewStatus ?? 'none') !== 'none') return false
-        const completed = order.completedAt ? new Date(order.completedAt).getTime() : 0
-        return completed > 0 && now - completed <= ninetyDays
-      })
-      .sort((a, b) => {
-        const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0
-        const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0
-        return tb - ta
-      })
-    if (!candidates.length) {
-      return { ok: false, message: '暂无可评价订单' }
-    }
-    orderId = candidates[0].orderId
+    const order = getMutableSnapshot(personaId).orders.find((item) => item.orderId === orderId)
+    if (order) order.reviewStatus = 'submitted'
   }
-
-  const order = snapshot.orders.find((item) => item.orderId === orderId)
-  if (!order) {
-    return { ok: false, message: '订单不存在' }
-  }
-
-  order.reviewStatus = 'submitted'
-
-  const rewardEligible = qualifiesReviewReward(content, body.imageIds?.length ?? 0)
-  const rewardCoupons = rewardEligible ? issueReviewRewardCoupons(personaId) : []
 
   return {
     ok: true,
-    reviewId: `rev_${Date.now()}`,
-    orderId,
+    reviewId,
+    orderId: orderId || undefined,
+    rewardIssued: false,
+    rewardCoupons: [],
+    qualityEligible,
+    shareHint: qualityEligible
+      ? '评价很棒！分享到社交平台后可领取优质评价礼哦～'
+      : '感谢点评！写满 20 字并上传至少 2 张图后，分享可领优质评价礼。',
+  }
+}
+
+export function shareScenicReview(
+  personaId: PersonaId,
+  body: { reviewId?: string; channel?: string },
+):
+  | {
+      ok: true
+      reviewId: string
+      channel: ReviewShareChannel
+      alreadySharedToday?: boolean
+      rewardIssued: boolean
+      rewardCoupons: Coupon[]
+      message: string
+    }
+  | { ok: false; message: string } {
+  const reviewId = body.reviewId?.trim()
+  const channel = body.channel?.trim() as ReviewShareChannelKey | undefined
+  if (!reviewId || !channel) {
+    return { ok: false, message: '缺少点评或分享渠道' }
+  }
+  const validChannels: ReviewShareChannelKey[] = [
+    'wechat_moments',
+    'xiaohongshu',
+    'douyin',
+    'dianping',
+  ]
+  if (!validChannels.includes(channel)) {
+    return { ok: false, message: '不支持的分享渠道' }
+  }
+
+  const runtime = getMockRuntime()
+  const list = runtime.scenicReviewsByPersona[personaId] ?? []
+  const review = list.find((item) => item.reviewId === reviewId)
+  if (!review) return { ok: false, message: '点评不存在' }
+
+  const day = scenicDayKey()
+  const shareKey = `${personaId}:${review.scenicId}:${channel}:${day}`
+  if (runtime.reviewShareKeys[shareKey]) {
+    return {
+      ok: true,
+      reviewId,
+      channel,
+      alreadySharedToday: true,
+      rewardIssued: false,
+      rewardCoupons: [],
+      message: '今日已在该平台分享过',
+    }
+  }
+
+  runtime.reviewShareKeys[shareKey] = 1
+  if (!review.sharedChannels.includes(channel)) {
+    review.sharedChannels = [...review.sharedChannels, channel]
+  }
+
+  let rewardCoupons: Coupon[] = []
+  const rewardKey = `${personaId}:${review.scenicId}`
+  const alreadyRewardedToday = runtime.reviewRewardDayByKey[rewardKey] === day
+  if (review.qualityEligible && !alreadyRewardedToday && !review.rewardIssued) {
+    rewardCoupons = issueReviewRewardCoupons(personaId)
+    if (rewardCoupons.length) {
+      review.rewardIssued = true
+      runtime.reviewRewardDayByKey[rewardKey] = day
+    }
+  }
+
+  return {
+    ok: true,
+    reviewId,
+    channel,
     rewardIssued: rewardCoupons.length > 0,
     rewardCoupons,
+    message: REVIEW_SHARE_DEMO_TOAST,
   }
+}
+
+export function listScenicReviewsForAdmin(scenicId?: string | null): ScenicReviewRecord[] {
+  const runtime = getMockRuntime()
+  const all = (
+    Object.keys(runtime.scenicReviewsByPersona) as PersonaId[]
+  ).flatMap((personaId) => runtime.scenicReviewsByPersona[personaId] ?? [])
+  const resolved = scenicId ? resolveBusinessScenicId(scenicId) : null
+  const filtered = resolved
+    ? all.filter((item) => item.scenicId === resolved)
+    : all
+  return filtered.sort(
+    (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
+  )
+}
+
+export function setScenicReviewMiniProgramDisplay(
+  reviewId: string,
+  showOnMiniProgram: boolean,
+): { ok: true; review: ScenicReviewRecord } | { ok: false; message: string } {
+  const runtime = getMockRuntime()
+  for (const personaId of Object.keys(runtime.scenicReviewsByPersona) as PersonaId[]) {
+    const list = runtime.scenicReviewsByPersona[personaId] ?? []
+    const hit = list.find((item) => item.reviewId === reviewId)
+    if (hit) {
+      hit.showOnMiniProgram = showOnMiniProgram
+      return { ok: true, review: hit }
+    }
+  }
+  return { ok: false, message: '点评不存在' }
+}
+
+/** @deprecated 旧订单点评路径保留名；请用景区点评 submitReview */
+export function submitOrderBoundReviewLegacy() {
+  return null
 }
 
 export function listCheckinSpots(
@@ -1301,10 +1509,13 @@ export function resetAllDemoSnapshots(): void {
     runtime.snapshots[personaId] = cloneSnapshot(baselineByPersona[personaId])
     runtime.checkinRecordsByPersona[personaId] = []
     runtime.virtualQueueByPersona[personaId] = cloneVirtualQueueSeed()
+    runtime.scenicReviewsByPersona[personaId] = []
   }
   refreshDemoNewRegistrationDate(runtime.snapshots.demo_new)
   runtime.orderDrafts.clear()
   runtime.quizSessions.clear()
+  runtime.reviewRewardDayByKey = {}
+  runtime.reviewShareKeys = {}
   clearAiChatTags()
   for (const key of Object.keys(runtime.plateOverrides) as PersonaId[]) {
     delete runtime.plateOverrides[key]

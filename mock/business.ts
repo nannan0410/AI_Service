@@ -12,6 +12,11 @@ import {
   submitCheckin,
   submitOrderFromDraft,
   submitReview,
+  getReviewEligibility,
+  listRecommendActivitiesForReview,
+  shareScenicReview,
+  listScenicReviewsForAdmin,
+  setScenicReviewMiniProgramDisplay,
   getVirtualQueueCatalog,
   takeVirtualQueue,
   ticketProducts,
@@ -351,6 +356,40 @@ export default [
     },
   },
   {
+    url: '/api/reviews/eligibility',
+    method: 'get',
+    response: ({
+      headers,
+      query,
+    }: {
+      headers: Record<string, unknown>
+      query: Record<string, string>
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      const inParkOverride =
+        query?.inPark === '1' || query?.inPark === 'true' ? true : undefined
+      const data = getReviewEligibility(
+        personaId,
+        getScenicIdFromHeaders(headers),
+        inParkOverride,
+      )
+      return { code: 200, data }
+    },
+  },
+  {
+    url: '/api/reviews/recommend-activities',
+    method: 'get',
+    response: ({ headers }: { headers: Record<string, unknown> }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      return {
+        code: 200,
+        data: listRecommendActivitiesForReview(getScenicIdFromHeaders(headers)),
+      }
+    },
+  },
+  {
     url: '/api/reviews/submit',
     method: 'post',
     response: ({
@@ -364,6 +403,8 @@ export default [
         tags?: string[]
         content?: string
         imageIds?: string[]
+        recommendedActivityIds?: string[]
+        inParkOverride?: boolean
       }
     }) => {
       const personaId = requirePersona(headers)
@@ -376,7 +417,9 @@ export default [
         tags: body?.tags,
         content: body?.content,
         imageIds: body?.imageIds,
+        recommendedActivityIds: body?.recommendedActivityIds,
         scenicId: getScenicIdFromHeaders(headers),
+        inParkOverride: body?.inParkOverride,
       })
       if (!result.ok) return { code: 400, message: result.message, data: null }
       return {
@@ -386,8 +429,56 @@ export default [
           orderId: result.orderId,
           rewardIssued: result.rewardIssued,
           rewardCoupons: result.rewardCoupons,
+          qualityEligible: result.qualityEligible,
+          shareHint: result.shareHint,
         },
       }
+    },
+  },
+  {
+    url: '/api/reviews/share',
+    method: 'post',
+    response: ({
+      headers,
+      body,
+    }: {
+      headers: Record<string, unknown>
+      body: { reviewId?: string; channel?: string }
+    }) => {
+      const personaId = requirePersona(headers)
+      if (!personaId) return { code: 401, message: '未登录', data: null }
+      const result = shareScenicReview(personaId, body ?? {})
+      if (!result.ok) return { code: 400, message: result.message, data: null }
+      return { code: 200, data: result }
+    },
+  },
+  {
+    url: '/api/reviews/admin',
+    method: 'get',
+    response: ({ headers }: { headers: Record<string, unknown> }) => {
+      return {
+        code: 200,
+        data: listScenicReviewsForAdmin(getScenicIdFromHeaders(headers)),
+      }
+    },
+  },
+  {
+    url: '/api/reviews/admin/display',
+    method: 'post',
+    response: ({
+      body,
+    }: {
+      body: { reviewId?: string; showOnMiniProgram?: boolean }
+    }) => {
+      if (!body?.reviewId || body.showOnMiniProgram == null) {
+        return { code: 400, message: '参数不完整', data: null }
+      }
+      const result = setScenicReviewMiniProgramDisplay(
+        body.reviewId,
+        Boolean(body.showOnMiniProgram),
+      )
+      if (!result.ok) return { code: 400, message: result.message, data: null }
+      return { code: 200, data: result.review }
     },
   },
   {

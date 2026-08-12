@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { showConfirmDialog } from "vant";
 import { appToast } from "@/utils/toast";
@@ -23,8 +23,15 @@ import {
   resolveSuggestedQuestions,
 } from "@/utils/welcomeQuestions";
 import { MAX_QUICK_SERVICES, MAX_WELCOME_RECOMMEND } from "@/utils/welcomeLayout";
-import { postDemoOps, resetDemoBusinessData, type DemoOpsAction } from "@/api/business";
+import {
+  postDemoOps,
+  resetDemoBusinessData,
+  fetchAdminScenicReviews,
+  setReviewMiniProgramDisplay,
+  type DemoOpsAction,
+} from "@/api/business";
 import { clearDemoClientStorage } from "@/utils/demoReset";
+import type { ScenicReviewRecord } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import { matchesScenicScope } from "@/utils/scenicScope";
 import type { AssistantSkillConfig, PersonaId, RecommendEntry } from "@/types";
@@ -45,6 +52,11 @@ import {
   validateSkillTriggerKeywords,
 } from "@/utils/skillKeywordValidation";
 import { listIntentExclusionRules } from "@/utils/intentExclusionCatalog";
+import {
+  clearTicketEligibilityOverride,
+  resolveTicketEligibilityConfig,
+  saveTicketEligibilityOverride,
+} from "@/utils/ticketEligibility";
 
 const router = useRouter();
 const assistantStore = useAssistantStore();
@@ -53,6 +65,73 @@ const skillStore = useSkillStore();
 const authStore = useAuthStore();
 const scenicStore = useScenicStore();
 
+const eligibilityChildMaxHeightCm = ref(120);
+const eligibilityElderMinAgeYears = ref(60);
+const adminReviewList = ref<ScenicReviewRecord[]>([]);
+
+async function loadAdminReviews() {
+  try {
+    const { data: res } = await fetchAdminScenicReviews();
+    if (res.code === 200) adminReviewList.value = res.data ?? [];
+  } catch {
+    adminReviewList.value = [];
+  }
+}
+
+async function onToggleReviewDisplay(reviewId: string, show: boolean) {
+  try {
+    const { data: res } = await setReviewMiniProgramDisplay({
+      reviewId,
+      showOnMiniProgram: show,
+    });
+    if (res.code !== 200) {
+      appToast(res.message || "更新失败");
+      return;
+    }
+    appToast(show ? "已设为在小程序展示" : "已取消小程序展示");
+    await loadAdminReviews();
+  } catch (e) {
+    appToast(e instanceof Error ? e.message : "更新失败");
+  }
+}
+
+function loadEligibilityForm() {
+  const cfg = resolveTicketEligibilityConfig(previewScenicId.value);
+  eligibilityChildMaxHeightCm.value = cfg.childMaxHeightCm;
+  eligibilityElderMinAgeYears.value = cfg.elderMinAgeYears;
+}
+
+function saveEligibilityForm() {
+  const scenicId = previewScenicId.value;
+  if (!scenicId) {
+    appToast("请先选择景区");
+    return;
+  }
+  const childMax = Number(eligibilityChildMaxHeightCm.value);
+  const elderMin = Number(eligibilityElderMinAgeYears.value);
+  if (!Number.isFinite(childMax) || childMax <= 0 || childMax > 250) {
+    appToast("儿童身高上限请填写 1～250 cm");
+    return;
+  }
+  if (!Number.isFinite(elderMin) || elderMin < 1 || elderMin > 120) {
+    appToast("老人周岁阈值请填写 1～120");
+    return;
+  }
+  saveTicketEligibilityOverride(scenicId, {
+    childMaxHeightCm: Math.round(childMax),
+    elderMinAgeYears: Math.round(elderMin),
+  });
+  loadEligibilityForm();
+  appToast("已保存本机购票资格阈值");
+}
+
+function resetEligibilityForm() {
+  const scenicId = previewScenicId.value;
+  if (!scenicId) return;
+  clearTicketEligibilityOverride(scenicId);
+  loadEligibilityForm();
+  appToast("已恢复该景区 Mock 默认阈值");
+}
 const currentPersonaLabel = computed(() => {
   const id = authStore.personaId;
   if (!id) return "未登录";
@@ -62,6 +141,11 @@ const currentPersonaLabel = computed(() => {
 const previewScenicId = computed(
   () => scenicStore.currentScenicId ?? scenicStore.enabledScenics[0]?.scenicId ?? null,
 );
+
+watch(previewScenicId, () => {
+  loadEligibilityForm();
+  void loadAdminReviews();
+}, { immediate: true });
 
 const previewScenicName = computed(
   () =>
@@ -292,7 +376,8 @@ function buildContextSummary(personaId: (typeof DEMO_PERSONA_OPTIONS)[number]["v
     `有待出行 ${ctx.hasPendingVisitOrder ? "是" : "否"}`,
     ctx.hasVisitToday ? "今日出行" : ctx.nextVisitDate ? `最近 ${ctx.nextVisitDate}` : "无待出行",
     `可开票 ${ctx.hasInvoiceableOrders ? "是" : "否"}`,
-    `可评价 ${ctx.hasReviewableOrders ? "是" : "否"}`,
+    `今日可点评 ${ctx.canScenicReviewToday ? "是" : "否"}`,
+    `可评价订单(旧) ${ctx.hasReviewableOrders ? "是" : "否"}`,
     `阶段 ${ctx.visitorPhase}`,
     `标签 ${ctx.tags.join(", ") || "无"}`,
   ].join(" · ");
@@ -1169,6 +1254,47 @@ function goPreviewChat() {
       </van-cell>
     </section>
 
+    <section class="admin-ui__block">
+      <p class="admin-ui__block-title">购票资格阈值 · {{ previewScenicName }}</p>
+      <p class="admin-business__hint admin-business__hint--block">
+        儿童身高 ≤ 阈值可买儿童票；老人已满 N 周岁可买老人票。写入本机覆盖，按景区隔离；聊天购票出票前会整批询问是/否。
+      </p>
+      <van-field
+        v-model.number="eligibilityChildMaxHeightCm"
+        type="digit"
+        label="儿童身高上限"
+        label-width="7.2em"
+        placeholder="cm"
+      >
+        <template #right-icon>
+          <span class="admin-business__field-unit">cm</span>
+        </template>
+      </van-field>
+      <van-field
+        v-model.number="eligibilityElderMinAgeYears"
+        type="digit"
+        label="老人满周岁"
+        label-width="7.2em"
+        placeholder="周岁"
+      >
+        <template #right-icon>
+          <span class="admin-business__field-unit">周岁</span>
+        </template>
+      </van-field>
+      <div class="admin-business__eligibility-actions">
+        <button
+          type="button"
+          class="admin-ui__btn admin-ui__btn--outline"
+          @click="resetEligibilityForm"
+        >
+          恢复默认
+        </button>
+        <button type="button" class="admin-ui__btn" @click="saveEligibilityForm">
+          保存本机
+        </button>
+      </div>
+    </section>
+
     <van-tabs v-model:active="activeTab" class="admin-business__tabs">
       <van-tab title="Skill 场景" name="skill">
         <van-collapse v-model="skillSectionOpen" class="admin-business__collapse">
@@ -1398,6 +1524,42 @@ function goPreviewChat() {
         清除演示信息
       </button>
     </div>
+
+    <section class="admin-ui__block">
+      <p class="admin-ui__block-title">点评管理 · {{ previewScenicName }}</p>
+      <p class="admin-business__hint admin-business__hint--block">
+        景区游园日点评运营资产；「在小程序展示」打开后可供小程序精选列表露出（演示列表如下）。
+      </p>
+      <div class="admin-ui__panel admin-ui__panel--card">
+        <van-cell
+          v-for="item in adminReviewList"
+          :key="item.reviewId"
+          :title="`${item.rating} 星 · ${item.content.slice(0, 36) || '（无文案）'}`"
+          :label="`${item.reviewId} · ${item.submittedAt.slice(0, 16).replace('T', ' ')} · 分享 ${item.sharedChannels.length} · ${item.rewardIssued ? '已发券' : '未发券'}`"
+        >
+          <template #right-icon>
+            <van-switch
+              :model-value="item.showOnMiniProgram"
+              size="20px"
+              @update:model-value="(v) => onToggleReviewDisplay(item.reviewId, v)"
+            />
+          </template>
+        </van-cell>
+        <van-empty
+          v-if="!adminReviewList.length"
+          description="暂无点评，去聊天提交后再刷新"
+          image-size="56"
+        />
+      </div>
+      <button
+        type="button"
+        class="admin-ui__btn admin-ui__btn--outline"
+        style="margin: 10px 16px 0"
+        @click="loadAdminReviews"
+      >
+        刷新点评列表
+      </button>
+    </section>
 
     <section class="admin-ui__block admin-business__demo-ops">
       <p class="admin-ui__block-title">
@@ -2246,6 +2408,22 @@ function goPreviewChat() {
   background: #fff;
   color: #646566;
   border: 1px solid #dcdee0;
+}
+
+.admin-business__eligibility-actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px 4px;
+}
+
+.admin-business__eligibility-actions .admin-ui__btn {
+  flex: 1;
+  margin: 0;
+}
+
+.admin-business__field-unit {
+  font-size: 13px;
+  color: #969799;
 }
 
 .admin-ui__btn--warn {

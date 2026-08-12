@@ -6,7 +6,10 @@ import {
 } from './extractPurchaseSlots'
 import { isLlmAvailable } from '@/ai/llm/client'
 import type { ParsedParty } from '@/utils/ticketPartyParser'
-import { parsePartyFromMessage } from '@/utils/ticketPartyParser'
+import {
+  normalizePartyRestatement,
+  parsePartyFromMessage,
+} from '@/utils/ticketPartyParser'
 import { parseVisitDateFromMessage, validateIsoVisitDate } from '@/utils/visitDateParser'
 import type { ToolExecutionCallbacks } from '@/types'
 
@@ -51,15 +54,19 @@ export function mergePartyPatch(
 
 function resolveFromRegex(message: string, now: Date): ResolvedPurchaseSlots {
   return {
-    partyPatch: parsePartyFromMessage(message),
+    partyPatch: normalizePartyRestatement(parsePartyFromMessage(message), message),
     visitDate: parseVisitDateFromMessage(message, now),
     source: 'regex',
   }
 }
 
-function resolveFromLlm(slots: LlmPurchaseSlots, now: Date): ResolvedPurchaseSlots {
+function resolveFromLlm(
+  slots: LlmPurchaseSlots,
+  now: Date,
+  message: string,
+): ResolvedPurchaseSlots {
   return {
-    partyPatch: llmToPartyPatch(slots),
+    partyPatch: normalizePartyRestatement(llmToPartyPatch(slots), message),
     visitDate: validateIsoVisitDate(slots.visitDate, now),
     source: 'llm',
   }
@@ -86,7 +93,7 @@ export async function resolvePurchaseSlotsFromMessage(
     options?.callbacks?.onToolDone?.('extractPurchaseSlots', llmSlots != null)
 
     if (llmSlots != null) {
-      return resolveFromLlm(llmSlots, now)
+      return resolveFromLlm(llmSlots, now, message)
     }
   }
 

@@ -1,66 +1,81 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRouter } from "vue-router";
 import { showToast } from "vant";
-import { fetchOrders, submitReview, uploadReviewImage } from "@/api/business";
-import type { Order } from "@/types";
-import { filterReviewableOrders } from "@/utils/reviewableOrders";
+import {
+  fetchReviewEligibility,
+  fetchReviewRecommendActivities,
+  submitReview,
+  uploadReviewImage,
+} from "@/api/business";
 import {
   REVIEW_CONTENT_MAX,
   REVIEW_TAG_OPTIONS,
   qualifiesReviewReward,
 } from "@/utils/reviewForm";
+import {
+  REVIEW_RECOMMEND_ACTIVITY_MAX,
+  scenicDayKey,
+} from "@/utils/scenicReviewAccess";
+import { markScenicReviewedToday } from "@/utils/scenicReviewClient";
 import { generateReviewDraft } from "@/utils/generateReviewDraft";
+import { useAuthStore } from "@/store/authStore";
+import { useScenicStore } from "@/store/scenicStore";
+import type { ReviewRecommendActivity } from "@/types";
 
-const route = useRoute();
 const router = useRouter();
+const authStore = useAuthStore();
+const scenicStore = useScenicStore();
 
-const orders = ref<Order[]>([]);
+const loading = ref(true);
+const canReview = ref(false);
+const blockReason = ref("");
 const rating = ref(0);
 const selectedTags = ref<string[]>([]);
+const selectedActivityIds = ref<string[]>([]);
 const content = ref("");
 const imageIds = ref<string[]>([]);
-const fileList = ref<{ url: string }[]>([]);
-const submitting = ref(false);
+const fileList = ref<{ url: string; imageId?: string }[]>([]);
 const uploading = ref(false);
+const submitting = ref(false);
 const generating = ref(false);
-
-const queryOrderId = computed(() => (route.query.orderId as string) || "");
-
-const reviewable = computed(() =>
-  [...filterReviewableOrders(orders.value)].sort((a, b) => {
-    const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0;
-    const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0;
-    return tb - ta;
-  }),
-);
-
-const targetOrder = computed(() => {
-  if (queryOrderId.value) {
-    return reviewable.value.find((o) => o.orderId === queryOrderId.value) ?? null;
-  }
-  return reviewable.value[0] ?? null;
-});
+const recommendActivities = ref<ReviewRecommendActivity[]>([]);
+const submitted = ref(false);
+const shareHint = ref("");
 
 const rewardHint = computed(() =>
   qualifiesReviewReward(content.value, imageIds.value.length)
-    ? "已满足优质评价条件，提交后可获餐饮折扣券 + 当日停车券"
-    : "优质评价：文案超过 20 字且上传至少 2 张图片，可获餐饮券（3 个月）+ 当日停车券",
+    ? "已满足优质评价条件，提交后分享可领礼"
+    : "领礼需：文案超过 20 字且至少 2 张图，提交后再分享",
 );
 
 onMounted(async () => {
-  const { data: res } = await fetchOrders();
-  if (res.code === 200) orders.value = res.data;
+  try {
+    const [{ data: elig }, { data: acts }] = await Promise.all([
+      fetchReviewEligibility(),
+      fetchReviewRecommendActivities(),
+    ]);
+    if (elig.code === 200 && elig.data) {
+      canReview.value = elig.data.canReview;
+      blockReason.value = elig.data.reason || "";
+    }
+    if (acts.code === 200) recommendActivities.value = acts.data ?? [];
+  } finally {
+    loading.value = false;
+  }
 });
 
 function toggleTag(tag: string) {
   const idx = selectedTags.value.indexOf(tag);
-  if (idx >= 0) {
-    selectedTags.value.splice(idx, 1);
-  } else if (selectedTags.value.length < 5) {
-    selectedTags.value.push(tag);
-  } else {
-    showToast("最多选择 5 个标签");
+  if (idx >= 0) selectedTags.value.splice(idx, 1);
+  else if (selectedTags.value.length < 5) selectedTags.value.push(tag);
+}
+
+function toggleActivity(id: string) {
+  const idx = selectedActivityIds.value.indexOf(id);
+  if (idx >= 0) selectedActivityIds.value.splice(idx, 1);
+  else if (selectedActivityIds.value.length < REVIEW_RECOMMEND_ACTIVITY_MAX) {
+    selectedActivityIds.value.push(id);
   }
 }
 
@@ -68,75 +83,55 @@ async function afterRead() {
   uploading.value = true;
   try {
     const { data: res } = await uploadReviewImage();
-    if (res.code === 200 && res.data?.imageId) {
-      imageIds.value.push(res.data.imageId);
-    } else {
+    if (res.code !== 200 || !res.data?.imageId) {
       fileList.value = fileList.value.slice(0, -1);
-      showToast("图片上传失败");
+      showToast("上传失败");
+      return;
     }
+    imageIds.value.push(res.data.imageId);
+  } catch {
+    fileList.value = fileList.value.slice(0, -1);
   } finally {
     uploading.value = false;
   }
 }
 
-function onDelete(_file: unknown, detail: { index: number }) {
-  imageIds.value.splice(detail.index, 1);
-}
-
 async function onGenerateDraft() {
-  if (!targetOrder.value || submitting.value || generating.value) return;
   generating.value = true;
   try {
-    const { text, source } = await generateReviewDraft({
+    const { text } = await generateReviewDraft({
       rating: rating.value || undefined,
       tags: [...selectedTags.value],
-      ticketName: targetOrder.value.ticketName,
-      visitDate:
-        targetOrder.value.visitDate ||
-        targetOrder.value.completedAt?.slice(0, 10),
+      ticketName: scenicStore.currentScenicName,
     });
     content.value = text;
-    showToast(
-      source === "llm"
-        ? "已生成评价草稿，请按真实体验修改后提交"
-        : "已生成评价草稿（离线模板），请按真实体验修改后提交",
-    );
   } finally {
     generating.value = false;
   }
 }
 
 async function onSubmit() {
-  if (!targetOrder.value) {
-    showToast("暂无可评价订单");
-    return;
-  }
-  if (rating.value < 1) {
-    showToast("请选择星级评分");
-    return;
-  }
-  if (content.value.length > REVIEW_CONTENT_MAX) {
-    showToast(`评价内容不超过 ${REVIEW_CONTENT_MAX} 字`);
-    return;
-  }
-
+  if (rating.value < 1 || submitting.value) return;
   submitting.value = true;
   try {
     const { data: res } = await submitReview({
-      orderId: targetOrder.value.orderId,
       rating: rating.value,
-      tags: selectedTags.value.length ? selectedTags.value : undefined,
-      content: content.value.trim() || undefined,
-      imageIds: imageIds.value.length ? imageIds.value : undefined,
+      tags: selectedTags.value,
+      content: content.value.trim(),
+      imageIds: imageIds.value,
+      recommendedActivityIds: selectedActivityIds.value,
     });
-    if (res.code === 200) {
-      showToast(
-        res.data.rewardIssued ? "评价已提交，赠券已发放" : "评价已提交，感谢您的反馈",
-      );
-      router.replace("/orders?tab=1");
-    } else {
-      showToast(res.message || "提交失败");
+    if (res.code !== 200 || !res.data) throw new Error(res.message || "提交失败");
+    submitted.value = true;
+    shareHint.value = res.data.shareHint || "";
+    const memberId = authStore.memberId;
+    const scenicId = scenicStore.currentScenicId;
+    if (memberId && scenicId) {
+      markScenicReviewedToday({ memberId, scenicId, dayKey: scenicDayKey() });
     }
+    showToast("评价已提交，请回聊天页完成分享领礼");
+  } catch (e) {
+    showToast(e instanceof Error ? e.message : "提交失败");
   } finally {
     submitting.value = false;
   }
@@ -144,151 +139,109 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="page">
+  <div class="review-page">
     <van-nav-bar
-      title="服务点评"
+      title="景区点评"
       left-arrow
       class="review-page__nav"
-      @click-left="$router.back()"
+      @click-left="router.back()"
     />
-    <van-empty v-if="!targetOrder" description="暂无可评价订单" />
-    <template v-else>
-      <van-cell-group inset class="order-card">
-        <van-cell
-          :title="targetOrder.ticketName"
-          :label="`${targetOrder.orderId} · 完成于 ${targetOrder.completedAt?.slice(0, 10) ?? '-'}`"
-          :value="`¥${targetOrder.totalAmount}`"
-        />
-      </van-cell-group>
-
-      <div class="section">
-        <div class="section__title">整体满意度</div>
-        <van-rate v-model="rating" :size="28" color="#ffd21e" void-icon="star" void-color="#eee" />
+    <div v-if="loading" class="review-page__body">加载中…</div>
+    <div v-else-if="!canReview || submitted" class="review-page__body">
+      <p>{{ submitted ? shareHint || "今日已点评" : blockReason || "当前不可点评" }}</p>
+      <van-button type="primary" round block style="margin-top: 16px" @click="router.push('/chat')">
+        返回聊天
+      </van-button>
+    </div>
+    <div v-else class="review-page__body">
+      <p class="review-page__label">整体满意度</p>
+      <van-rate v-model="rating" :size="24" color="#ffd21e" />
+      <p class="review-page__label">标签</p>
+      <div class="review-page__tags">
+        <van-tag
+          v-for="tag in REVIEW_TAG_OPTIONS"
+          :key="tag"
+          :type="selectedTags.includes(tag) ? 'primary' : 'default'"
+          @click="toggleTag(tag)"
+        >
+          {{ tag }}
+        </van-tag>
       </div>
-
-      <div class="section">
-        <div class="section__title">快捷标签（可选，最多 5 个）</div>
-        <div class="tags">
+      <template v-if="recommendActivities.length">
+        <p class="review-page__label">推荐游玩项目</p>
+        <div class="review-page__tags">
           <van-tag
-            v-for="tag in REVIEW_TAG_OPTIONS"
-            :key="tag"
-            :type="selectedTags.includes(tag) ? 'primary' : 'default'"
-            size="medium"
-            class="tag"
-            @click="toggleTag(tag)"
+            v-for="act in recommendActivities"
+            :key="act.activityId"
+            :type="selectedActivityIds.includes(act.activityId) ? 'primary' : 'default'"
+            @click="toggleActivity(act.activityId)"
           >
-            {{ tag }}
+            <span v-if="act.hot">热门 </span>{{ act.name }}
           </van-tag>
         </div>
-      </div>
-
-      <div class="section section--content">
-        <div class="section__head">
-          <div class="section__title section__title--inline">评价内容</div>
-          <van-button
-            size="mini"
-            type="primary"
-            plain
-            round
-            :loading="generating"
-            :disabled="submitting"
-            @click="onGenerateDraft"
-          >
-            帮我写评价
-          </van-button>
-        </div>
-        <van-cell-group inset class="form">
-          <van-field
-            v-model="content"
-            rows="4"
-            autosize
-            type="textarea"
-            :maxlength="REVIEW_CONTENT_MAX"
-            show-word-limit
-            placeholder="分享游玩体验（选填），可点「帮我写评价」生成约 50 字草稿"
-            :readonly="generating"
-          />
-        </van-cell-group>
-        <p class="ai-hint">AI 草稿仅供参考，请按真实体验修改后再提交</p>
-      </div>
-
-      <div class="section">
-        <div class="section__title">上传图片（选填）</div>
-        <van-uploader v-model="fileList" :max-count="6" :after-read="afterRead" @delete="onDelete" />
-        <p class="reward-hint">{{ rewardHint }}</p>
-      </div>
-
-      <div class="actions">
-        <van-button
-          block
-          type="primary"
-          :loading="submitting || uploading"
-          @click="onSubmit"
-        >
-          提交评价
+      </template>
+      <div class="review-page__row">
+        <p class="review-page__label">评价内容</p>
+        <van-button size="mini" plain type="primary" round :loading="generating" @click="onGenerateDraft">
+          帮我写评价
         </van-button>
       </div>
-    </template>
+      <van-field
+        v-model="content"
+        type="textarea"
+        rows="3"
+        :maxlength="REVIEW_CONTENT_MAX"
+        show-word-limit
+      />
+      <p class="review-page__label">图片</p>
+      <van-uploader v-model="fileList" :max-count="6" :after-read="afterRead" />
+      <p class="reward-hint">{{ rewardHint }}</p>
+      <van-button
+        type="primary"
+        round
+        block
+        :disabled="rating < 1 || uploading"
+        :loading="submitting"
+        @click="onSubmit"
+      >
+        提交评价
+      </van-button>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.page {
+.review-page {
   min-height: 100vh;
-  background: #f7f8fa;
-  padding-bottom: 24px;
+  background: #f5f6f8;
 }
 .review-page__nav {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 10;
 }
-.order-card {
-  margin-top: 12px;
+.review-page__body {
+  padding: 16px;
 }
-.section {
-  margin: 16px 16px 0;
-}
-.section__title {
-  font-size: 14px;
-  color: #323233;
-  margin-bottom: 10px;
+.review-page__label {
+  margin: 12px 0 8px;
+  font-size: 13px;
   font-weight: 500;
 }
-.tags {
+.review-page__tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
-.tag {
-  cursor: pointer;
-}
-.section__title--inline {
-  margin-bottom: 0;
-}
-.section__head {
+.review-page__row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.form {
-  margin-top: 0;
-}
-.ai-hint {
-  margin: 8px 0 0;
-  font-size: 11px;
-  color: #969799;
-  line-height: 1.4;
+  align-items: center;
 }
 .reward-hint {
-  margin: 10px 0 0;
+  margin: 12px 0;
   font-size: 12px;
   color: #ff976a;
-  line-height: 1.45;
-}
-.actions {
-  padding: 20px 16px 0;
+  line-height: 1.4;
 }
 </style>

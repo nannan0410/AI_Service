@@ -194,7 +194,7 @@
     "rules": [
       {
         "op": "eq",
-        "field": "hasReviewableOrders",
+        "field": "canScenicReviewToday",
         "value": true
       }
     ],

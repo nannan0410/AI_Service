@@ -31,6 +31,22 @@
     "scenicId": "scenic_hlg"
   },
   {
+    "productId": "tkt_elderly",
+    "name": "老人票（折扣票）",
+    "type": "ticket",
+    "channels": [
+      "self"
+    ],
+    "status": "on",
+    "price": 149,
+    "ticketTypeId": "elderly",
+    "tags": [
+      "老人",
+      "折扣"
+    ],
+    "scenicId": "scenic_hlg"
+  },
+  {
     "productId": "tkt_family",
     "name": "家庭套票（2大1小）",
     "type": "ticket",

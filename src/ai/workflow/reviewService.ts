@@ -1,83 +1,115 @@
-import { fetchOrders } from '@/api/business'
-import { filterReviewableOrders } from '@/utils/reviewableOrders'
+import { fetchOrders, fetchReviewEligibility, fetchReviewRecommendActivities } from '@/api/business'
 import { shouldRunReviewWorkflow } from '@/utils/reviewIntent'
+import { useScenicStore } from '@/store/scenicStore'
 import type {
   LlmChatResult,
-  Order,
   ReviewCardPayload,
   ToolExecutionCallbacks,
 } from '@/types'
 
 export { shouldRunReviewWorkflow }
 
-function sortReviewableDesc(orders: Order[]): Order[] {
-  return [...orders].sort((a, b) => {
-    const ta = a.completedAt ? new Date(a.completedAt).getTime() : 0
-    const tb = b.completedAt ? new Date(b.completedAt).getTime() : 0
-    return tb - ta
-  })
-}
-
-function buildReviewCardPayload(orders: Order[]): ReviewCardPayload {
-  const sorted = sortReviewableDesc(orders)
-  return {
-    cardId: `review_${Date.now()}`,
-    defaultOrderId: sorted[0]?.orderId,
-    orders: sorted.map((order) => ({
-      orderId: order.orderId,
-      ticketName: order.ticketName,
-      visitDate: order.visitDate,
-      completedAt: order.completedAt,
-      totalAmount: order.totalAmount,
-    })),
-  }
-}
-
 export async function runReviewServiceWorkflow(
   _message: string,
   callbacks?: ToolExecutionCallbacks,
+  options?: { inPark?: boolean },
 ): Promise<LlmChatResult> {
-  callbacks?.onToolStart?.('getOrders', '查询可评价订单')
-  let orders: Order[] = []
+  const scenicStore = useScenicStore()
+  const scenicId = scenicStore.currentScenicId
+  const scenicName = scenicStore.currentScenicName || '景区'
+
+  callbacks?.onToolStart?.('getReviewEligibility', '确认今日是否可点评')
+  let eligibility: Awaited<
+    ReturnType<typeof fetchReviewEligibility>
+  >['data']['data'] | null = null
   try {
-    const { data: res } = await fetchOrders()
-    callbacks?.onToolDone?.('getOrders', res.code === 200)
-    if (res.code === 200) orders = res.data
+    const { data: res } = await fetchReviewEligibility({
+      inPark: options?.inPark,
+    })
+    callbacks?.onToolDone?.('getReviewEligibility', res.code === 200)
+    if (res.code === 200) eligibility = res.data
   } catch {
-    callbacks?.onToolDone?.('getOrders', false)
-    return {
-      content: '暂时无法查询订单，请稍后再试。',
-      skillId: 'review_service',
-      toolCallsUsed: ['getOrders'],
+    callbacks?.onToolDone?.('getReviewEligibility', false)
+  }
+
+  // 客户端自报在园：服务端快照可能仍为 false，用本地覆盖准入
+  if (eligibility && !eligibility.canReview && options?.inPark && !eligibility.reviewedToday) {
+    eligibility = {
+      ...eligibility,
+      canReview: true,
+      reason: undefined,
     }
   }
 
-  const reviewable = filterReviewableOrders(orders)
-  if (!reviewable.length) {
-    return {
-      content:
-        '您当前暂无已完成且未评价的订单。游玩结束后再来分享体验吧～可先前往「我的订单」确认订单状态。',
-      skillId: 'review_service',
-      toolCallsUsed: ['getOrders'],
+  if (!eligibility?.canReview) {
+    // 兜底：拉订单看是否有已核销
+    callbacks?.onToolStart?.('getOrders', '查询游园凭证')
+    try {
+      const { data: res } = await fetchOrders()
+      callbacks?.onToolDone?.('getOrders', res.code === 200)
+      const hasCompleted =
+        res.code === 200 && res.data.some((o) => o.status === 'completed')
+      if (!hasCompleted && !options?.inPark) {
+        return {
+          content:
+            eligibility?.reason ||
+            '点评需在园内，或持有已核销订单/门票。可先在欢迎页确认在园状态哦～',
+          skillId: 'review_service',
+          toolCallsUsed: ['getReviewEligibility', 'getOrders'],
+        }
+      }
+      if (eligibility?.reviewedToday) {
+        return {
+          content: eligibility.reason || '今天已经点评过啦，明天再来分享体验吧～',
+          skillId: 'review_service',
+          toolCallsUsed: ['getReviewEligibility'],
+        }
+      }
+    } catch {
+      callbacks?.onToolDone?.('getOrders', false)
+      return {
+        content: eligibility?.reason || '暂时无法确认点评资格，请稍后再试。',
+        skillId: 'review_service',
+        toolCallsUsed: ['getReviewEligibility'],
+      }
     }
   }
 
-  const count = reviewable.length
-  const caption =
-    count === 1
-      ? `为您找到 1 笔可评价订单（${reviewable[0].ticketName}），请在下方填写评价。`
-      : `为您找到 ${count} 笔可评价订单，请选择订单并在下方填写评价（每笔订单仅可评价一次）。`
+  if (eligibility?.reviewedToday) {
+    return {
+      content: eligibility.reason || '今天已经点评过啦，明天再来分享体验吧～',
+      skillId: 'review_service',
+      toolCallsUsed: ['getReviewEligibility'],
+    }
+  }
+
+  callbacks?.onToolStart?.('getReviewActivities', '加载可推荐项目')
+  let recommendActivities: ReviewCardPayload['recommendActivities'] = []
+  try {
+    const { data: res } = await fetchReviewRecommendActivities()
+    callbacks?.onToolDone?.('getReviewActivities', res.code === 200)
+    if (res.code === 200) recommendActivities = res.data
+  } catch {
+    callbacks?.onToolDone?.('getReviewActivities', false)
+  }
+
+  const payload: ReviewCardPayload = {
+    cardId: `review_${Date.now()}`,
+    scenicId: scenicId || undefined,
+    scenicName,
+    recommendActivities,
+  }
 
   return {
     content: '',
     skillId: 'review_service',
-    toolCallsUsed: ['getOrders'],
+    toolCallsUsed: ['getReviewEligibility', 'getReviewActivities'],
     cards: [
       {
         type: 'review',
         role: 'assistant',
-        content: caption,
-        payload: buildReviewCardPayload(reviewable),
+        content: `欢迎为「${scenicName}」留下今日游园点评～写满 20 字并上传至少 2 张图后，分享到社交平台可领优质评价礼。`,
+        payload,
       },
     ],
   }

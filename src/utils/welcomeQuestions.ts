@@ -134,6 +134,7 @@ export function resolveSuggestedQuestions(
     orders: welcomeCtx?.orders,
     nickname: welcomeCtx?.nickname,
     scenicId: welcomeCtx?.scenicId ?? null,
+    inPark: welcomeCtx?.inPark,
   }
   const ctx = buildDemoRuleContext(personaId, live)
   const matched = questions

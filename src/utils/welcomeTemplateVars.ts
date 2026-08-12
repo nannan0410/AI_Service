@@ -23,6 +23,8 @@ export interface WelcomeTemplateVarContext {
   /** 当前服务景区名称，供 {{scenicName}} 占位符 */
   scenicName?: string
   scenicId?: string | null
+  /** 会话自报 / 覆盖在园态；不传则用演示账号快照 */
+  inPark?: boolean
 }
 
 export interface ResolvedWelcomeTemplateVars {

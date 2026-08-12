@@ -13,10 +13,12 @@ import type {
   SceneRecommendPayload,
   StarIntroPayload,
   TicketCardPayload,
+  TicketEligibilityCardPayload,
   TicketFallbackPayload,
   PageGuideCardPayload,
   MapActionCardPayload,
   ReviewCardPayload,
+  ReviewShareChannel,
   ReviewSubmitDraft,
   TravelGuidePayload,
   VisitorPickPayload,
@@ -26,6 +28,7 @@ import AssistantAvatar from "@/components/assistant/AssistantAvatar.vue";
 import TicketCard from "@/components/chat/cards/TicketCard.vue";
 import TicketConfirmCard from "@/components/chat/cards/TicketConfirmCard.vue";
 import TicketFallbackCard from "@/components/chat/cards/TicketFallbackCard.vue";
+import TicketEligibilityCard from "@/components/chat/cards/TicketEligibilityCard.vue";
 import PageGuideCard from "@/components/chat/cards/PageGuideCard.vue";
 import ReviewCard from "@/components/chat/cards/ReviewCard.vue";
 import CouponCard from "@/components/chat/cards/CouponCard.vue";
@@ -48,14 +51,25 @@ const props = defineProps<{
   ticketConfirmDisabled?: boolean;
   reviewDisabled?: boolean;
   quizDisabled?: boolean;
-  submittedReviewOrderIds?: string[];
+  ticketEligibilityDisabled?: boolean;
+  reviewCompleted?: {
+    reviewId: string;
+    shareHint?: string;
+    sharedChannels?: ReviewShareChannel[];
+  } | null;
   favorited?: boolean;
 }>();
 
 const emit = defineEmits<{
   visitorConfirm: [payload: VisitorPickPayload, idNumbers: string[]];
   ticketConfirm: [payload: TicketCardPayload];
-  reviewSubmit: [draft: ReviewSubmitDraft];
+  ticketEligibilityAnswer: [
+    payload: TicketEligibilityCardPayload,
+    ok: boolean,
+    messageId: string,
+  ];
+  reviewSubmit: [draft: ReviewSubmitDraft, messageId: string];
+  reviewShare: [channel: ReviewShareChannel, messageId: string];
   checkinConfirm: [payload: PageGuideCardPayload, messageId: string];
   quizStart: [quizId: string];
   quizAnswer: [payload: QuizCardPayload, optionKey: string, messageId: string];
@@ -158,6 +172,10 @@ function asTicket(payload: unknown): TicketCardPayload {
 
 function asTicketFallback(payload: unknown): TicketFallbackPayload {
   return payload as TicketFallbackPayload;
+}
+
+function asTicketEligibility(payload: unknown): TicketEligibilityCardPayload {
+  return payload as TicketEligibilityCardPayload;
 }
 
 function asCoupon(payload: unknown): CouponCardPayload {
@@ -322,6 +340,7 @@ const cardTypes = new Set([
   "ticket",
   "ticket_confirm",
   "ticket_fallback",
+  "ticket_eligibility",
   "page_guide",
   "review",
   "coupon",
@@ -437,6 +456,21 @@ const cardTypes = new Set([
     </div>
 
     <div
+      v-else-if="message.type === 'ticket_eligibility'"
+      class="bubble bubble--assistant bubble-card-box"
+    >
+      <p v-if="message.content" class="bubble-card-box__caption">{{ message.content }}</p>
+      <TicketEligibilityCard
+        :payload="asTicketEligibility(message.payload)"
+        :disabled="ticketEligibilityDisabled"
+        @answer="
+          (ok) =>
+            emit('ticketEligibilityAnswer', asTicketEligibility(message.payload), ok, message.id)
+        "
+      />
+    </div>
+
+    <div
       v-else-if="message.type === 'page_guide'"
       class="bubble bubble--assistant bubble-card-box"
     >
@@ -469,8 +503,9 @@ const cardTypes = new Set([
       <ReviewCard
         :payload="asReview(message.payload)"
         :disabled="reviewDisabled"
-        :submitted-order-ids="submittedReviewOrderIds"
-        @submit="(draft) => emit('reviewSubmit', draft)"
+        :completed="reviewCompleted"
+        @submit="(draft) => emit('reviewSubmit', draft, message.id)"
+        @share="(channel) => emit('reviewShare', channel, message.id)"
       />
     </div>
 

@@ -8,19 +8,15 @@ const router = useRouter();
 const activeTab = computed(() => {
   if (route.path.includes("/business") || route.path.includes("/route-check"))
     return "business";
-  if (route.path.includes("/data")) return "data";
   return "ui";
 });
 
-const isWideTab = computed(
-  () => activeTab.value === "data" || route.path.includes("/route-check"),
-);
+const isWideTab = computed(() => route.path.includes("/route-check"));
 
 function onTabChange(name: string | number) {
   const map: Record<string, string> = {
     ui: "/config/ui",
     business: "/config/business",
-    data: "/config/data",
   };
   router.replace(map[String(name)] ?? "/config/ui");
 }
@@ -52,7 +48,6 @@ function openChatH5() {
     <van-tabs :active="activeTab" shrink class="config-layout__tabs" @change="onTabChange">
       <van-tab title="助手 UI" name="ui" />
       <van-tab title="业务场景" name="business" />
-      <van-tab title="数据与接口" name="data" />
     </van-tabs>
 
     <router-view />

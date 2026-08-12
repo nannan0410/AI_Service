@@ -151,9 +151,50 @@ export function submitReview(payload: {
   tags?: string[]
   content?: string
   imageIds?: string[]
+  recommendedActivityIds?: string[]
+  inParkOverride?: boolean
 }) {
   return request.post<ApiResponse<import('@/types').ReviewSubmitResult>>(
     '/api/reviews/submit',
+    payload,
+  )
+}
+
+export function fetchReviewEligibility(params?: { inPark?: boolean }) {
+  return request.get<ApiResponse<import('@/types').ReviewEligibility>>(
+    '/api/reviews/eligibility',
+    { params: { inPark: params?.inPark ? '1' : undefined } },
+  )
+}
+
+export function fetchReviewRecommendActivities() {
+  return request.get<
+    ApiResponse<import('@/types').ReviewRecommendActivity[]>
+  >('/api/reviews/recommend-activities')
+}
+
+export function shareScenicReview(payload: {
+  reviewId: string
+  channel: import('@/types').ReviewShareChannel
+}) {
+  return request.post<ApiResponse<import('@/types').ReviewShareResult>>(
+    '/api/reviews/share',
+    payload,
+  )
+}
+
+export function fetchAdminScenicReviews() {
+  return request.get<ApiResponse<import('@/types').ScenicReviewRecord[]>>(
+    '/api/reviews/admin',
+  )
+}
+
+export function setReviewMiniProgramDisplay(payload: {
+  reviewId: string
+  showOnMiniProgram: boolean
+}) {
+  return request.post<ApiResponse<import('@/types').ScenicReviewRecord>>(
+    '/api/reviews/admin/display',
     payload,
   )
 }

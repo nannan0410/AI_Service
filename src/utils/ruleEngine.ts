@@ -16,7 +16,10 @@ export interface RuleContext {
   /** 今天是否有待出行订单 */
   hasVisitToday: boolean
   hasInvoiceableOrders: boolean
+  /** @deprecated 入口请用 canScenicReviewToday */
   hasReviewableOrders: boolean
+  /** 景区游园日点评：准入 ∧ 今日未评 */
+  canScenicReviewToday: boolean
   /** 账户是否已持有可用的新客专享券 */
   hasNewGuestCoupon: boolean
   /** 当前是否可领取新客专享券（身份 + 窗口 + 未领过） */

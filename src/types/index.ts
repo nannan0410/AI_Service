@@ -49,6 +49,7 @@ export type ReviewStatus = 'none' | 'submitted'
 export type TicketTypeId =
   | 'adult'
   | 'child'
+  | 'elderly'
   | 'family_bundle'
   | 'family_annual'
   | 'holiday_special'
@@ -64,13 +65,12 @@ export type MessageType =
   | 'visitor_pick'
   | 'ticket_confirm'
   | 'ticket_fallback'
+  | 'ticket_eligibility'
   | 'page_guide'
   | 'map_action'
   | 'review'
   | 'guide'
   | 'star_intro'
-  | 'quiz'
-  | 'system'
   | 'quiz'
   | 'system'
 
@@ -169,13 +169,62 @@ export interface ReviewSubmitPayload {
   tags?: string[]
   content?: string
   imageIds?: string[]
+  recommendedActivityIds?: string[]
 }
 
 export interface ReviewSubmitResult {
   reviewId: string
-  orderId: string
+  /** @deprecated 景区点评主路径不再强绑订单；兼容旧字段 */
+  orderId?: string
   rewardIssued?: boolean
   rewardCoupons?: Coupon[]
+  qualityEligible?: boolean
+  shareHint?: string
+}
+
+export type ReviewShareChannel =
+  | 'wechat_moments'
+  | 'xiaohongshu'
+  | 'douyin'
+  | 'dianping'
+
+export interface ReviewShareResult {
+  reviewId: string
+  channel: ReviewShareChannel
+  alreadySharedToday?: boolean
+  rewardIssued: boolean
+  rewardCoupons?: Coupon[]
+  message: string
+}
+
+export interface ReviewEligibility {
+  canReview: boolean
+  reviewedToday: boolean
+  reason?: string
+  scenicId: string | null
+}
+
+export interface ScenicReviewRecord {
+  reviewId: string
+  scenicId: string
+  personaId: string
+  rating: number
+  tags: string[]
+  content: string
+  imageIds: string[]
+  recommendedActivityIds: string[]
+  submittedAt: string
+  dayKey: string
+  qualityEligible: boolean
+  showOnMiniProgram: boolean
+  sharedChannels: ReviewShareChannel[]
+  rewardIssued: boolean
+}
+
+export interface ReviewRecommendActivity {
+  activityId: string
+  name: string
+  hot?: boolean
 }
 
 export interface VisitorState {
@@ -588,6 +637,17 @@ export interface QuizCardPayload {
   selectedKey?: string
 }
 
+/** 购票资格确认（儿童身高 / 老人年龄）是/否卡 */
+export interface TicketEligibilityCardPayload {
+  kind: 'child_height' | 'elder_age'
+  sessionId: string
+  question: string
+  yesLabel: string
+  noLabel: string
+  status: 'active' | 'answered'
+  selected?: boolean
+}
+
 export interface QuizAnswerResult {
   correct: boolean
   finished: boolean
@@ -817,19 +877,26 @@ export interface ReviewOrderOption {
   totalAmount: number
 }
 
-/** 对话内服务点评表单 */
+/** 对话内景区点评表单（去订单） */
 export interface ReviewCardPayload {
   cardId: string
-  orders: ReviewOrderOption[]
+  scenicId?: string
+  scenicName?: string
+  /** 可推荐游玩项目；空则前端隐藏该项 */
+  recommendActivities?: ReviewRecommendActivity[]
+  /** @deprecated 兼容旧卡；新路径不再展示订单选择 */
+  orders?: ReviewOrderOption[]
   defaultOrderId?: string
 }
 
 export interface ReviewSubmitDraft {
-  orderId: string
   rating: number
   tags: string[]
   content: string
   imageIds: string[]
+  recommendedActivityIds?: string[]
+  /** @deprecated */
+  orderId?: string
 }
 
 export interface TravelGuideSection {

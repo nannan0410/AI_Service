@@ -304,7 +304,7 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
   ) {
     const questions = syncWelcomeQuestions()
     const orders =
-      welcomeCtx?.orders?.length
+      welcomeCtx && 'orders' in welcomeCtx && welcomeCtx.orders !== undefined
         ? welcomeCtx.orders
         : getDemoSnapshotOrders(personaId)
     const resolvedCtx: WelcomeTemplateVarContext = {
@@ -313,6 +313,7 @@ export const useBusinessConfigStore = defineStore('businessConfig', () => {
       ref: welcomeCtx?.ref,
       scenicId: welcomeCtx?.scenicId,
       scenicName: welcomeCtx?.scenicName,
+      inPark: welcomeCtx?.inPark,
     }
     return resolveSuggestedQuestions(questions, personaId, couponCtx, resolvedCtx)
   }

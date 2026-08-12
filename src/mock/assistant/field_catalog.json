@@ -89,12 +89,21 @@
     },
     {
       "fieldId": "hasReviewableOrders",
-      "label": "有可评价订单",
+      "label": "有可评价订单（旧）",
       "valueType": "boolean",
       "source": "computed",
-      "computeHint": "当前账号已完成 ∧ reviewStatus=none（未评价）；演示另加完成日90天内",
+      "computeHint": "兼容旧规则；新入口请用 canScenicReviewToday",
       "ruleEligible": true,
       "group": "order"
+    },
+    {
+      "fieldId": "canScenicReviewToday",
+      "label": "今日可景区点评",
+      "valueType": "boolean",
+      "source": "computed",
+      "computeHint": "（已核销订单∨已核销票夹∨在园含自报）∧ 景区自然日未点评；见景区点评优化规格",
+      "ruleEligible": true,
+      "group": "visit"
     },
     {
       "fieldId": "hasNewGuestCoupon",

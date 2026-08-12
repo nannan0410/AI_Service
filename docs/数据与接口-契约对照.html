@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>数据与接口 · 契约对照（内部只读）</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f8;
+      --card: #fff;
+      --text: #1f2a37;
+      --muted: #646566;
+      --line: #ebedf0;
+      --accent: #07c160;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 22px;
+    }
+    .lead {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .notice {
+      margin-bottom: 20px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #fff7e8;
+      color: #ed6a0c;
+      font-size: 13px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+    th {
+      background: #fafafa;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      background: #f3f6f8;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(7, 193, 96, 0.12);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .tag--off {
+      background: #f2f3f5;
+      color: #969799;
+    }
+    footer {
+      margin-top: 18px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    a { color: #1989fa; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>数据与接口 · 契约对照</h1>
+    <p class="lead">
+      内部只读说明：原演示后台 Tab「数据与接口」（<code>/config/data</code>）的模块与接口清单。
+      客户演示包已隐藏该 Tab；运行时业务数据仍来自 Mock / API，与本页无关。
+    </p>
+    <div class="notice">
+      请用浏览器直接打开本文件阅读，勿挂到客户可访问路径。更细的场景字段见
+      <code>docs/场景实现对照表.md</code>、<code>docs/内容数据配置说明.md</code>。
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>模块</th>
+          <th>契约 / 数据源</th>
+          <th>按景区</th>
+          <th>落地说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>景区与城市</td>
+          <td><code>scenicStore</code>（Mock：list.json · cities.json）</td>
+          <td><span class="tag--off tag">否</span></td>
+          <td>景区主数据 / 多园区配置中心</td>
+        </tr>
+        <tr>
+          <td>园区项目</td>
+          <td><code>GET /api/activities</code> · Header <code>X-Scenic-Id</code></td>
+          <td><span class="tag">是</span></td>
+          <td>项目主数据</td>
+        </tr>
+        <tr>
+          <td>海洋明星</td>
+          <td><code>GET /api/stars</code> · Header <code>X-Scenic-Id</code></td>
+          <td><span class="tag">是</span></td>
+          <td>答题 / 明星介绍</td>
+        </tr>
+        <tr>
+          <td>地图配置</td>
+          <td><code>GET /api/map/config</code></td>
+          <td><span class="tag">是</span></td>
+          <td>导览底图与能力开关</td>
+        </tr>
+        <tr>
+          <td>地图 POI</td>
+          <td><code>GET /api/map/pois</code></td>
+          <td><span class="tag">是</span></td>
+          <td>点位与项目映射</td>
+        </tr>
+        <tr>
+          <td>固定游园线</td>
+          <td><code>GET /api/map/routes</code></td>
+          <td><span class="tag">是</span></td>
+          <td>固定线路 Mock</td>
+        </tr>
+        <tr>
+          <td>线路规划（Mock）</td>
+          <td><code>GET /api/map/plan</code></td>
+          <td><span class="tag">是</span></td>
+          <td>契约占位</td>
+        </tr>
+        <tr>
+          <td>票商品</td>
+          <td><code>GET /api/products/tickets</code></td>
+          <td><span class="tag">是</span></td>
+          <td>购票 / 会员选品</td>
+        </tr>
+        <tr>
+          <td>券商品</td>
+          <td><code>GET /api/products/coupons</code></td>
+          <td><span class="tag">是</span></td>
+          <td>领券 / 营销</td>
+        </tr>
+        <tr>
+          <td>内容块</td>
+          <td><code>GET /api/content/blocks</code></td>
+          <td><span class="tag">是</span></td>
+          <td>交通 / 入园 / 攻略正文</td>
+        </tr>
+        <tr>
+          <td>用户快照 · 订单</td>
+          <td><code>GET /api/order/list</code> · Authorization + Scenic</td>
+          <td><span class="tag">是</span></td>
+          <td>演示账号订单（含 OTA）</td>
+        </tr>
+        <tr>
+          <td>标签目录</td>
+          <td><code>GET /api/admin/tag-catalog</code></td>
+          <td><span class="tag--off tag">否</span></td>
+          <td>画像标签说明</td>
+        </tr>
+        <tr>
+          <td>订单规则说明</td>
+          <td><code>GET /api/admin/tag-rules</code></td>
+          <td><span class="tag--off tag">否</span></td>
+          <td>订单 → 标签规则</td>
+        </tr>
+        <tr>
+          <td>Persona 预览</td>
+          <td><code>GET /api/admin/persona-preview</code></td>
+          <td><span class="tag--off tag">否</span></td>
+          <td>三演示账号标签预览</td>
+        </tr>
+        <tr>
+          <td>会员分层标签</td>
+          <td><code>GET /api/member/profile-tags</code></td>
+          <td><span class="tag--off tag">否</span></td>
+          <td>当前登录会员画像</td>
+        </tr>
+        <tr>
+          <td>规则字段目录</td>
+          <td><code>GET /api/admin/field-catalog</code></td>
+          <td><span class="tag--off tag">否</span></td>
+          <td>欢迎入口 / 推荐规则字段</td>
+        </tr>
+        <tr>
+          <td>Skill 配置（只读）</td>
+          <td><code>GET /api/assistant/skills</code></td>
+          <td><span class="tag--off tag">否</span></td>
+          <td>场景 Skill 列表</td>
+        </tr>
+        <tr>
+          <td>打卡点</td>
+          <td><code>GET /api/checkin/spots</code></td>
+          <td><span class="tag">是</span></td>
+          <td>园区打卡</td>
+        </tr>
+        <tr>
+          <td>虚拟排队目录</td>
+          <td><code>GET /api/virtual-queue/catalog</code></td>
+          <td><span class="tag">是</span></td>
+          <td>免费包 / 付费排队</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <footer>
+      源码页 <code>src/pages/admin/AdminDataPage.vue</code> 仍保留便于内部恢复；客户包路由已重定向到
+      <code>/config/ui</code>。更新于 2026-08-12。
+    </footer>
+  </div>
+</body>
+</html>

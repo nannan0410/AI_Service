@@ -3,13 +3,22 @@ import { computed, ref } from 'vue'
 import type { WelcomeQuestionConfig } from '@/types/businessConfig'
 import { WELCOME_RECOMMEND_VISIBLE } from '@/utils/welcomeLayout'
 
-const props = defineProps<{
-  questions: WelcomeQuestionConfig[]
-  subtitle?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    questions: WelcomeQuestionConfig[]
+    subtitle?: string
+    /** 无订单且未授权定位时的在园自报询问 */
+    showInParkAsk?: boolean
+  }>(),
+  {
+    subtitle: undefined,
+    showInParkAsk: false,
+  },
+)
 
 const emit = defineEmits<{
   select: [question: WelcomeQuestionConfig]
+  'in-park-answer': [inPark: boolean]
 }>()
 
 const expanded = ref(false)
@@ -24,8 +33,16 @@ const moreQuestions = computed(() =>
 
 const showMoreButton = computed(() => moreQuestions.value.length > 0)
 
+const showSection = computed(
+  () => props.showInParkAsk || props.questions.length > 0,
+)
+
 function onSelect(question: WelcomeQuestionConfig) {
   emit('select', question)
+}
+
+function onInParkAnswer(inPark: boolean) {
+  emit('in-park-answer', inPark)
 }
 
 function toggleMore() {
@@ -45,7 +62,11 @@ function actionHint(item: WelcomeQuestionConfig): string {
 </script>
 
 <template>
-  <section v-if="questions.length" class="welcome-recommend" aria-label="游游推荐">
+  <section
+    v-if="showSection"
+    class="welcome-recommend"
+    aria-label="游游推荐"
+  >
     <header class="welcome-recommend__head">
       <h2 class="welcome-recommend__title">
         游游推荐 <span aria-hidden="true">✨</span>
@@ -54,6 +75,33 @@ function actionHint(item: WelcomeQuestionConfig): string {
         {{ subtitle ?? '试试这些热门问题' }}
       </p>
     </header>
+
+    <div
+      v-if="showInParkAsk"
+      class="welcome-recommend__inpark"
+      role="group"
+      aria-label="确认是否在园"
+    >
+      <p class="welcome-recommend__inpark-text">
+        您现在在园里吗？点一下状态，推荐会更准～
+      </p>
+      <div class="welcome-recommend__inpark-actions">
+        <button
+          type="button"
+          class="welcome-recommend__inpark-btn welcome-recommend__inpark-btn--primary"
+          @click="onInParkAnswer(true)"
+        >
+          我在园内
+        </button>
+        <button
+          type="button"
+          class="welcome-recommend__inpark-btn"
+          @click="onInParkAnswer(false)"
+        >
+          还没到园
+        </button>
+      </div>
+    </div>
 
     <div class="welcome-recommend__feed">
       <button
@@ -80,10 +128,7 @@ function actionHint(item: WelcomeQuestionConfig): string {
         <span class="welcome-recommend-card__arrow" aria-hidden="true">›</span>
       </button>
 
-      <div
-        v-if="expanded"
-        class="welcome-recommend__more-list"
-      >
+      <div v-if="expanded" class="welcome-recommend__more-list">
         <button
           v-for="(item, index) in moreQuestions"
           :key="item.id"
@@ -145,6 +190,49 @@ function actionHint(item: WelcomeQuestionConfig): string {
   font-size: 12px;
   color: #8a94a0;
   line-height: 1.4;
+}
+
+.welcome-recommend__inpark {
+  margin-bottom: 10px;
+  padding: 12px 12px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 6px 16px rgba(95, 112, 132, 0.1);
+}
+
+.welcome-recommend__inpark-text {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #3d4a5c;
+  line-height: 1.5;
+}
+
+.welcome-recommend__inpark-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.welcome-recommend__inpark-btn {
+  flex: 1;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 1px solid #ebedf0;
+  border-radius: 999px;
+  background: #fff;
+  color: #323233;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.welcome-recommend__inpark-btn--primary {
+  border-color: transparent;
+  background: var(--chat-primary, #07c160);
+  color: #fff;
+}
+
+.welcome-recommend__inpark-btn:active {
+  opacity: 0.88;
 }
 
 .welcome-recommend__feed {

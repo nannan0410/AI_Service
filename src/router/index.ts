@@ -132,12 +132,8 @@ const router = createRouter({
           component: () => import('@/pages/admin/AdminBusinessPage.vue'),
           meta: { public: true, title: '业务场景配置' },
         },
-        {
-          path: 'data',
-          name: 'config-data',
-          component: () => import('@/pages/admin/AdminDataPage.vue'),
-          meta: { public: true, title: '数据与接口' },
-        },
+        /** 客户演示包不开放；契约说明见 docs/数据与接口-契约对照.html */
+        { path: 'data', redirect: '/config/ui' },
         {
           path: 'route-check',
           name: 'config-route-check',
@@ -148,7 +144,7 @@ const router = createRouter({
     },
     { path: '/admin/ui', redirect: '/config/ui' },
     { path: '/admin/business', redirect: '/config/business' },
-    { path: '/admin/data', redirect: '/config/data' },
+    { path: '/admin/data', redirect: '/config/ui' },
     { path: '/admin/route-check', redirect: '/config/route-check' },
     {
       path: '/profile',

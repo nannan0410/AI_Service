@@ -9,6 +9,11 @@ import {
 } from '@/utils/newGuestCoupon'
 import { filterInvoiceableOrders } from '@/utils/invoiceableOrders'
 import { filterReviewableOrders } from '@/utils/reviewableOrders'
+import {
+  canAccessScenicReview,
+  scenicDayKey,
+} from '@/utils/scenicReviewAccess'
+import { hasScenicReviewedTodayLocal } from '@/utils/scenicReviewClient'
 import demoNew from '@/mock/users/demo_new.json'
 import demoMid from '@/mock/users/demo_mid.json'
 import demoVip from '@/mock/users/demo_vip.json'
@@ -74,6 +79,14 @@ export function buildDemoRuleContext(
   const hasVisitTodayOrder = hasVisitToday(orders, new Date(now))
   const hasInvoiceableOrders = filterInvoiceableOrders(orders, now).length > 0
   const hasReviewableOrders = filterReviewableOrders(orders, now).length > 0
+  const dayKey = scenicDayKey(new Date(now))
+  const reviewedToday = hasScenicReviewedTodayLocal({
+    memberId: snapshot.memberInfo.memberId,
+    scenicId,
+    dayKey,
+  })
+  const canScenicReviewToday =
+    canAccessScenicReview({ orders, inPark: Boolean(inPark) }) && !reviewedToday
 
   let visitorPhase: RuleContext['visitorPhase'] = 'pre'
   if (inPark) {
@@ -96,6 +109,7 @@ export function buildDemoRuleContext(
     hasVisitToday: hasVisitTodayOrder,
     hasInvoiceableOrders,
     hasReviewableOrders,
+    canScenicReviewToday,
     hasNewGuestCoupon: hasNewGuestCoupon(coupons),
     canClaimNewGuestCoupon: canClaimNewGuestCoupon({
       personaId,

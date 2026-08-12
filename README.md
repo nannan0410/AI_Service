@@ -183,11 +183,13 @@ docs/
 ├── AI助手与地图导览-画像标签-细化方案.md
 ├── 项目现状.md
 ├── 场景实现对照表.md
+├── 景区点评优化规格.md                 # 游园日点评：准入/分享/发券/管理
 ├── 业务场景配置与实现.md
 ├── 对话意图识别与LLM分工.md
 ├── 内容数据配置说明.md
 ├── 多景区模式-落地计划.md            # 演示版切换交互
 ├── 演示剥离清单.md                     # 正式上线：演示壳 vs 正式能力
+├── 数据与接口-契约对照.html            # 内部只读契约（客户包已隐藏 /config/data）
 ├── 后台配置-ElementPlus落地计划.md    # 规划未实施
 ├── 汇报串讲词-演示版.md
 ├── mini-program-routes.md
@@ -211,6 +213,7 @@ docs/
 |---------|------|
 | 看当前进度与待办 | [项目现状](./docs/项目现状.md) |
 | 查游前/游中/游后场景是否已实现 | [场景实现对照表](./docs/场景实现对照表.md) |
+| 景区点评（去订单 / 分享发券） | [景区点评优化规格](./docs/景区点评优化规格.md) |
 | 查 Skill / 规则 / 购票 / 推券规格 | [业务场景配置与实现](./docs/业务场景配置与实现.md) |
 | 查 Workflow vs LLM、主对话分层、推荐两类 | [对话意图识别与LLM分工](./docs/对话意图识别与LLM分工.md) |
 | 查攻略/内容块 JSON | [内容数据配置说明](./docs/内容数据配置说明.md) |
@@ -222,4 +225,5 @@ docs/
 | 小程序路径契约 | [mini-program-routes](./docs/mini-program-routes.md) |
 | PC 后台 Element Plus 规划 | [后台配置-ElementPlus落地计划](./docs/后台配置-ElementPlus落地计划.md)（未实施） |
 | PC 后台 HTML 原型（无 Mock） | [docs/prototypes](./docs/prototypes/README.md) |
+| 数据与接口契约（内部只读 HTML） | [数据与接口-契约对照.html](./docs/数据与接口-契约对照.html)（客户包已隐藏 `/config/data`） |
 | 历史版本变更 | [v0.2.2](./docs/版本变动说明-v0.2.2.md) / [v0.2.1](./docs/版本变动说明-v0.2.1.md) / [v0.2.0](./docs/版本变动说明-v0.2.0.md) |
