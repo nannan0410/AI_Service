@@ -1519,11 +1519,13 @@
     .field-block .textarea {
       min-height: 400px;
     }
-    .drawer .field-row {
+    .drawer .field-row,
+    .modal--form .field-row {
       max-width: none;
       grid-template-columns: 8em 1fr;
     }
-    .drawer .field-row label {
+    .drawer .field-row label,
+    .modal--form .field-row label {
       line-height: 32px;
       height: 32px;
       padding-top: 0;
@@ -1820,6 +1822,41 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
       display: flex;
       flex-direction: column;
+    }
+    .modal.modal--w600 {
+      width: 600px;
+      max-height: min(80vh, calc(100vh - 48px));
+    }
+    .modal--form .alert {
+      margin: 0 0 16px;
+    }
+    .modal--form .drawer-form--tag .field-row > .input,
+    .modal--form .drawer-form--tag .field-row > .c-select,
+    .modal--form .drawer-form--tag .field-row > .input-with-count,
+    .modal--form .drawer-form--tag .field-row > .seg-radio,
+    .modal--form .drawer-form--tag-rule .field-row > .input,
+    .modal--form .drawer-form--tag-rule .field-row > .c-select,
+    .modal--form .drawer-form--tag-rule .field-row > textarea.input {
+      max-width: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .modal--form .drawer-form--tag .field-row > .input-with-count {
+      display: block;
+    }
+    .modal--form .drawer-form--tag .field-row > .input-with-count .input,
+    .modal--form .drawer-form--tag-rule .field-row > .input.input-num {
+      max-width: none;
+      width: 100%;
+    }
+    .modal--form .seg-radio--fill {
+      display: flex;
+      width: 100%;
+    }
+    .modal--form .seg-radio--fill .seg-radio__item {
+      flex: 1;
+      width: auto;
+      min-width: 0;
     }
     .modal__head {
       padding: 16px 24px;
@@ -2712,7 +2749,7 @@
         </div>
       </section>
 
-      <!-- 标签：统一目录 + 适用对象 -->
+      <!-- 标签：订单 / 会员 / 产品目录 + 汇总打标规则 -->
       <section class="page" id="page-tags">
         <div class="page-head">
           <div>
@@ -2720,129 +2757,131 @@
           </div>
         </div>
         <div class="alert">
-          统一标签目录：会员画像 / 产品 / 项目 / 内容共用同一套 <code>tagId</code>。按「适用对象」过滤选用；「打标规则」仅写入<strong>会员画像</strong>类标签。
+          <div><strong>订单标签</strong>：规则模板固定，只改阈值；助手<strong>读订单时现算</strong>补打（含历史单）。</div>
+          <div><strong>会员标签</strong>：规则类只配阈值（缺字段则停用）；手动类运营打标；喜好类由游客勾选写入，对话推断<strong>不回写</strong>会员。</div>
+          <div><strong>产品标签</strong>：仅供产品管理勾选，无打标规则。项目 / 内容标签待未来「项目列表」再建。</div>
         </div>
         <div class="tabs" data-tabs="tags">
-          <button type="button" class="tab active" data-tab="tags-catalog">标签目录</button>
+          <button type="button" class="tab active" data-tab="tags-order">订单标签</button>
+          <button type="button" class="tab" data-tab="tags-member">会员标签</button>
+          <button type="button" class="tab" data-tab="tags-product">产品标签</button>
           <button type="button" class="tab" data-tab="tags-rules">打标规则</button>
         </div>
-        <div class="card tab-panel active" data-tab-panel="tags-catalog">
-          <div class="filter-bar" style="border:none;margin:0;border-radius:0;border-bottom:1px solid var(--border)">
-            <div class="filter-item">
-              <span>名称 / ID</span>
-              <input class="input" type="text" placeholder="请输入" id="tag-catalog-q" />
-            </div>
-            <div class="filter-item filter-item--status">
-              <span>分组</span>
-              <select class="select" aria-label="分组" id="tag-catalog-category">
-                <option value="" selected>全部</option>
-                <option value="fact">事实</option>
-                <option value="order">订单</option>
-                <option value="ai">AI 推断</option>
-                <option value="content">内容属性</option>
-              </select>
-            </div>
-            <div class="filter-item filter-item--status">
-              <span>适用对象</span>
-              <select class="select" aria-label="适用对象" id="tag-catalog-scope">
-                <option value="" selected>全部</option>
-                <option value="member">会员画像</option>
-                <option value="product">产品</option>
-                <option value="activity">项目</option>
-                <option value="content">内容/攻略</option>
-              </select>
-            </div>
-            <div class="filter-actions">
-              <button type="button" class="btn btn-primary" id="tag-catalog-search">查询</button>
-              <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create">新增标签</button>
-            </div>
-          </div>
-          <div class="card__body--flush table-wrap">
-            <table class="data" id="tag-catalog-table">
-              <thead>
-                <tr>
-                  <th style="width:140px">标签 ID</th>
-                  <th style="width:100px">名称</th>
-                  <th style="width:88px">分组</th>
-                  <th style="min-width:200px">适用对象</th>
-                  <th>说明</th>
-                  <th style="width:88px">操作</th>
-                </tr>
-              </thead>
-              <tbody id="tag-catalog-tbody"></tbody>
-            </table>
-          </div>
-          <div class="table-footer table-footer--stat">
-            <span id="tag-catalog-count">共 0 条</span>
-          </div>
-        </div>
-        <div class="card tab-panel" data-tab-panel="tags-rules">
+
+        <div class="card tab-panel active" data-tab-panel="tags-order">
           <div class="tags-rules-head">
             <div class="filter-actions">
-              <button type="button" class="btn btn-primary" data-open-drawer="tag-rule" data-drawer-mode="create">新增规则</button>
+              <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create" data-tag-domain="order">新增标签</button>
             </div>
           </div>
           <div class="card__body--flush table-wrap">
-            <table class="data">
+            <table class="data" style="table-layout:fixed;width:100%">
+              <colgroup>
+                <col style="width:20%" />
+                <col style="width:20%" />
+                <col style="width:50%" />
+                <col style="width:10%" />
+              </colgroup>
               <thead>
                 <tr>
-                  <th>规则名称</th>
-                  <th>条件（示意）</th>
-                  <th>写入标签</th>
-                  <th style="width:88px">状态</th>
-                  <th style="width:88px">操作</th>
+                  <th>标签 ID</th>
+                  <th>名称</th>
+                  <th>说明</th>
+                  <th>操作</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="tag-order-catalog-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card tab-panel" data-tab-panel="tags-member">
+          <div class="tags-rules-head">
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create" data-tag-domain="member">新增标签</button>
+            </div>
+          </div>
+          <div class="card__body--flush table-wrap">
+            <table class="data" style="table-layout:fixed;width:100%">
+              <colgroup>
+                <col style="width:18.18%" />
+                <col style="width:18.18%" />
+                <col style="width:18.18%" />
+                <col style="width:36.36%" />
+                <col style="width:9.09%" />
+              </colgroup>
+              <thead>
                 <tr>
-                  <td>亲子订单</td>
-                  <td><code>child≥1</code> 或家庭票种</td>
-                  <td><code>order_family</code> → 亲子订单（双写 <code>family</code>）</td>
-                  <td><button type="button" class="switch on" aria-pressed="true" title="启用"></button></td>
-                  <td>
-                    <div class="table-ops">
-                      <button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-id="rule_order_family">编辑</button>
-                    </div>
-                  </td>
+                  <th>标签 ID</th>
+                  <th>名称</th>
+                  <th>类型</th>
+                  <th>说明</th>
+                  <th>操作</th>
                 </tr>
+              </thead>
+              <tbody id="tag-member-catalog-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card tab-panel" data-tab-panel="tags-product">
+          <div class="tags-rules-head">
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create" data-tag-domain="product">新增标签</button>
+            </div>
+          </div>
+          <div class="card__body--flush table-wrap">
+            <table class="data" style="table-layout:fixed;width:100%">
+              <colgroup>
+                <col style="width:20%" />
+                <col style="width:20%" />
+                <col style="width:50%" />
+                <col style="width:10%" />
+              </colgroup>
+              <thead>
                 <tr>
-                  <td>情侣出游</td>
-                  <td><code>adult=2</code> 且 <code>child=0</code></td>
-                  <td><code>order_couple</code> → 情侣出游</td>
-                  <td><button type="button" class="switch on" aria-pressed="true" title="启用"></button></td>
-                  <td>
-                    <div class="table-ops">
-                      <button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-id="rule_order_couple">编辑</button>
-                    </div>
-                  </td>
+                  <th>标签 ID</th>
+                  <th>名称</th>
+                  <th>说明</th>
+                  <th>操作</th>
                 </tr>
-                <tr>
-                  <td>团队游客</td>
-                  <td><code>adult+child≥5</code></td>
-                  <td><code>order_group</code> → 团队游客</td>
-                  <td><button type="button" class="switch" aria-pressed="false" title="禁用"></button></td>
-                  <td>
-                    <div class="table-ops">
-                      <button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-id="rule_order_group">编辑</button>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td>新客（事实）</td>
-                  <td>无 completed 订单</td>
-                  <td><code>new_guest</code> → 新客</td>
-                  <td><button type="button" class="switch on" aria-pressed="true" title="启用"></button></td>
-                  <td>
-                    <div class="table-ops">
-                      <button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-id="rule_new_guest">编辑</button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
+              </thead>
+              <tbody id="tag-product-catalog-tbody"></tbody>
             </table>
           </div>
           <div class="table-footer table-footer--stat">
-            <span>共 4 条</span>
+            <span id="tag-product-catalog-count">共 0 条</span>
+          </div>
+        </div>
+
+        <div class="card tab-panel" data-tab-panel="tags-rules">
+          <div class="card__body--flush table-wrap">
+            <table class="data" style="table-layout:fixed;width:100%">
+              <colgroup>
+                <col style="width:9.09%" />
+                <col style="width:9.09%" />
+                <col style="width:27.27%" />
+                <col style="width:9.09%" />
+                <col style="width:27.27%" />
+                <col style="width:9.09%" />
+                <col style="width:9.09%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>标签类型</th>
+                  <th>规则名称</th>
+                  <th>固定逻辑</th>
+                  <th>可配参数</th>
+                  <th>写入标签</th>
+                  <th>状态</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="tag-rules-tbody"></tbody>
+            </table>
+          </div>
+          <div class="table-footer table-footer--stat">
+            <span id="tag-rules-count">共 0 条</span>
           </div>
         </div>
       </section>
@@ -3062,7 +3101,6 @@
                   <th style="width:88px">分类</th>
                   <th>位置</th>
                   <th style="width:120px">开放时段</th>
-                  <th>标签</th>
                   <th style="width:72px">操作</th>
                 </tr>
               </thead>
@@ -3073,10 +3111,6 @@
                   <td>漂流入口</td>
                   <td>10:00-17:00</td>
                   <td>
-                    <span class="tag tag-blue">亲子</span>
-                    <span class="tag tag-blue">温和</span>
-                  </td>
-                  <td>
                     <div class="table-ops"><button type="button" class="btn-link">编辑</button></div>
                   </td>
                 </tr>
@@ -3085,10 +3119,6 @@
                   <td>游乐</td>
                   <td>极限区</td>
                   <td>09:30-20:30</td>
-                  <td>
-                    <span class="tag tag-blue">刺激</span>
-                    <span class="tag tag-blue">喜欢刺激</span>
-                  </td>
                   <td>
                     <div class="table-ops"><button type="button" class="btn-link">编辑</button></div>
                   </td>
@@ -3099,10 +3129,6 @@
                   <td>中心湖</td>
                   <td>19:00-20:30</td>
                   <td>
-                    <span class="tag tag-blue">偏好拍照</span>
-                    <span class="tag tag-blue">慢节奏</span>
-                  </td>
-                  <td>
                     <div class="table-ops"><button type="button" class="btn-link">编辑</button></div>
                   </td>
                 </tr>
@@ -3110,7 +3136,7 @@
             </table>
           </div>
           <div class="table-footer table-footer--stat">
-            <span>共 3 条 · 标签选自统一目录（适用对象含「项目」）</span>
+            <span>共 3 条 · 项目/内容标签待未来「项目列表」主数据再维护</span>
           </div>
         </div>
       </section>
@@ -3427,6 +3453,20 @@
       <div class="modal__foot">
         <button type="button" class="btn" id="tag-picker-cancel">取消</button>
         <button type="button" class="btn btn-primary" id="tag-picker-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="tag-form-mask" aria-hidden="true">
+    <div class="modal modal--w600 modal--form" role="dialog" aria-modal="true" aria-labelledby="tag-form-title">
+      <div class="modal__head">
+        <span id="tag-form-title">编辑标签</span>
+        <button type="button" class="modal__close" id="tag-form-close" aria-label="关闭">×</button>
+      </div>
+      <div class="modal__body" id="tag-form-body"></div>
+      <div class="modal__foot">
+        <button type="button" class="btn" id="tag-form-cancel">取消</button>
+        <button type="button" class="btn btn-primary" id="tag-form-submit">提交</button>
       </div>
     </div>
   </div>
@@ -4354,7 +4394,7 @@
           '<div class="product-tags-field">' +
           '<div class="product-tags-field__toolbar">' +
           '<button type="button" class="btn btn-sm" id="product-tag-add">选择标签</button>' +
-          '<span class="product-tags-field__hint">从统一「标签管理」目录勾选（适用对象含产品）；跨会员/项目可复用同一 tagId</span>' +
+          '<span class="product-tags-field__hint">从「标签管理 → 产品标签」勾选；与订单/会员标签分域</span>' +
           "</div>" +
           '<div class="product-tags-field__selected" id="product-tags-selected"></div>' +
           "</div>" +
@@ -4417,6 +4457,7 @@
           "</div>",
         tag:
           '<div class="drawer-form drawer-form--tag">' +
+          '<div class="alert alert--warn" data-tag-domain-hint></div>' +
           '<div class="field-row">' +
           '<label><span class="req">*</span> 标签 ID</label>' +
           '<input class="input" type="text" name="tag-id" placeholder="如 order_family" />' +
@@ -4427,22 +4468,18 @@
           '<input class="input" type="text" name="tag-name" data-max-chars="20" placeholder="请输入" />' +
           '<span class="input-count">0/20</span>' +
           "</div></div>" +
-          '<div class="field-row">' +
-          '<label><span class="req">*</span> 分组</label>' +
-          '<select class="select" name="tag-category" aria-label="分组">' +
-          '<option value="fact">事实</option>' +
-          '<option value="order">订单</option>' +
-          '<option value="ai">AI 推断</option>' +
-          '<option value="content">内容属性</option>' +
-          "</select>" +
-          "</div>" +
-          '<div class="field-row">' +
-          '<label><span class="req">*</span> 适用对象</label>' +
-          '<div class="check-group" data-tag-scopes>' +
-          '<label class="check-item"><input type="checkbox" name="tag-scope" value="member" /> 会员画像</label>' +
-          '<label class="check-item"><input type="checkbox" name="tag-scope" value="product" /> 产品</label>' +
-          '<label class="check-item"><input type="checkbox" name="tag-scope" value="activity" /> 项目</label>' +
-          '<label class="check-item"><input type="checkbox" name="tag-scope" value="content" /> 内容/攻略</label>' +
+          '<div class="field-row" data-tag-kind-row hidden>' +
+          '<label><span class="req">*</span> 类型</label>' +
+          '<div class="seg-radio seg-radio--fill" role="radiogroup" aria-label="类型" data-tag-kind>' +
+          '<label class="seg-radio__item">' +
+          '<input type="radio" name="tag-kind" value="rule" />' +
+          "规则</label>" +
+          '<label class="seg-radio__item is-active">' +
+          '<input type="radio" name="tag-kind" value="manual" checked />' +
+          "手动</label>" +
+          '<label class="seg-radio__item">' +
+          '<input type="radio" name="tag-kind" value="prefer" />' +
+          "喜好映射</label>" +
           "</div></div>" +
           '<div class="field-row">' +
           "<label>说明</label>" +
@@ -4453,27 +4490,27 @@
           "</div>",
         "tag-rule":
           '<div class="drawer-form drawer-form--tag-rule">' +
+          '<div class="alert alert--warn">规则逻辑不可改，仅调整阈值与启停。订单规则在助手读单时现算。</div>' +
           '<div class="field-row">' +
-          '<label><span class="req">*</span> 规则名称</label>' +
-          '<div class="input-with-count">' +
-          '<input class="input" type="text" name="rule-name" data-max-chars="40" placeholder="请输入" />' +
-          '<span class="input-count">0/40</span>' +
-          "</div></div>" +
-          '<div class="field-row">' +
-          '<label><span class="req">*</span> 条件（示意）</label>' +
-          '<textarea class="input" name="rule-when" placeholder="如 adult==2 AND child==0"></textarea>' +
+          "<label>规则名称</label>" +
+          '<input class="input" type="text" name="rule-name" readonly style="background:#f5f5f5" />' +
           "</div>" +
           '<div class="field-row">' +
-          '<label><span class="req">*</span> 写入标签</label>' +
-          '<select class="select" name="rule-tag-id" aria-label="写入标签" data-rule-tag-select>' +
-          '<option value="" selected disabled>请选择会员画像标签</option>' +
-          "</select>" +
+          "<label>固定逻辑</label>" +
+          '<textarea class="input" name="rule-logic" readonly style="background:#f5f5f5;min-height:72px"></textarea>' +
+          "</div>" +
+          '<div class="field-row" data-rule-param-row>' +
+          '<label><span class="req">*</span> <span data-rule-param-label>可配参数</span></label>' +
+          '<input class="input input-num" type="text" name="rule-param" placeholder="数值" />' +
+          "</div>" +
+          '<div class="field-row">' +
+          "<label>写入标签</label>" +
+          '<input class="input" type="text" name="rule-tag-label" readonly style="background:#f5f5f5" />' +
           "</div>" +
           '<div class="field-row">' +
           "<label>状态</label>" +
           '<button type="button" class="switch on" name="rule-enabled" aria-pressed="true" title="启用"></button>' +
           "</div>" +
-          '<p class="field-hint-inline" style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.5">仅可写入适用对象含「会员画像」的标签；产品/项目/内容请在业务页勾选。</p>' +
           "</div>",
       };
 
@@ -5422,6 +5459,10 @@
 
       function openDrawer(type, options) {
         options = options || {};
+        if (type === "tag" || type === "tag-rule") {
+          openTagFormModal(type, options);
+          return;
+        }
         var mode = options.mode || "edit";
         var skillId = options.skillId || "";
         var titles = {
@@ -5432,8 +5473,6 @@
             mode === "edit" ? "编辑推荐对话" : "新增推荐对话",
           service: mode === "edit" ? "编辑快捷服务" : "新增快捷服务",
           product: mode === "edit" ? "编辑产品" : "新增产品",
-          tag: mode === "edit" ? "编辑标签" : "新增标签",
-          "tag-rule": mode === "edit" ? "编辑打标规则" : "新增打标规则",
         };
         drawerTitle.textContent = titles[type] || "编辑";
         if (
@@ -5481,12 +5520,6 @@
         if (type === "product") {
           prepProductForm(drawerBody, mode, options.productType || "ticket");
         }
-        if (type === "tag") {
-          prepTagForm(drawerBody, mode, options.tagId || "");
-        }
-        if (type === "tag-rule") {
-          prepTagRuleForm(drawerBody, mode, options.ruleId || "");
-        }
         enhanceCharCounts(drawerBody);
         enhanceSelects(drawerBody);
         if (type === "welcome-q" || type === "service") {
@@ -5498,6 +5531,66 @@
         mask.classList.add("open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
+      }
+
+      function openTagFormModal(type, options) {
+        options = options || {};
+        var mode = options.mode || "edit";
+        var titleEl = document.getElementById("tag-form-title");
+        var bodyEl = document.getElementById("tag-form-body");
+        var maskEl = document.getElementById("tag-form-mask");
+        if (!bodyEl || !maskEl) return;
+        var title = "编辑";
+        if (type === "tag") {
+          var d = options.tagDomain || "member";
+          var noun =
+            d === "order" ? "订单标签" : d === "product" ? "产品标签" : "会员标签";
+          title = mode === "edit" ? "编辑" + noun : "新增" + noun;
+        } else {
+          title =
+            "编辑" +
+            (options.ruleDomain === "order" ? "订单" : "会员") +
+            "规则";
+        }
+        if (titleEl) titleEl.textContent = title;
+        bodyEl.innerHTML = templates[type] || "";
+        bodyEl.querySelectorAll(".switch").forEach(function (sw) {
+          sw.addEventListener("click", function () {
+            sw.classList.toggle("on");
+            sw.setAttribute(
+              "aria-pressed",
+              sw.classList.contains("on") ? "true" : "false"
+            );
+          });
+        });
+        if (type === "tag") {
+          prepTagForm(
+            bodyEl,
+            mode,
+            options.tagId || "",
+            options.tagDomain || "member"
+          );
+        }
+        if (type === "tag-rule") {
+          prepTagRuleForm(
+            bodyEl,
+            mode,
+            options.ruleId || "",
+            options.ruleDomain || "member"
+          );
+        }
+        enhanceCharCounts(bodyEl);
+        enhanceSelects(bodyEl);
+        maskEl.classList.add("open");
+        maskEl.setAttribute("aria-hidden", "false");
+      }
+
+      function closeTagFormModal() {
+        closeAllCustomSelects();
+        var maskEl = document.getElementById("tag-form-mask");
+        if (!maskEl) return;
+        maskEl.classList.remove("open");
+        maskEl.setAttribute("aria-hidden", "true");
       }
 
       var DEMO_SUPPLIER_PRODUCTS = {
@@ -5896,247 +5989,233 @@
         );
       }
 
-      var DEMO_TAG_CATALOG = [
-        {
-          tagId: "new_guest",
-          name: "新客",
-          category: "fact",
-          scopes: ["member"],
-          desc: "首次来访用户",
-        },
-        {
-          tagId: "member_gold",
-          name: "黄金会员",
-          category: "fact",
-          scopes: ["member"],
-          desc: "会员等级为黄金",
-        },
-        {
-          tagId: "high_value",
-          name: "高价值",
-          category: "fact",
-          scopes: ["member"],
-          desc: "高等级或高消费（兼容旧规则）",
-        },
-        {
-          tagId: "visit_repeat",
-          name: "多次入园",
-          category: "fact",
-          scopes: ["member"],
-          desc: "已完成订单数 ≥ 2",
-        },
-        {
-          tagId: "family",
-          name: "亲子",
-          category: "order",
-          scopes: ["member", "product", "activity", "content"],
-          desc: "亲子人群/场景；会员与产品/项目共用",
-        },
-        {
-          tagId: "order_family",
-          name: "亲子订单",
-          category: "order",
-          scopes: ["member"],
-          desc: "订单含儿童或家庭票；可双写 family",
-        },
-        {
-          tagId: "order_couple",
-          name: "情侣出游",
-          category: "order",
-          scopes: ["member"],
-          desc: "2 成人 0 儿童",
-        },
-        {
-          tagId: "order_group",
-          name: "团队游客",
-          category: "order",
-          scopes: ["member"],
-          desc: "单笔成人+儿童 ≥ 5",
-        },
-        {
-          tagId: "prefer_thrill",
-          name: "喜欢刺激",
-          category: "ai",
-          scopes: ["member", "activity", "content"],
-          desc: "偏好刺激类项目（对话/画像）",
-        },
-        {
-          tagId: "prefer_photo",
-          name: "偏好拍照",
-          category: "ai",
-          scopes: ["member", "activity", "content"],
-          desc: "偏好打卡出片",
-        },
-        {
-          tagId: "prefer_slow",
-          name: "慢节奏",
-          category: "ai",
-          scopes: ["member", "activity", "content"],
-          desc: "偏好温和慢游",
-        },
-        {
-          tagId: "audience_adult",
-          name: "成人",
-          category: "content",
-          scopes: ["product", "activity"],
-          desc: "成人向产品/项目",
-        },
-        {
-          tagId: "audience_child",
-          name: "儿童",
-          category: "content",
-          scopes: ["product", "activity"],
-          desc: "儿童向产品/项目",
-        },
-        {
-          tagId: "product_annual",
-          name: "年卡",
-          category: "content",
-          scopes: ["product"],
-          desc: "年卡类产品",
-        },
-        {
-          tagId: "attr_thrill",
-          name: "刺激",
-          category: "content",
-          scopes: ["activity", "content"],
-          desc: "项目/内容属性：刺激",
-        },
-        {
-          tagId: "attr_gentle",
-          name: "温和",
-          category: "content",
-          scopes: ["activity", "content"],
-          desc: "项目/内容属性：温和",
-        },
+      var DEMO_ORDER_TAGS = [
+        { tagId: "order_family", name: "亲子订单", desc: "含儿童或家庭票种的订单" },
+        { tagId: "order_couple", name: "情侣出游", desc: "两人出游典型构成" },
+        { tagId: "order_group", name: "团队游客", desc: "单笔人数达团队阈值" },
       ];
 
-      var TAG_CATEGORY_LABEL = {
-        fact: "事实",
-        order: "订单",
-        ai: "AI 推断",
-        content: "内容属性",
+      var DEMO_MEMBER_TAGS = [
+        { tagId: "new_guest", name: "新客", kind: "rule", desc: "无已完成订单" },
+        { tagId: "high_value", name: "高消费", kind: "rule", desc: "累计实付达阈值" },
+        { tagId: "visit_repeat", name: "多次入园", kind: "rule", desc: "已完成订单数达阈值" },
+        { tagId: "member_gold", name: "黄金会员", kind: "rule", desc: "会员等级含黄金（依赖会员字段对接）" },
+        { tagId: "manual_care", name: "重点关怀", kind: "manual", desc: "运营手动标记" },
+        { tagId: "prefer_thrill", name: "喜欢刺激", kind: "prefer", desc: "游客勾选喜好写入；对话推断不回写" },
+        { tagId: "prefer_photo", name: "偏好拍照", kind: "prefer", desc: "游客勾选喜好写入；对话推断不回写" },
+        { tagId: "prefer_slow", name: "慢节奏", kind: "prefer", desc: "游客勾选喜好写入；对话推断不回写" },
+      ];
+
+      var DEMO_PRODUCT_TAGS = [
+        { tagId: "audience_adult", name: "成人", desc: "成人向产品" },
+        { tagId: "audience_child", name: "儿童", desc: "儿童向产品" },
+        { tagId: "family", name: "亲子", desc: "亲子向产品" },
+        { tagId: "product_annual", name: "年卡", desc: "年卡类产品" },
+      ];
+
+      var MEMBER_KIND_LABEL = {
+        rule: "规则",
+        manual: "手动",
+        prefer: "喜好映射",
       };
 
-      var TAG_SCOPE_LABEL = {
-        member: "会员画像",
-        product: "产品",
-        activity: "项目",
-        content: "内容/攻略",
-      };
-
-      function getTagById(tagId) {
-        for (var i = 0; i < DEMO_TAG_CATALOG.length; i++) {
-          if (DEMO_TAG_CATALOG[i].tagId === tagId) return DEMO_TAG_CATALOG[i];
-        }
-        return null;
-      }
-
-      function getTagByName(name) {
-        for (var i = 0; i < DEMO_TAG_CATALOG.length; i++) {
-          if (DEMO_TAG_CATALOG[i].name === name) return DEMO_TAG_CATALOG[i];
-        }
-        return null;
-      }
-
-      function tagsForScope(scope) {
-        return DEMO_TAG_CATALOG.filter(function (t) {
-          return t.scopes.indexOf(scope) !== -1;
-        });
-      }
-
-      var DEMO_TAG_RULES = [
+      var DEMO_ORDER_RULES = [
         {
           ruleId: "rule_order_family",
           name: "亲子订单",
-          when: "quantity.child >= 1 OR ticketType in (family_bundle, family_annual)",
+          logic: "儿童数 ≥ N，或票种 ∈ 家庭票种白名单",
+          paramLabel: "儿童数阈值 N",
+          paramValue: 1,
+          paramUnit: "人",
           tagId: "order_family",
           enabled: true,
         },
         {
           ruleId: "rule_order_couple",
           name: "情侣出游",
-          when: "adult==2 AND child==0 AND (adult+child)<5 AND ticketType not in (family_bundle, family_annual)",
+          logic: "成人 = 2 且 儿童 = 0，且非家庭票种",
+          paramLabel: "",
+          paramValue: null,
+          paramUnit: "",
           tagId: "order_couple",
           enabled: true,
         },
         {
           ruleId: "rule_order_group",
           name: "团队游客",
-          when: "adult + child >= 5",
+          logic: "成人 + 儿童 ≥ N",
+          paramLabel: "人数阈值 N",
+          paramValue: 5,
+          paramUnit: "人",
           tagId: "order_group",
           enabled: false,
         },
+      ];
+
+      var DEMO_MEMBER_RULES = [
         {
           ruleId: "rule_new_guest",
-          name: "新客（事实）",
-          when: "completed_order_count == 0",
+          name: "新客",
+          logic: "已完成订单数 = 0",
+          paramLabel: "",
+          paramValue: null,
+          paramUnit: "",
           tagId: "new_guest",
+          enabled: true,
+        },
+        {
+          ruleId: "rule_high_value",
+          name: "高消费",
+          logic: "累计实付 ≥ 金额",
+          paramLabel: "累计实付阈值",
+          paramValue: 2000,
+          paramUnit: "元",
+          tagId: "high_value",
+          enabled: true,
+        },
+        {
+          ruleId: "rule_visit_repeat",
+          name: "多次入园",
+          logic: "已完成订单数 ≥ N",
+          paramLabel: "完成订单数 N",
+          paramValue: 2,
+          paramUnit: "笔",
+          tagId: "visit_repeat",
           enabled: true,
         },
       ];
 
-      function getTagRuleById(ruleId) {
-        for (var i = 0; i < DEMO_TAG_RULES.length; i++) {
-          if (DEMO_TAG_RULES[i].ruleId === ruleId) return DEMO_TAG_RULES[i];
+      function findInList(list, key, id) {
+        for (var i = 0; i < list.length; i++) {
+          if (list[i][key] === id) return list[i];
         }
         return null;
       }
 
-      function prepTagForm(root, mode, tagId) {
-        var tag = mode === "edit" ? getTagById(tagId) : null;
+      function getTagById(tagId) {
+        return (
+          findInList(DEMO_ORDER_TAGS, "tagId", tagId) ||
+          findInList(DEMO_MEMBER_TAGS, "tagId", tagId) ||
+          findInList(DEMO_PRODUCT_TAGS, "tagId", tagId)
+        );
+      }
+
+      function getTagByName(name) {
+        var lists = [DEMO_ORDER_TAGS, DEMO_MEMBER_TAGS, DEMO_PRODUCT_TAGS];
+        for (var i = 0; i < lists.length; i++) {
+          var hit = findInList(lists[i], "name", name);
+          if (hit) return hit;
+        }
+        return null;
+      }
+
+      function getProductTags() {
+        return DEMO_PRODUCT_TAGS.slice();
+      }
+
+      function getTagRuleById(ruleId) {
+        return (
+          findInList(DEMO_ORDER_RULES, "ruleId", ruleId) ||
+          findInList(DEMO_MEMBER_RULES, "ruleId", ruleId)
+        );
+      }
+
+      function formatRuleParam(rule) {
+        if (rule.paramValue == null || rule.paramValue === "") return "—";
+        return String(rule.paramValue) + (rule.paramUnit ? " " + rule.paramUnit : "");
+      }
+
+      function prepTagForm(root, mode, tagId, domain) {
+        domain = domain || "member";
+        var tag =
+          mode === "edit"
+            ? domain === "order"
+              ? findInList(DEMO_ORDER_TAGS, "tagId", tagId)
+              : domain === "product"
+                ? findInList(DEMO_PRODUCT_TAGS, "tagId", tagId)
+                : findInList(DEMO_MEMBER_TAGS, "tagId", tagId)
+            : null;
         var idInput = root.querySelector('[name="tag-id"]');
         var nameInput = root.querySelector('[name="tag-name"]');
-        var catSelect = root.querySelector('[name="tag-category"]');
         var descInput = root.querySelector('[name="tag-desc"]');
-        var scopes = (tag && tag.scopes) || [];
+        var kindRow = root.querySelector("[data-tag-kind-row]");
+        var kindWrap = root.querySelector("[data-tag-kind]");
+        var hint = root.querySelector("[data-tag-domain-hint]");
         if (idInput) {
           idInput.value = tag ? tag.tagId : "";
           if (mode === "edit") {
             idInput.readOnly = true;
             idInput.style.background = "#f5f5f5";
+          } else {
+            idInput.readOnly = false;
+            idInput.style.background = "";
           }
         }
         if (nameInput) nameInput.value = tag ? tag.name : "";
-        if (catSelect) catSelect.value = tag ? tag.category : "fact";
         if (descInput) descInput.value = tag ? tag.desc || "" : "";
-        root.querySelectorAll('[name="tag-scope"]').forEach(function (cb) {
-          cb.checked = scopes.indexOf(cb.value) !== -1;
-        });
+        if (kindRow) kindRow.hidden = domain !== "member";
+        if (kindWrap) {
+          var kind = tag && tag.kind ? tag.kind : "manual";
+          kindWrap.querySelectorAll(".seg-radio__item").forEach(function (item) {
+            var radio = item.querySelector('input[type="radio"]');
+            var on = !!(radio && radio.value === kind);
+            if (radio) radio.checked = on;
+            item.classList.toggle("is-active", on);
+          });
+          if (!kindWrap.dataset.kindBound) {
+            kindWrap.dataset.kindBound = "1";
+            kindWrap.querySelectorAll(".seg-radio__item").forEach(function (item) {
+              item.addEventListener("click", function (e) {
+                e.preventDefault();
+                var radio = item.querySelector('input[type="radio"]');
+                if (!radio) return;
+                kindWrap.querySelectorAll(".seg-radio__item").forEach(function (it) {
+                  var r = it.querySelector('input[type="radio"]');
+                  if (r) r.checked = it === item;
+                  it.classList.toggle("is-active", it === item);
+                });
+              });
+            });
+          }
+        }
+        if (hint) {
+          hint.textContent =
+            domain === "order"
+              ? "订单标签由读单现算规则写入本单，不在此配置阈值。"
+              : domain === "product"
+                ? "产品标签仅供产品管理勾选，无打标规则。"
+                : "规则类需在下方规则表配阈值；喜好类仅游客勾选写入，对话推断不回写。";
+        }
       }
 
-      function prepTagRuleForm(root, mode, ruleId) {
-        var rule = mode === "edit" ? getTagRuleById(ruleId) : null;
+      function prepTagRuleForm(root, mode, ruleId, ruleDomain) {
+        var rule = getTagRuleById(ruleId);
         var nameInput = root.querySelector('[name="rule-name"]');
-        var whenInput = root.querySelector('[name="rule-when"]');
-        var tagSelect = root.querySelector("[data-rule-tag-select]");
+        var logicInput = root.querySelector('[name="rule-logic"]');
+        var paramRow = root.querySelector("[data-rule-param-row]");
+        var paramLabel = root.querySelector("[data-rule-param-label]");
+        var paramInput = root.querySelector('[name="rule-param"]');
+        var tagLabel = root.querySelector('[name="rule-tag-label"]');
         var enabledSw = root.querySelector('[name="rule-enabled"]');
-        var memberTags = tagsForScope("member");
-        if (tagSelect) {
-          tagSelect.innerHTML =
-            '<option value="" disabled' +
-            (rule ? "" : " selected") +
-            ">请选择会员画像标签</option>" +
-            memberTags
-              .map(function (t) {
-                var selected =
-                  rule && rule.tagId === t.tagId ? " selected" : "";
-                return (
-                  '<option value="' +
-                  escapeHtml(t.tagId) +
-                  '"' +
-                  selected +
-                  ">" +
-                  escapeHtml(t.name) +
-                  "（" +
-                  escapeHtml(t.tagId) +
-                  "）</option>"
-                );
-              })
-              .join("");
-        }
+        var meta = rule ? getTagById(rule.tagId) : null;
         if (nameInput) nameInput.value = rule ? rule.name : "";
-        if (whenInput) whenInput.value = rule ? rule.when : "";
+        if (logicInput) logicInput.value = rule ? rule.logic : "";
+        if (tagLabel) {
+          tagLabel.value = rule
+            ? (meta ? meta.name : rule.tagId) + "（" + rule.tagId + "）"
+            : "";
+        }
+        var hasParam = !!(rule && rule.paramLabel);
+        if (paramRow) paramRow.hidden = !hasParam;
+        if (paramLabel && rule) paramLabel.textContent = rule.paramLabel || "可配参数";
+        if (paramInput) {
+          paramInput.value = hasParam ? String(rule.paramValue) : "";
+          paramInput.placeholder = hasParam
+            ? rule.paramUnit
+              ? "单位：" + rule.paramUnit
+              : "数值"
+            : "";
+        }
         if (enabledSw) {
           var on = !rule || rule.enabled;
           enabledSw.classList.toggle("on", on);
@@ -6157,88 +6236,126 @@
           .filter(Boolean);
       }
 
-      function renderScopeChips(scopes) {
-        return (
-          '<div class="scope-chips">' +
-          (scopes || [])
-            .map(function (s) {
-              return (
-                '<span class="scope-chip">' +
-                escapeHtml(TAG_SCOPE_LABEL[s] || s) +
-                "</span>"
-              );
-            })
-            .join("") +
-          "</div>"
-        );
+      function renderSimpleTagCatalog(tbodyId, countId, list, domain) {
+        var tbody = document.getElementById(tbodyId);
+        var countEl = countId ? document.getElementById(countId) : null;
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        var colSpan = domain === "member" ? 5 : 4;
+        if (!list.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="' +
+            colSpan +
+            '"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>';
+        } else {
+          list.forEach(function (t) {
+            var tr = document.createElement("tr");
+            var cols =
+              "<td><code>" +
+              escapeHtml(t.tagId) +
+              "</code></td><td>" +
+              escapeHtml(t.name) +
+              "</td>";
+            if (domain === "member") {
+              cols +=
+                "<td>" + escapeHtml(MEMBER_KIND_LABEL[t.kind] || t.kind) + "</td>";
+            }
+            cols +=
+              "<td>" +
+              escapeHtml(t.desc || "—") +
+              '</td><td><div class="table-ops"><button type="button" class="btn-link" data-open-drawer="tag" data-drawer-mode="edit" data-tag-domain="' +
+              escapeHtml(domain) +
+              '" data-tag-id="' +
+              escapeHtml(t.tagId) +
+              '">编辑</button></div></td>';
+            tr.innerHTML = cols;
+            tbody.appendChild(tr);
+          });
+        }
+        if (countEl) countEl.textContent = "共 " + list.length + " 条";
       }
 
-      function renderTagCatalogTable() {
-        var tbody = document.getElementById("tag-catalog-tbody");
-        var countEl = document.getElementById("tag-catalog-count");
+      var TAG_DOMAIN_LABEL = {
+        order: "订单",
+        member: "会员",
+        product: "产品",
+      };
+
+      function renderRuleTable() {
+        var tbody = document.getElementById("tag-rules-tbody");
+        var countEl = document.getElementById("tag-rules-count");
         if (!tbody) return;
-        var qEl = document.getElementById("tag-catalog-q");
-        var catEl = document.getElementById("tag-catalog-category");
-        var scopeEl = document.getElementById("tag-catalog-scope");
-        var q = qEl ? qEl.value.trim().toLowerCase() : "";
-        var cat = catEl ? catEl.value : "";
-        var scope = scopeEl ? scopeEl.value : "";
-        var rows = DEMO_TAG_CATALOG.filter(function (t) {
-          if (cat && t.category !== cat) return false;
-          if (scope && t.scopes.indexOf(scope) === -1) return false;
-          if (q) {
-            var hay = (t.tagId + " " + t.name + " " + (t.desc || "")).toLowerCase();
-            if (hay.indexOf(q) === -1) return false;
-          }
-          return true;
-        });
+        var rows = DEMO_ORDER_RULES.map(function (r) {
+          return { rule: r, domain: "order" };
+        }).concat(
+          DEMO_MEMBER_RULES.map(function (r) {
+            return { rule: r, domain: "member" };
+          })
+        );
         tbody.innerHTML = "";
         if (!rows.length) {
           tbody.innerHTML =
-            '<tr><td colspan="6"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>';
+            '<tr><td colspan="7"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>';
         } else {
-          rows.forEach(function (t) {
+          rows.forEach(function (item) {
+            var r = item.rule;
+            var ruleDomain = item.domain;
+            var meta = getTagById(r.tagId);
             var tr = document.createElement("tr");
             tr.innerHTML =
-              "<td><code>" +
-              escapeHtml(t.tagId) +
-              "</code></td>" +
               "<td>" +
-              escapeHtml(t.name) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(TAG_CATEGORY_LABEL[t.category] || t.category) +
-              "</td>" +
-              "<td>" +
-              renderScopeChips(t.scopes) +
-              "</td>" +
-              "<td>" +
-              escapeHtml(t.desc || "—") +
-              "</td>" +
-              '<td><div class="table-ops"><button type="button" class="btn-link" data-open-drawer="tag" data-drawer-mode="edit" data-tag-id="' +
-              escapeHtml(t.tagId) +
+              escapeHtml(TAG_DOMAIN_LABEL[ruleDomain] || ruleDomain) +
+              "</td><td>" +
+              escapeHtml(r.name) +
+              "</td><td>" +
+              escapeHtml(r.logic) +
+              "</td><td>" +
+              escapeHtml(formatRuleParam(r)) +
+              "</td><td><code>" +
+              escapeHtml(r.tagId) +
+              "</code>" +
+              (meta ? " → " + escapeHtml(meta.name) : "") +
+              '</td><td><button type="button" class="switch' +
+              (r.enabled ? " on" : "") +
+              '" aria-pressed="' +
+              (r.enabled ? "true" : "false") +
+              '" title="' +
+              (r.enabled ? "启用" : "禁用") +
+              '"></button></td><td><div class="table-ops"><button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-domain="' +
+              escapeHtml(ruleDomain) +
+              '" data-rule-id="' +
+              escapeHtml(r.ruleId) +
               '">编辑</button></div></td>';
             tbody.appendChild(tr);
+          });
+          tbody.querySelectorAll(".switch").forEach(function (sw) {
+            sw.addEventListener("click", function () {
+              sw.classList.toggle("on");
+              var on = sw.classList.contains("on");
+              sw.setAttribute("aria-pressed", on ? "true" : "false");
+              sw.setAttribute("title", on ? "启用" : "禁用");
+            });
           });
         }
         if (countEl) countEl.textContent = "共 " + rows.length + " 条";
       }
 
       function bindTagCatalogPage() {
-        var searchBtn = document.getElementById("tag-catalog-search");
-        var qEl = document.getElementById("tag-catalog-q");
-        var catEl = document.getElementById("tag-catalog-category");
-        var scopeEl = document.getElementById("tag-catalog-scope");
-        if (searchBtn) searchBtn.addEventListener("click", renderTagCatalogTable);
-        if (qEl) {
-          qEl.addEventListener("keydown", function (e) {
-            if (e.key === "Enter") renderTagCatalogTable();
-          });
-        }
-        if (catEl) catEl.addEventListener("change", renderTagCatalogTable);
-        if (scopeEl) scopeEl.addEventListener("change", renderTagCatalogTable);
+        renderSimpleTagCatalog("tag-order-catalog-tbody", null, DEMO_ORDER_TAGS, "order");
+        renderSimpleTagCatalog(
+          "tag-member-catalog-tbody",
+          null,
+          DEMO_MEMBER_TAGS,
+          "member"
+        );
+        renderSimpleTagCatalog(
+          "tag-product-catalog-tbody",
+          "tag-product-catalog-count",
+          DEMO_PRODUCT_TAGS,
+          "product"
+        );
+        renderRuleTable();
         enhanceSelects(document.getElementById("page-tags"));
-        renderTagCatalogTable();
       }
 
       function bindProductTagsField(root, initialTags) {
@@ -6251,7 +6368,7 @@
           return t.tagId;
         });
         var draft = [];
-        var productTags = tagsForScope("product");
+        var productTags = getProductTags();
 
         function renderSelected() {
           if (!selectedWrap) return;
@@ -6282,7 +6399,7 @@
           gridEl.innerHTML = "";
           if (!productTags.length) {
             gridEl.innerHTML =
-              '<div class="empty" style="padding:16px"><div>目录中暂无适用「产品」的标签</div></div>';
+              '<div class="empty" style="padding:16px"><div>暂无产品标签，请先在「标签管理 → 产品标签」维护</div></div>';
             return;
           }
           productTags.forEach(function (t) {
@@ -6308,7 +6425,7 @@
 
         function openPicker() {
           draft = selected.slice();
-          if (titleEl) titleEl.textContent = "选择标签（适用：产品）";
+          if (titleEl) titleEl.textContent = "选择产品标签";
           renderPickerOptions();
           if (maskEl) {
             maskEl.classList.add("open");
@@ -6363,12 +6480,34 @@
           skillId: btn.getAttribute("data-skill-id") || "",
           productType: btn.getAttribute("data-product-type") || "",
           tagId: btn.getAttribute("data-tag-id") || "",
+          tagDomain: btn.getAttribute("data-tag-domain") || "",
           ruleId: btn.getAttribute("data-rule-id") || "",
+          ruleDomain: btn.getAttribute("data-rule-domain") || "",
         });
       });
       mask.addEventListener("click", closeDrawer);
       document.getElementById("drawer-close").addEventListener("click", closeDrawer);
       document.getElementById("drawer-cancel").addEventListener("click", closeDrawer);
+
+      (function bindTagFormModal() {
+        var maskEl = document.getElementById("tag-form-mask");
+        var closeBtn = document.getElementById("tag-form-close");
+        var cancelBtn = document.getElementById("tag-form-cancel");
+        var submitBtn = document.getElementById("tag-form-submit");
+        if (closeBtn) closeBtn.addEventListener("click", closeTagFormModal);
+        if (cancelBtn) cancelBtn.addEventListener("click", closeTagFormModal);
+        if (submitBtn) {
+          submitBtn.addEventListener("click", function () {
+            closeTagFormModal();
+            showOkToast("已提交");
+          });
+        }
+        if (maskEl) {
+          maskEl.addEventListener("click", function (e) {
+            if (e.target === maskEl) closeTagFormModal();
+          });
+        }
+      })();
 
       enhanceCharCounts(document.getElementById("page-ui"));
       enhanceSelects(document.getElementById("page-ui"));

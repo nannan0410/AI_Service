@@ -155,7 +155,7 @@ interface ProductBase {
   status: 'on' | 'off'           // AI 清单上下架（列表开关）
   syncStatus?: string            // 对接状态（如正常/停用）
   refPrice?: number              // 参考售价（非日历实价）
-  tags?: string[]                // 标签管理多选，用于推荐（替代独立「票种类型」运营字段）
+  tags?: string[]                // 产品标签（标签管理→产品标签目录多选），用于推荐
 }
 
 interface TicketProduct extends ProductBase {

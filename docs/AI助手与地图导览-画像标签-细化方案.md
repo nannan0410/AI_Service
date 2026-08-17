@@ -446,7 +446,18 @@ Workflow 正则（含新 project_query / map_guide 意图）
 
 ## 7. 画像标签与订单规则（运营 Demo）
 
-### 7.1 标签目录（示例，可落 `tags.json` 扩展）
+### 7.1 标签分域（运营后台口径 · 2026-08）
+
+正式后台「标签管理」**不再**做跨实体统一目录 + 适用对象多选。分域如下：
+
+| 域 | 后台维护 | 写入时机 | 说明 |
+|----|----------|----------|------|
+| **订单标签** | 名称 + **固定规则模板**（仅可配阈值） | 助手**读订单时现算**（含历史单补打） | 如亲子/情侣/团队；不强依赖下单瞬间写库 |
+| **会员标签** | 名称（规则 / 手动 / 喜好映射）+ 规则类阈值 | 规则现算或定时；手动运营打；喜好=游客勾选 | **对话推断喜好仅会话内，不回写会员系统** |
+| **产品标签** | 名称目录 | 产品管理勾选 | 与订单/会员分域 |
+| **项目 / 内容标签** | 一期不做 | — | 待未来「项目列表」主数据再加 |
+
+下表仍为 Demo/`tags.json` 示意分类（事实 / 订单 / AI），与后台分域可映射：订单规则 → 订单标签；事实/规则会员 → 会员规则类；`prefer_*` → 喜好映射（产品勾选）或会话临时态（对话）。
 
 #### 事实标签
 
@@ -454,50 +465,54 @@ Workflow 正则（含新 project_query / map_guide 意图）
 |-------|------|------------------|
 | `new_guest` | 新客 | 无 completed 订单（沿用现逻辑） |
 | `member_gold` | 黄金会员 | `memberLevel` 含黄金 |
-| `visit_repeat` | 多次入园 | completed 订单数 ≥ 2 |
+| `visit_repeat` | 多次入园 | completed 订单数 ≥ 2（阈值可配） |
 
 #### 订单标签
 
 | tagId | 名称 | 规则说明 |
 |-------|------|----------|
-| `order_family` | 亲子订单 | 任一相关订单 `quantity.child ≥ 1`，或票种 family_* |
+| `order_family` | 亲子订单 | 儿童数 ≥ N 或票种 family_*（N 可配） |
 | `order_couple` | 情侣出游 | 2 成人 0 儿童且非团队票（演示规则） |
-| `order_group` | 团队游客 | 单笔 adult+child ≥ 5 |
+| `order_group` | 团队游客 | 单笔 adult+child ≥ N（N 可配） |
 
 #### 消费标签（可选，Demo 可少做）
 
 | tagId | 名称 | 规则 |
 |-------|------|------|
-| `consume_high` | 高客单 | 历史实付合计超阈值（Mock） |
+| `high_value` / `consume_high` | 高消费 | 历史实付合计 ≥ 金额阈值（可配，如 2000） |
 
-#### AI 推断标签
+#### AI / 喜好标签
 
 | tagId | 名称 | 规则 | confidence |
 |-------|------|------|------------|
-| `prefer_thrill` | 喜欢刺激 | 对话关键词「刺激」（演示）；正式版 LLM 归并「惊险」等 | 0.6–0.8 |
-| `prefer_photo` | 偏好拍照 | 对话关键词「拍照/出片」（演示） | 0.6–0.8 |
-| `prefer_slow` | 慢节奏 | 对话关键词「休闲」（演示） | 0.7 |
+| `prefer_thrill` | 喜欢刺激 | **喜好映射**：游客勾选写入；对话关键词仅会话演示，**不回写会员** | 0.6–0.8 |
+| `prefer_photo` | 偏好拍照 | 同上 | 0.6–0.8 |
+| `prefer_slow` | 慢节奏 | 同上 | 0.7 |
 
-**兼容**：现有规则引擎用的 `family` / `high_value` 可与新 id 映射（`family` ↔ `order_family` 或保留双写一版），避免一次打断 `member_offer`。
+**兼容**：现有规则引擎用的 `family` / `high_value` 可与新 id 映射（`family` ↔ `order_family` 或保留双写一版），避免一次打断 `member_offer`。产品侧「亲子」可继续用产品标签 `family`，与订单 `order_family` 分域。
 
 ### 7.2 标签产生时机（非助手实时打全量）
 
 ```mermaid
 flowchart LR
-  OrderEvt["订单支付/完成/读快照"] --> OrderRule["订单规则"]
-  Member["会员信息"] --> FactRule["事实规则"]
-  Behavior["打卡/排队等行为 Mock"] --> BehRule["行为规则"]
-  ChatLight["对话轻量回写可选"] --> AiRule["AI 推断规则"]
-  OrderRule & FactRule & BehRule & AiRule --> Center["标签快照 UserProfile"]
+  OrderRead["助手读订单 / 订单快照"] --> OrderRule["订单规则现算"]
+  Member["会员信息"] --> FactRule["会员规则（阈值可配）"]
+  Manual["运营手动打标"] --> ManualTag["手动会员标签"]
+  PreferUI["游客勾选喜好"] --> PreferTag["喜好映射标签"]
+  ChatLight["对话推断 prefer_*"] --> SessionOnly["仅会话内，不回写会员"]
+  OrderRule --> OrderTags["订单标签"]
+  FactRule & ManualTag & PreferTag --> Center["会员画像快照"]
   Center --> Assistant["AI 助手只读"]
+  OrderTags --> Assistant
+  SessionOnly --> Assistant
   Center --> OpsUI["运营 Persona 预览"]
 ```
 
 ### 7.3 运营验收标准（落在「数据与接口」Tab 内模块）
 
-1. **标签目录**模块：能按类型看清；每条有来源说明与默认置信度。  
+1. **标签目录**模块：能按**订单 / 会员 / 产品**分域看清；会员区分规则/手动/喜好。  
 2. **Persona 预览**模块：三个 demo 账号标签不同；能看到 evidence（如订单号）。  
-3. **订单规则说明**模块：每条规则有「若/则」+ 至少一条 demo 订单命中/未命中示例。  
+3. **订单规则说明**模块：每条规则有「固定逻辑 + 可配参数」+ 至少一条 demo 订单命中/未命中示例；说明读单现算。  
 4. 以上均为 `/config/data` 页内独立 Title 区块，只读（详见 §15）。
 ### 7.4 推荐侧如何用标签与定向策略（演示现状）
 
