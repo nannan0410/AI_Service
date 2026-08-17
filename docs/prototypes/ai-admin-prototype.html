@@ -242,6 +242,130 @@
     .page.active.page--with-foot .page-foot {
       display: flex;
     }
+    .page-foot__view,
+    .page-foot__edit {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .page-foot__view[hidden],
+    .page-foot__edit[hidden] {
+      display: none !important;
+    }
+    .page.is-view .input,
+    .page.is-view .textarea {
+      background: #f5f5f5;
+      color: var(--text);
+      cursor: default;
+    }
+    .page.is-view .input:focus,
+    .page.is-view .textarea:focus {
+      border-color: var(--border-strong);
+      box-shadow: none;
+    }
+    .page.is-view .c-select {
+      pointer-events: none;
+    }
+    .page.is-view .c-select__trigger {
+      background: #f5f5f5;
+      cursor: default;
+    }
+    .page.is-view .ops-edit-only {
+      display: none !important;
+    }
+    .skill-tool-head,
+    .skill-tool-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .skill-tool-head {
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 22px;
+    }
+    .skill-tool-head__id,
+    .skill-tool-row__id {
+      width: 240px;
+      flex: 0 0 auto;
+      max-width: 100%;
+    }
+    .skill-tool-head__label,
+    .skill-tool-row__label {
+      width: 200px;
+      flex: 0 0 auto;
+      max-width: 100%;
+    }
+    .skill-tool-head__access {
+      width: 96px;
+      flex-shrink: 0;
+    }
+    .skill-tool-head__op {
+      width: 32px;
+      flex-shrink: 0;
+    }
+    .skill-tool-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .skill-tool-row .input.skill-tool-row__id {
+      width: 240px;
+      max-width: 100%;
+    }
+    .skill-tool-row .input.skill-tool-row__label {
+      width: 200px;
+      max-width: 100%;
+    }
+    .skill-tool-row .c-select {
+      width: 96px;
+      max-width: 96px;
+      flex-shrink: 0;
+    }
+    .skill-tool-row__id,
+    .skill-tool-row__label {
+      line-height: 32px;
+      color: var(--text);
+      font-size: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .skill-tool-row__access-text {
+      width: 96px;
+      flex-shrink: 0;
+      line-height: 32px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    .skill-tool-row .input {
+      max-width: none;
+      height: 32px;
+    }
+    .skill-tool-row .c-select {
+      width: 96px;
+      max-width: 96px;
+      flex-shrink: 0;
+    }
+    .skill-tool-row__text {
+      line-height: 32px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .skill-tool-row__access-text {
+      width: 96px;
+      flex-shrink: 0;
+      line-height: 32px;
+      color: var(--text-secondary);
+    }
+    .proto-toast.proto-toast--ok {
+      background: #f6ffed;
+      border-color: #b7eb8f;
+      color: #389e0d;
+    }
     /* 列表页：仅表格内容区滚动，底栏固定统计 */
     .main:has(.page--list-scroll.active) {
       overflow: hidden;
@@ -1198,6 +1322,11 @@
     .proto-toast.show {
       display: block;
     }
+    .proto-toast.proto-toast--ok {
+      background: #f6ffed;
+      border-color: #b7eb8f;
+      color: #389e0d;
+    }
 
     .upload-box {
       width: 104px;
@@ -1286,9 +1415,12 @@
       color: var(--text-muted);
     }
     .tool-bind__row > .c-select:first-child {
-      flex: 1;
-      width: auto;
-      max-width: none;
+      flex: 0 0 auto;
+      width: 400px;
+      max-width: 100%;
+    }
+    .tool-bind__row > .c-select:first-child .c-select__trigger {
+      width: 100%;
     }
     .tool-bind__remove {
       display: inline-flex;
@@ -1743,6 +1875,72 @@
       background: var(--primary-bg);
       color: var(--primary);
     }
+    .tag-picker-option__meta {
+      margin-left: 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .tag-picker-option.is-on .tag-picker-option__meta {
+      color: var(--primary);
+      opacity: 0.85;
+    }
+    .scope-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .scope-chip {
+      display: inline-block;
+      padding: 0 6px;
+      height: 22px;
+      line-height: 20px;
+      font-size: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: #fafafa;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .tags-rules-head {
+      padding: 16px 16px 0;
+      background: #fff;
+    }
+    .tags-rules-head .filter-actions {
+      margin: 0 0 16px;
+      justify-content: flex-start;
+      width: 100%;
+    }
+    .check-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      align-items: center;
+      min-height: 32px;
+    }
+    .check-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+    }
+    .drawer-form--tag .field-row > .input,
+    .drawer-form--tag .field-row > .c-select,
+    .drawer-form--tag-rule .field-row > .input,
+    .drawer-form--tag-rule .field-row > .c-select,
+    .drawer-form--tag-rule .field-row > textarea.input {
+      max-width: 400px;
+      width: 100%;
+    }
+    .drawer-form--tag-rule textarea.input {
+      min-height: 88px;
+      height: auto;
+      padding: 8px 11px;
+      line-height: 1.5;
+      resize: vertical;
+    }
     .drawer-form--product .product-snapshot__title {
       margin: 0 0 8px;
       font-size: 13px;
@@ -2023,7 +2221,8 @@
             <svg class="nav-submenu__arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="nav-submenu__children">
-            <button type="button" class="nav-item" data-page="api-config" data-title="接口配置">接口配置</button>
+            <button type="button" class="nav-item" data-page="api-ext" data-title="外部接口对接">外部接口对接</button>
+            <button type="button" class="nav-item" data-page="skill-tools" data-title="SKILL工具">SKILL工具</button>
             <button type="button" class="nav-item" data-page="ops-skill" data-title="Skill 场景（运维）">Skill 场景</button>
           </div>
         </div>
@@ -2284,10 +2483,6 @@
               <div class="upload-box">+ 上传</div>
             </div>
             <div class="field-row">
-              <label>会员默认头像</label>
-              <div class="upload-box">+ 上传</div>
-            </div>
-            <div class="field-row">
               <label>助手默认全身图</label>
               <div class="upload-box">+ 上传</div>
             </div>
@@ -2517,61 +2712,137 @@
         </div>
       </section>
 
-      <!-- 标签 -->
+      <!-- 标签：统一目录 + 适用对象 -->
       <section class="page" id="page-tags">
         <div class="page-head">
           <div>
             <h1>标签管理</h1>
           </div>
         </div>
+        <div class="alert">
+          统一标签目录：会员画像 / 产品 / 项目 / 内容共用同一套 <code>tagId</code>。按「适用对象」过滤选用；「打标规则」仅写入<strong>会员画像</strong>类标签。
+        </div>
         <div class="tabs" data-tabs="tags">
           <button type="button" class="tab active" data-tab="tags-catalog">标签目录</button>
           <button type="button" class="tab" data-tab="tags-rules">打标规则</button>
         </div>
-        <div class="filter-bar">
-          <div class="filter-item">
-            <span>名称</span>
-            <input class="input" type="text" placeholder="请输入" />
-          </div>
-          <div class="filter-actions">
-            <button type="button" class="btn btn-primary">查询</button>
-            <button type="button" class="btn btn-primary">新增标签</button>
-          </div>
-        </div>
         <div class="card tab-panel active" data-tab-panel="tags-catalog">
-          <div class="card__body--flush">
-            <table class="data">
+          <div class="filter-bar" style="border:none;margin:0;border-radius:0;border-bottom:1px solid var(--border)">
+            <div class="filter-item">
+              <span>名称 / ID</span>
+              <input class="input" type="text" placeholder="请输入" id="tag-catalog-q" />
+            </div>
+            <div class="filter-item filter-item--status">
+              <span>分组</span>
+              <select class="select" aria-label="分组" id="tag-catalog-category">
+                <option value="" selected>全部</option>
+                <option value="fact">事实</option>
+                <option value="order">订单</option>
+                <option value="ai">AI 推断</option>
+                <option value="content">内容属性</option>
+              </select>
+            </div>
+            <div class="filter-item filter-item--status">
+              <span>适用对象</span>
+              <select class="select" aria-label="适用对象" id="tag-catalog-scope">
+                <option value="" selected>全部</option>
+                <option value="member">会员画像</option>
+                <option value="product">产品</option>
+                <option value="activity">项目</option>
+                <option value="content">内容/攻略</option>
+              </select>
+            </div>
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary" id="tag-catalog-search">查询</button>
+              <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create">新增标签</button>
+            </div>
+          </div>
+          <div class="card__body--flush table-wrap">
+            <table class="data" id="tag-catalog-table">
               <thead>
                 <tr>
-                  <th>标签 ID</th>
-                  <th>名称</th>
-                  <th>分组</th>
+                  <th style="width:140px">标签 ID</th>
+                  <th style="width:100px">名称</th>
+                  <th style="width:88px">分组</th>
+                  <th style="min-width:200px">适用对象</th>
                   <th>说明</th>
-                  <th>操作</th>
+                  <th style="width:88px">操作</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td colspan="5"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
-              </tbody>
+              <tbody id="tag-catalog-tbody"></tbody>
             </table>
+          </div>
+          <div class="table-footer table-footer--stat">
+            <span id="tag-catalog-count">共 0 条</span>
           </div>
         </div>
         <div class="card tab-panel" data-tab-panel="tags-rules">
-          <div class="card__body--flush">
+          <div class="tags-rules-head">
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary" data-open-drawer="tag-rule" data-drawer-mode="create">新增规则</button>
+            </div>
+          </div>
+          <div class="card__body--flush table-wrap">
             <table class="data">
               <thead>
                 <tr>
                   <th>规则名称</th>
-                  <th>条件</th>
+                  <th>条件（示意）</th>
                   <th>写入标签</th>
-                  <th>状态</th>
-                  <th>操作</th>
+                  <th style="width:88px">状态</th>
+                  <th style="width:88px">操作</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td colspan="5"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+                <tr>
+                  <td>亲子订单</td>
+                  <td><code>child≥1</code> 或家庭票种</td>
+                  <td><code>order_family</code> → 亲子订单（双写 <code>family</code>）</td>
+                  <td><button type="button" class="switch on" aria-pressed="true" title="启用"></button></td>
+                  <td>
+                    <div class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-id="rule_order_family">编辑</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>情侣出游</td>
+                  <td><code>adult=2</code> 且 <code>child=0</code></td>
+                  <td><code>order_couple</code> → 情侣出游</td>
+                  <td><button type="button" class="switch on" aria-pressed="true" title="启用"></button></td>
+                  <td>
+                    <div class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-id="rule_order_couple">编辑</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>团队游客</td>
+                  <td><code>adult+child≥5</code></td>
+                  <td><code>order_group</code> → 团队游客</td>
+                  <td><button type="button" class="switch" aria-pressed="false" title="禁用"></button></td>
+                  <td>
+                    <div class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-id="rule_order_group">编辑</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>新客（事实）</td>
+                  <td>无 completed 订单</td>
+                  <td><code>new_guest</code> → 新客</td>
+                  <td><button type="button" class="switch on" aria-pressed="true" title="启用"></button></td>
+                  <td>
+                    <div class="table-ops">
+                      <button type="button" class="btn-link" data-open-drawer="tag-rule" data-drawer-mode="edit" data-rule-id="rule_new_guest">编辑</button>
+                    </div>
+                  </td>
+                </tr>
               </tbody>
             </table>
+          </div>
+          <div class="table-footer table-footer--stat">
+            <span>共 4 条</span>
           </div>
         </div>
       </section>
@@ -2618,18 +2889,21 @@
         <div class="page-list-body">
           <div class="card page-list-card">
             <div class="card__body--flush table-wrap">
-              <table class="data">
+              <table class="data" style="min-width:1280px">
                 <thead>
                   <tr>
                     <th style="width:120px">对接产品 ID</th>
                     <th>名称</th>
-                    <th style="width:100px">产品类型</th>
-                    <th style="width:100px">参考售价</th>
+                    <th style="width:88px">产品类型</th>
+                    <th style="width:180px">游玩期限</th>
+                    <th style="width:180px">可售期限</th>
+                    <th style="width:100px">是否自销可售</th>
+                    <th style="width:88px">参考售价</th>
                     <th>标签</th>
                     <th style="width:88px">对接状态</th>
                     <th style="width:120px">来源</th>
-                    <th style="width:88px">状态</th>
-                    <th style="width:88px">操作</th>
+                    <th style="width:72px">状态</th>
+                    <th style="width:72px">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2637,19 +2911,27 @@
                     <td>TK10086</td>
                     <td>成人全日票</td>
                     <td>门票</td>
+                    <td style="white-space:nowrap">2026-01-01 ~ 2026-12-31</td>
+                    <td style="white-space:nowrap">2025-12-01 ~ 2026-11-30</td>
+                    <td>是</td>
                     <td>¥299</td>
                     <td><span class="tag tag-blue">成人</span></td>
                     <td><span class="tag tag-green">正常</span></td>
                     <td>智慧乐园票务</td>
                     <td><button type="button" class="switch on" aria-label="上下架"></button></td>
-                    <td class="table-ops">
-                      <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="ticket">编辑</button>
+                    <td>
+                      <div class="table-ops">
+                        <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="ticket">编辑</button>
+                      </div>
                     </td>
                   </tr>
                   <tr>
                     <td>PASS2001</td>
                     <td>家庭年卡（2大1小）</td>
                     <td>卡票</td>
+                    <td style="white-space:nowrap">2026-01-01 ~ 2026-12-31</td>
+                    <td style="white-space:nowrap">2025-10-01 ~ 2026-12-31</td>
+                    <td>是</td>
                     <td>¥2999</td>
                     <td>
                       <span class="tag tag-blue">亲子</span>
@@ -2658,21 +2940,28 @@
                     <td><span class="tag tag-green">正常</span></td>
                     <td>智慧乐园票务</td>
                     <td><button type="button" class="switch on" aria-label="上下架"></button></td>
-                    <td class="table-ops">
-                      <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="pass">编辑</button>
+                    <td>
+                      <div class="table-ops">
+                        <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="pass">编辑</button>
+                      </div>
                     </td>
                   </tr>
                   <tr>
                     <td>BDL3008</td>
                     <td>亲子一日畅玩组合</td>
                     <td>组合产品</td>
+                    <td style="white-space:nowrap">2026-04-01 ~ 2026-10-31</td>
+                    <td style="white-space:nowrap">2026-03-01 ~ 2026-09-30</td>
+                    <td>否</td>
                     <td>¥668</td>
                     <td><span class="tag tag-blue">亲子</span></td>
                     <td><span class="tag tag-orange">停用</span></td>
                     <td>海洋公园票务</td>
                     <td><button type="button" class="switch on" aria-label="上下架"></button></td>
-                    <td class="table-ops">
-                      <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="bundle">编辑</button>
+                    <td>
+                      <div class="table-ops">
+                        <button type="button" class="btn-link" data-open-drawer="product" data-drawer-mode="edit" data-product-type="bundle">编辑</button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -2770,16 +3059,58 @@
               <thead>
                 <tr>
                   <th>名称</th>
-                  <th>分类</th>
+                  <th style="width:88px">分类</th>
                   <th>位置</th>
-                  <th>开放时段</th>
-                  <th>操作</th>
+                  <th style="width:120px">开放时段</th>
+                  <th>标签</th>
+                  <th style="width:72px">操作</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td colspan="5"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
+                <tr>
+                  <td>亲子漂流</td>
+                  <td>游乐</td>
+                  <td>漂流入口</td>
+                  <td>10:00-17:00</td>
+                  <td>
+                    <span class="tag tag-blue">亲子</span>
+                    <span class="tag tag-blue">温和</span>
+                  </td>
+                  <td>
+                    <div class="table-ops"><button type="button" class="btn-link">编辑</button></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>极限过山车</td>
+                  <td>游乐</td>
+                  <td>极限区</td>
+                  <td>09:30-20:30</td>
+                  <td>
+                    <span class="tag tag-blue">刺激</span>
+                    <span class="tag tag-blue">喜欢刺激</span>
+                  </td>
+                  <td>
+                    <div class="table-ops"><button type="button" class="btn-link">编辑</button></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td>水上灯光秀</td>
+                  <td>演出</td>
+                  <td>中心湖</td>
+                  <td>19:00-20:30</td>
+                  <td>
+                    <span class="tag tag-blue">偏好拍照</span>
+                    <span class="tag tag-blue">慢节奏</span>
+                  </td>
+                  <td>
+                    <div class="table-ops"><button type="button" class="btn-link">编辑</button></div>
+                  </td>
+                </tr>
               </tbody>
             </table>
+          </div>
+          <div class="table-footer table-footer--stat">
+            <span>共 3 条 · 标签选自统一目录（适用对象含「项目」）</span>
           </div>
         </div>
       </section>
@@ -2830,46 +3161,80 @@
         </div>
       </section>
 
-      <!-- 运维：接口配置 -->
-      <section class="page" id="page-api-config">
+      <!-- 运维：外部接口对接 -->
+      <section class="page page--with-foot is-view" id="page-api-ext" data-ops-form>
         <div class="page-head">
           <div>
-            <h1>接口配置 <span class="proto-badge">内部</span></h1>
-          </div>
-          <div class="page-head__actions">
-            <button type="button" class="btn btn-primary">保存</button>
+            <h1>外部接口对接 <span class="proto-badge">内部</span></h1>
           </div>
         </div>
-        <div class="alert alert--warn">本菜单默认仅内部角色可见；演示原型中仍展示以便评审信息架构。</div>
+        <div class="alert alert--warn">请检查后填写，请勿随意变更影响使用。</div>
         <div class="card">
-          <div class="card__title">外部接口对接</div>
-          <div class="card__body">
-            <div class="field-row" style="max-width:none;grid-template-columns:100px 1fr">
+          <div class="card__body" data-ops-fields>
+            <div class="field-row">
               <label>地图接口</label>
-              <input class="input input-wide" type="text" placeholder="请输入 Base URL / 标识" />
+              <input class="input" data-ops-key="map" type="text" placeholder="请输入 Base URL / 标识" value="https://api.internal/map" readonly />
             </div>
-            <div class="field-row" style="max-width:none;grid-template-columns:100px 1fr">
+            <div class="field-row">
               <label>订单接口</label>
-              <input class="input input-wide" type="text" placeholder="请输入 Base URL / 标识" />
+              <input class="input" data-ops-key="order" type="text" placeholder="请输入 Base URL / 标识" value="https://api.internal/order" readonly />
             </div>
-            <div class="field-row" style="max-width:none;grid-template-columns:100px 1fr">
+            <div class="field-row">
               <label>天气接口</label>
-              <input class="input input-wide" type="text" placeholder="请输入 Base URL / 标识" />
+              <input class="input" data-ops-key="weather" type="text" placeholder="请输入 Base URL / 标识" value="https://api.internal/weather" readonly />
             </div>
-            <div class="field-row" style="max-width:none;grid-template-columns:100px 1fr">
+            <div class="field-row">
               <label>LLM 接口</label>
-              <input class="input input-wide" type="text" placeholder="请输入 Endpoint / 模型标识" />
+              <input class="input" data-ops-key="llm" type="text" placeholder="请输入 Endpoint / 模型标识" value="https://api.internal/llm" readonly />
             </div>
           </div>
         </div>
+        <div class="page-foot" role="toolbar" aria-label="页面操作">
+          <div class="page-foot__view">
+            <button type="button" class="btn btn-primary" data-ops-edit>编辑</button>
+          </div>
+          <div class="page-foot__edit" hidden>
+            <button type="button" class="btn" data-ops-cancel>取消</button>
+            <button type="button" class="btn btn-primary" data-ops-submit>提交</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 运维：SKILL工具 -->
+      <section class="page page--with-foot is-view" id="page-skill-tools" data-ops-form>
+        <div class="page-head">
+          <div>
+            <h1>SKILL工具 <span class="proto-badge">内部</span></h1>
+          </div>
+        </div>
+        <div class="alert alert--warn">请检查后填写，请勿随意变更影响使用。</div>
         <div class="card">
-          <div class="card__title">与 Skill 绑定工具的关系</div>
           <div class="card__body">
-            <div class="readonly-block">
-              本页维护全局 / 环境级 Base URL 与凭证占位。<br />
-              某 Skill 可用哪些能力、每条是只读还是写入，在「运维管理 → Skill 场景 → 绑定工具」按组配置（能力标识 + 读写），最多 20 组。<br />
-              正式由运维中心接管。
+            <div class="field-block">
+              <div class="field-block__label">工具目录</div>
+              <div class="field-block__content">
+                <div class="field-block__toolbar">
+                  <button type="button" class="btn btn-sm btn-primary ops-edit-only" data-ops-tool-add>添加工具（0/20）</button>
+                  <span class="field-block__hint">全局能力目录；Skill 场景绑定工具时从此选择（能力标识 + 读写），最多 20 组。</span>
+                </div>
+                <div class="skill-tool-head">
+                  <span class="skill-tool-head__id">能力标识</span>
+                  <span class="skill-tool-head__label">名称</span>
+                  <span class="skill-tool-head__access">读写</span>
+                  <span class="skill-tool-head__op ops-edit-only"></span>
+                </div>
+                <div class="skill-tool-list" data-ops-tool-list></div>
+              </div>
             </div>
+          </div>
+        </div>
+        <div class="page-foot" role="toolbar" aria-label="页面操作">
+          <div class="page-foot__view">
+            <button type="button" class="btn btn-primary" data-ops-edit>编辑</button>
+          </div>
+          <div class="page-foot__edit" hidden>
+            <button type="button" class="btn" data-ops-cancel>取消</button>
+            <button type="button" class="btn btn-primary" data-ops-submit>提交</button>
           </div>
         </div>
       </section>
@@ -3244,7 +3609,9 @@
 
       function showPage(id) {
         pages.forEach(function (p) {
-          p.classList.toggle("active", p.id === "page-" + id);
+          var active = p.id === "page-" + id;
+          if (!active && typeof p._opsResetView === "function") p._opsResetView();
+          p.classList.toggle("active", active);
         });
         navItems.forEach(function (n) {
           var active = n.getAttribute("data-page") === id;
@@ -3320,14 +3687,23 @@
       var protoToast = document.getElementById("proto-toast");
       var protoToastTimer = null;
 
-      function showErrorToast(msg) {
+      function showProtoToast(msg, ok) {
         if (!protoToast) return;
         protoToast.textContent = msg;
+        protoToast.classList.toggle("proto-toast--ok", !!ok);
         protoToast.classList.add("show");
         if (protoToastTimer) clearTimeout(protoToastTimer);
         protoToastTimer = setTimeout(function () {
           protoToast.classList.remove("show");
         }, 3000);
+      }
+
+      function showErrorToast(msg) {
+        showProtoToast(msg, false);
+      }
+
+      function showOkToast(msg) {
+        showProtoToast(msg, true);
       }
 
       var drawerFoot = document.querySelector(".drawer__foot");
@@ -3389,6 +3765,18 @@
         ticket_purchase: DEMO_SKILLS.ticket_purchase.defaultKeywords,
         parking_pay: DEMO_SKILLS.parking_pay.defaultKeywords,
       };
+
+      var DEMO_SKILL_CATALOG = [
+        { name: "getProductCatalog", label: "查询票产品", access: "read" },
+        { name: "getCoupons", label: "查询优惠券", access: "read" },
+        { name: "getMemberInfo", label: "查询会员信息", access: "read" },
+        { name: "getOrders", label: "查询订单", access: "read" },
+        { name: "generateTravelGuide", label: "生成游玩攻略", access: "read" },
+        { name: "issueCoupon", label: "发放优惠券", access: "write" },
+        { name: "createOrderDraft", label: "创建订单草稿", access: "write" },
+        { name: "getParkingFee", label: "查询停车费", access: "read" },
+        { name: "createParkingOrder", label: "创建停车订单", access: "write" },
+      ];
 
       var CUSTOM_KW_HINT =
         "勿与同层默认词重复；本 Skill 内（含各子意图）唯一；跨 Skill 重复请到冲突检查对照";
@@ -3966,7 +4354,7 @@
           '<div class="product-tags-field">' +
           '<div class="product-tags-field__toolbar">' +
           '<button type="button" class="btn btn-sm" id="product-tag-add">选择标签</button>' +
-          '<span class="product-tags-field__hint">推荐用标签表达人群/场景（如成人、亲子、年卡）</span>' +
+          '<span class="product-tags-field__hint">从统一「标签管理」目录勾选（适用对象含产品）；跨会员/项目可复用同一 tagId</span>' +
           "</div>" +
           '<div class="product-tags-field__selected" id="product-tags-selected"></div>' +
           "</div>" +
@@ -4027,46 +4415,211 @@
           "</div>" +
           DISPLAY_RULES_BLOCK_HTML +
           "</div>",
+        tag:
+          '<div class="drawer-form drawer-form--tag">' +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 标签 ID</label>' +
+          '<input class="input" type="text" name="tag-id" placeholder="如 order_family" />' +
+          "</div>" +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 名称</label>' +
+          '<div class="input-with-count">' +
+          '<input class="input" type="text" name="tag-name" data-max-chars="20" placeholder="请输入" />' +
+          '<span class="input-count">0/20</span>' +
+          "</div></div>" +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 分组</label>' +
+          '<select class="select" name="tag-category" aria-label="分组">' +
+          '<option value="fact">事实</option>' +
+          '<option value="order">订单</option>' +
+          '<option value="ai">AI 推断</option>' +
+          '<option value="content">内容属性</option>' +
+          "</select>" +
+          "</div>" +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 适用对象</label>' +
+          '<div class="check-group" data-tag-scopes>' +
+          '<label class="check-item"><input type="checkbox" name="tag-scope" value="member" /> 会员画像</label>' +
+          '<label class="check-item"><input type="checkbox" name="tag-scope" value="product" /> 产品</label>' +
+          '<label class="check-item"><input type="checkbox" name="tag-scope" value="activity" /> 项目</label>' +
+          '<label class="check-item"><input type="checkbox" name="tag-scope" value="content" /> 内容/攻略</label>' +
+          "</div></div>" +
+          '<div class="field-row">' +
+          "<label>说明</label>" +
+          '<div class="input-with-count">' +
+          '<input class="input" type="text" name="tag-desc" data-max-chars="80" placeholder="可选" />' +
+          '<span class="input-count">0/80</span>' +
+          "</div></div>" +
+          "</div>",
+        "tag-rule":
+          '<div class="drawer-form drawer-form--tag-rule">' +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 规则名称</label>' +
+          '<div class="input-with-count">' +
+          '<input class="input" type="text" name="rule-name" data-max-chars="40" placeholder="请输入" />' +
+          '<span class="input-count">0/40</span>' +
+          "</div></div>" +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 条件（示意）</label>' +
+          '<textarea class="input" name="rule-when" placeholder="如 adult==2 AND child==0"></textarea>' +
+          "</div>" +
+          '<div class="field-row">' +
+          '<label><span class="req">*</span> 写入标签</label>' +
+          '<select class="select" name="rule-tag-id" aria-label="写入标签" data-rule-tag-select>' +
+          '<option value="" selected disabled>请选择会员画像标签</option>' +
+          "</select>" +
+          "</div>" +
+          '<div class="field-row">' +
+          "<label>状态</label>" +
+          '<button type="button" class="switch on" name="rule-enabled" aria-pressed="true" title="启用"></button>' +
+          "</div>" +
+          '<p class="field-hint-inline" style="margin:0;color:var(--text-muted);font-size:13px;line-height:1.5">仅可写入适用对象含「会员画像」的标签；产品/项目/内容请在业务页勾选。</p>' +
+          "</div>",
       };
 
       var TOOL_BIND_MAX = 20;
       var SUB_INTENT_MAX = 10;
 
+      function getCatalogTool(name) {
+        for (var i = 0; i < DEMO_SKILL_CATALOG.length; i++) {
+          if (DEMO_SKILL_CATALOG[i].name === name) return DEMO_SKILL_CATALOG[i];
+        }
+        return null;
+      }
+
+      function getCatalogAccess(name) {
+        var t = getCatalogTool(name);
+        return t && t.access === "write" ? "write" : "read";
+      }
+
+      function formatCatalogToolLabel(t) {
+        if (!t) return "—";
+        var label = t.label || t.name;
+        return label === t.name ? t.name : label + "（" + t.name + "）";
+      }
+
+      function catalogToolOptionsHtml(selectedName, usedNames) {
+        usedNames = usedNames || [];
+        var html = '<option value="">请选择工具</option>';
+        DEMO_SKILL_CATALOG.forEach(function (t) {
+          if (usedNames.indexOf(t.name) !== -1 && t.name !== selectedName) return;
+          html +=
+            '<option value="' +
+            escapeHtml(t.name) +
+            '" data-catalog-access="' +
+            t.access +
+            '"' +
+            (t.name === selectedName ? " selected" : "") +
+            ">" +
+            escapeHtml(formatCatalogToolLabel(t)) +
+            "</option>";
+        });
+        return html;
+      }
+
+      function getUsedToolNames(list, exceptRow) {
+        var used = [];
+        if (!list) return used;
+        list.querySelectorAll(".tool-bind__row").forEach(function (row) {
+          if (row === exceptRow) return;
+          var toolSel = row.querySelector("select.tool-bind__tool");
+          var text = row.querySelector(".tool-bind__tool-text");
+          var name = toolSel
+            ? toolSel.value.trim()
+            : text
+              ? (text.getAttribute("data-tool-name") || "").trim()
+              : "";
+          if (name) used.push(name);
+        });
+        return used;
+      }
+
+      function refreshToolBindSelect(toolSelect, selectedName, usedNames) {
+        var wrap = toolSelect.closest(".c-select");
+        toolSelect.innerHTML = catalogToolOptionsHtml(selectedName, usedNames);
+        if (wrap) {
+          toolSelect.classList.add("select");
+          toolSelect.classList.remove("c-select__native");
+          delete toolSelect.dataset.enhanced;
+          wrap.parentNode.insertBefore(toolSelect, wrap);
+          wrap.remove();
+          enhanceSelect(toolSelect);
+        }
+      }
+
       function createToolBindRow(name, access, onChange, options) {
         options = options || {};
         var readonly = !!options.readonly;
+        var usedNames = options.usedNames || [];
+        var list = options.list || null;
         var row = document.createElement("div");
         row.className = "tool-bind__row";
+        var catalog = getCatalogTool(name);
+        var catalogAccess = getCatalogAccess(name);
+        var preferred =
+          catalogAccess === "read" ? "read" : access === "read" ? "read" : access || catalogAccess;
+
         if (readonly) {
           row.innerHTML =
-            '<span class="tool-bind__tool-text">' +
-            escapeHtml(name || "—") +
+            '<span class="tool-bind__tool-text" data-tool-name="' +
+            escapeHtml(name || "") +
+            '">' +
+            escapeHtml(catalog ? formatCatalogToolLabel(catalog) : name || "—") +
             "</span>" +
             '<span class="tool-bind__access-text">' +
-            (access === "write" ? "写入" : "只读") +
+            (preferred === "write" ? "写入" : "只读") +
             "</span>";
           return row;
         }
+
         row.innerHTML =
-          '<input class="input" type="text" placeholder="能力标识，如 getProductCatalog" value="' +
-          escapeHtml(name || "") +
-          '" />' +
-          '<select class="select" aria-label="读写">' +
-          '<option value="read"' +
-          (access === "write" ? "" : " selected") +
-          ">只读</option>" +
-          '<option value="write"' +
-          (access === "write" ? " selected" : "") +
-          ">写入</option>" +
+          '<select class="select tool-bind__tool" aria-label="绑定工具">' +
+          catalogToolOptionsHtml(name || "", usedNames) +
+          "</select>" +
+          '<select class="select tool-bind__access" aria-label="读写" style="width:96px"' +
+          (catalogAccess === "read" && name ? " disabled" : "") +
+          ">" +
+          accessOptionsHtml(name ? catalogAccess : "write", preferred) +
           "</select>" +
           '<button type="button" class="tool-bind__remove" aria-label="删除" title="删除">' +
           toolBindRemoveIcon +
           "</button>";
-        row.querySelector(".tool-bind__remove").addEventListener("click", function () {
-          row.remove();
+
+        var toolSelect = row.querySelector(".tool-bind__tool");
+        var accessSelect = row.querySelector(".tool-bind__access");
+        enhanceSelects(row);
+        if (name && catalogAccess === "read") {
+          var aw = accessSelect.closest(".c-select");
+          if (aw) {
+            var btn = aw.querySelector(".c-select__trigger");
+            if (btn) btn.disabled = true;
+            aw.style.opacity = "0.65";
+          }
+        }
+
+        function refreshSiblingToolOptions() {
+          if (!list) return;
+          list.querySelectorAll(".tool-bind__row").forEach(function (r) {
+            var sel = r.querySelector("select.tool-bind__tool");
+            if (!sel) return;
+            refreshToolBindSelect(sel, sel.value, getUsedToolNames(list, r));
+          });
+        }
+
+        toolSelect.addEventListener("change", function () {
+          var catAccess = getCatalogAccess(toolSelect.value);
+          refreshAccessSelect(accessSelect, toolSelect.value ? catAccess : "write", catAccess);
+          refreshSiblingToolOptions();
           if (onChange) onChange();
         });
-        enhanceSelects(row);
+        accessSelect.addEventListener("change", function () {
+          if (onChange) onChange();
+        });
+        row.querySelector(".tool-bind__remove").addEventListener("click", function () {
+          row.remove();
+          refreshSiblingToolOptions();
+          if (onChange) onChange();
+        });
         return row;
       }
 
@@ -4091,19 +4644,52 @@
 
         function syncToolBindAddBtn() {
           var count = list.querySelectorAll(".tool-bind__row").length;
+          var used = getUsedToolNames(list);
+          var remain = DEMO_SKILL_CATALOG.filter(function (t) {
+            return used.indexOf(t.name) === -1;
+          }).length;
           addBtn.textContent = "添加工具（" + count + "/" + TOOL_BIND_MAX + "）";
-          addBtn.disabled = count >= TOOL_BIND_MAX;
-          addBtn.title = count >= TOOL_BIND_MAX ? "最多绑定 20 个工具" : "";
+          addBtn.disabled = count >= TOOL_BIND_MAX || remain <= 0;
+          addBtn.title =
+            count >= TOOL_BIND_MAX
+              ? "最多绑定 20 个工具"
+              : remain <= 0
+                ? "目录工具已全部添加"
+                : "";
         }
 
         (initialTools || []).forEach(function (t) {
-          list.appendChild(createToolBindRow(t.name, t.access, syncToolBindAddBtn));
+          list.appendChild(
+            createToolBindRow(t.name, t.access, syncToolBindAddBtn, {
+              list: list,
+              usedNames: getUsedToolNames(list),
+            })
+          );
         });
         syncToolBindAddBtn();
 
         addBtn.addEventListener("click", function () {
           if (list.querySelectorAll(".tool-bind__row").length >= TOOL_BIND_MAX) return;
-          list.appendChild(createToolBindRow("", "read", syncToolBindAddBtn));
+          var used = getUsedToolNames(list);
+          var next = null;
+          for (var i = 0; i < DEMO_SKILL_CATALOG.length; i++) {
+            if (used.indexOf(DEMO_SKILL_CATALOG[i].name) === -1) {
+              next = DEMO_SKILL_CATALOG[i];
+              break;
+            }
+          }
+          if (!next) return;
+          list.appendChild(
+            createToolBindRow(next.name, next.access, syncToolBindAddBtn, {
+              list: list,
+              usedNames: used,
+            })
+          );
+          list.querySelectorAll(".tool-bind__row").forEach(function (r) {
+            var sel = r.querySelector("select.tool-bind__tool");
+            if (!sel) return;
+            refreshToolBindSelect(sel, sel.value, getUsedToolNames(list, r));
+          });
           syncToolBindAddBtn();
         });
       }
@@ -4111,18 +4697,16 @@
       function getPoolFromToolBind(root) {
         var pool = [];
         root.querySelectorAll("#tool-bind-list .tool-bind__row").forEach(function (row) {
-          var input = row.querySelector("input.input");
-          var sel = row.querySelector("select");
+          var toolSel = row.querySelector("select.tool-bind__tool");
+          var accessSel = row.querySelector("select.tool-bind__access");
           var text = row.querySelector(".tool-bind__tool-text");
           var accessText = row.querySelector(".tool-bind__access-text");
-          var name = input
-            ? input.value.trim()
-            : text
-              ? text.textContent.trim()
-              : "";
+          var name = "";
+          if (toolSel) name = toolSel.value.trim();
+          else if (text) name = (text.getAttribute("data-tool-name") || "").trim();
           if (!name || name === "—") return;
           var access = "read";
-          if (sel) access = sel.value === "write" ? "write" : "read";
+          if (accessSel) access = accessSel.value === "write" ? "write" : "read";
           else if (accessText && accessText.textContent.indexOf("写入") !== -1) access = "write";
           pool.push({ name: name, access: access });
         });
@@ -4132,15 +4716,17 @@
       function skillToolOptionsHtml(pool, selectedName) {
         var html = '<option value="">请选择工具</option>';
         pool.forEach(function (t) {
+          var catalog = getCatalogTool(t.name);
+          var label = catalog ? formatCatalogToolLabel(catalog) : t.name;
           html +=
             '<option value="' +
-            t.name +
+            escapeHtml(t.name) +
             '" data-skill-access="' +
             t.access +
             '"' +
             (t.name === selectedName ? " selected" : "") +
             ">" +
-            t.name +
+            escapeHtml(label) +
             "（Skill:" +
             (t.access === "write" ? "写入" : "只读") +
             "）</option>";
@@ -4477,7 +5063,7 @@
           '<div class="field-block__content">' +
           '<div class="field-block__toolbar" id="tool-bind-toolbar">' +
           '<button type="button" class="btn btn-sm btn-primary" id="tool-bind-add">添加工具（0/20）</button>' +
-          '<span class="field-block__hint">每组：能力标识 + 只读/写入；最多 20 组。子意图只能从本列表选择工具。</span>' +
+          '<span class="field-block__hint">每组选自「运维管理 → SKILL工具」：能力标识 + 只读/写入；最多 20 组。子意图只能从本列表选择工具。</span>' +
           "</div>" +
           '<div class="tool-bind"><div class="tool-bind__list" id="tool-bind-list"></div></div>' +
           "</div></div>" +
@@ -4846,6 +5432,8 @@
             mode === "edit" ? "编辑推荐对话" : "新增推荐对话",
           service: mode === "edit" ? "编辑快捷服务" : "新增快捷服务",
           product: mode === "edit" ? "编辑产品" : "新增产品",
+          tag: mode === "edit" ? "编辑标签" : "新增标签",
+          "tag-rule": mode === "edit" ? "编辑打标规则" : "新增打标规则",
         };
         drawerTitle.textContent = titles[type] || "编辑";
         if (
@@ -4875,6 +5463,10 @@
         drawerBody.querySelectorAll(".switch").forEach(function (sw) {
           sw.addEventListener("click", function () {
             sw.classList.toggle("on");
+            sw.setAttribute(
+              "aria-pressed",
+              sw.classList.contains("on") ? "true" : "false"
+            );
           });
         });
         if (type === "ops-skill") {
@@ -4888,6 +5480,12 @@
         }
         if (type === "product") {
           prepProductForm(drawerBody, mode, options.productType || "ticket");
+        }
+        if (type === "tag") {
+          prepTagForm(drawerBody, mode, options.tagId || "");
+        }
+        if (type === "tag-rule") {
+          prepTagRuleForm(drawerBody, mode, options.ruleId || "");
         }
         enhanceCharCounts(drawerBody);
         enhanceSelects(drawerBody);
@@ -4910,9 +5508,13 @@
             type: "ticket",
             ticketKind: "日历票",
             refPrice: "¥299",
-            playPeriod: "选定游玩日当日有效",
             validStart: "2026-01-01",
             validEnd: "2026-12-31",
+            saleStart: "2025-12-01",
+            saleEnd: "2026-11-30",
+            bookMinDays: 0,
+            bookMaxDays: 30,
+            selfChannelSaleable: true,
             syncStatus: "正常",
           },
           TK10087: {
@@ -4921,9 +5523,13 @@
             type: "ticket",
             ticketKind: "期票",
             refPrice: "¥159",
-            playPeriod: "激活后 7 日内任选 1 天",
             validStart: "2026-03-01",
             validEnd: "2026-09-30",
+            saleStart: "2026-02-01",
+            saleEnd: "2026-08-31",
+            bookMinDays: 1,
+            bookMaxDays: 60,
+            selfChannelSaleable: true,
             syncStatus: "正常",
           },
           PASS2001: {
@@ -4932,6 +5538,13 @@
             type: "pass",
             passKind: "年卡",
             refPrice: "¥2999",
+            validStart: "2026-01-01",
+            validEnd: "2026-12-31",
+            saleStart: "2025-10-01",
+            saleEnd: "2026-12-31",
+            bookMinDays: 0,
+            bookMaxDays: 365,
+            selfChannelSaleable: true,
             syncStatus: "正常",
           },
           PASS2002: {
@@ -4940,6 +5553,13 @@
             type: "pass",
             passKind: "月卡",
             refPrice: "¥399",
+            validStart: "2026-01-01",
+            validEnd: "2026-06-30",
+            saleStart: "2025-12-01",
+            saleEnd: "2026-05-31",
+            bookMinDays: 0,
+            bookMaxDays: 90,
+            selfChannelSaleable: true,
             syncStatus: "正常",
           },
         },
@@ -4950,6 +5570,13 @@
             type: "bundle",
             refPrice: "¥668",
             children: "成人全日票 ×1 + 儿童票 ×1",
+            validStart: "2026-04-01",
+            validEnd: "2026-10-31",
+            saleStart: "2026-03-01",
+            saleEnd: "2026-09-30",
+            bookMinDays: 1,
+            bookMaxDays: 45,
+            selfChannelSaleable: false,
             syncStatus: "停用",
           },
           PASS2101: {
@@ -4958,25 +5585,43 @@
             type: "pass",
             passKind: "次卡",
             refPrice: "¥899",
+            validStart: "2026-01-01",
+            validEnd: "2026-12-31",
+            saleStart: "2025-11-01",
+            saleEnd: "2026-12-31",
+            bookMinDays: 0,
+            bookMaxDays: 180,
+            selfChannelSaleable: true,
             syncStatus: "正常",
           },
         },
       };
 
-      var DEMO_EDIT_PRODUCTS = {
-        ticket: {
-          supplier: "park_ticket",
-          product: DEMO_SUPPLIER_PRODUCTS.park_ticket.TK10086,
-        },
-        pass: {
-          supplier: "park_ticket",
-          product: DEMO_SUPPLIER_PRODUCTS.park_ticket.PASS2001,
-        },
-        bundle: {
-          supplier: "ocean_ticket",
-          product: DEMO_SUPPLIER_PRODUCTS.ocean_ticket.BDL3008,
-        },
-      };
+      function formatDateRange(start, end) {
+        if (!start && !end) return "—";
+        return (start || "—") + " ~ " + (end || "—");
+      }
+
+      function formatBookDaysRange(minDays, maxDays) {
+        var hasMin = minDays !== undefined && minDays !== null && minDays !== "";
+        var hasMax = maxDays !== undefined && maxDays !== null && maxDays !== "";
+        if (!hasMin && !hasMax) return "—";
+        return (hasMin ? String(minDays) : "—") + " ~ " + (hasMax ? String(maxDays) : "—");
+      }
+
+      function formatYesNo(v) {
+        if (v === true) return "是";
+        if (v === false) return "否";
+        return "—";
+      }
+
+      function appendProductTermRows(rows, product) {
+        rows.push(["游玩期限", formatDateRange(product.validStart, product.validEnd)]);
+        rows.push(["可售期限", formatDateRange(product.saleStart, product.saleEnd)]);
+        rows.push(["提前售卖期限", formatBookDaysRange(product.bookMinDays, product.bookMaxDays)]);
+        rows.push(["是否自销可售", formatYesNo(product.selfChannelSaleable)]);
+        rows.push(["对接状态", product.syncStatus || "—"]);
+      }
 
       function renderProductSnapshot(el, product) {
         var row = el
@@ -4998,16 +5643,15 @@
         if (product.type === "ticket") {
           rows.push(["门票类型", product.ticketKind || "—"]);
           rows.push(["参考售价", product.refPrice || "—"]);
-          rows.push(["游玩期限", product.playPeriod || "—"]);
-          rows.push(["有效开始日期", product.validStart || "—"]);
-          rows.push(["有效结束日期", product.validEnd || "—"]);
-          rows.push(["对接状态", product.syncStatus || "—"]);
+          appendProductTermRows(rows, product);
         } else if (product.type === "pass") {
           rows.push(["卡票类型", product.passKind || "—"]);
           rows.push(["参考售价", product.refPrice || "—"]);
+          appendProductTermRows(rows, product);
         } else if (product.type === "bundle") {
           rows.push(["组合内容", product.children || "—"]);
           rows.push(["参考售价", product.refPrice || "—"]);
+          appendProductTermRows(rows, product);
         }
         var html =
           '<div class="product-snapshot__title">对接产品信息</div><dl class="product-snapshot__grid">';
@@ -5015,11 +5659,26 @@
           html += "<dt>" + r[0] + "</dt><dd>" + r[1] + "</dd>";
         });
         html +=
-          "</dl><p class=\"product-snapshot__note\">参考售价非日历实价；实际价格以选定日期为准。</p>";
+          "</dl><p class=\"product-snapshot__note\">参考售价非日历实价；实际价格以选定日期为准。是否自销可售：是否包含自销小程序渠道。</p>";
         el.innerHTML = html;
         el.hidden = false;
         if (row) row.hidden = false;
       }
+
+      var DEMO_EDIT_PRODUCTS = {
+        ticket: {
+          supplier: "park_ticket",
+          product: DEMO_SUPPLIER_PRODUCTS.park_ticket.TK10086,
+        },
+        pass: {
+          supplier: "park_ticket",
+          product: DEMO_SUPPLIER_PRODUCTS.park_ticket.PASS2001,
+        },
+        bundle: {
+          supplier: "ocean_ticket",
+          product: DEMO_SUPPLIER_PRODUCTS.ocean_ticket.BDL3008,
+        },
+      };
 
       function prepProductForm(root, mode, initialType) {
         var typeSelect = root.querySelector("#product-type-select");
@@ -5229,37 +5888,377 @@
           root,
           mode === "edit"
             ? typeSelect && typeSelect.value === "pass"
-              ? ["亲子", "年卡"]
+              ? ["family", "product_annual"]
               : typeSelect && typeSelect.value === "bundle"
-                ? ["亲子"]
-                : ["成人"]
+                ? ["family"]
+                : ["audience_adult"]
             : []
         );
       }
 
       var DEMO_TAG_CATALOG = [
-        "成人",
-        "儿童",
-        "亲子",
-        "年卡",
-        "会员",
-        "日历票",
-        "期票",
-        "次卡",
+        {
+          tagId: "new_guest",
+          name: "新客",
+          category: "fact",
+          scopes: ["member"],
+          desc: "首次来访用户",
+        },
+        {
+          tagId: "member_gold",
+          name: "黄金会员",
+          category: "fact",
+          scopes: ["member"],
+          desc: "会员等级为黄金",
+        },
+        {
+          tagId: "high_value",
+          name: "高价值",
+          category: "fact",
+          scopes: ["member"],
+          desc: "高等级或高消费（兼容旧规则）",
+        },
+        {
+          tagId: "visit_repeat",
+          name: "多次入园",
+          category: "fact",
+          scopes: ["member"],
+          desc: "已完成订单数 ≥ 2",
+        },
+        {
+          tagId: "family",
+          name: "亲子",
+          category: "order",
+          scopes: ["member", "product", "activity", "content"],
+          desc: "亲子人群/场景；会员与产品/项目共用",
+        },
+        {
+          tagId: "order_family",
+          name: "亲子订单",
+          category: "order",
+          scopes: ["member"],
+          desc: "订单含儿童或家庭票；可双写 family",
+        },
+        {
+          tagId: "order_couple",
+          name: "情侣出游",
+          category: "order",
+          scopes: ["member"],
+          desc: "2 成人 0 儿童",
+        },
+        {
+          tagId: "order_group",
+          name: "团队游客",
+          category: "order",
+          scopes: ["member"],
+          desc: "单笔成人+儿童 ≥ 5",
+        },
+        {
+          tagId: "prefer_thrill",
+          name: "喜欢刺激",
+          category: "ai",
+          scopes: ["member", "activity", "content"],
+          desc: "偏好刺激类项目（对话/画像）",
+        },
+        {
+          tagId: "prefer_photo",
+          name: "偏好拍照",
+          category: "ai",
+          scopes: ["member", "activity", "content"],
+          desc: "偏好打卡出片",
+        },
+        {
+          tagId: "prefer_slow",
+          name: "慢节奏",
+          category: "ai",
+          scopes: ["member", "activity", "content"],
+          desc: "偏好温和慢游",
+        },
+        {
+          tagId: "audience_adult",
+          name: "成人",
+          category: "content",
+          scopes: ["product", "activity"],
+          desc: "成人向产品/项目",
+        },
+        {
+          tagId: "audience_child",
+          name: "儿童",
+          category: "content",
+          scopes: ["product", "activity"],
+          desc: "儿童向产品/项目",
+        },
+        {
+          tagId: "product_annual",
+          name: "年卡",
+          category: "content",
+          scopes: ["product"],
+          desc: "年卡类产品",
+        },
+        {
+          tagId: "attr_thrill",
+          name: "刺激",
+          category: "content",
+          scopes: ["activity", "content"],
+          desc: "项目/内容属性：刺激",
+        },
+        {
+          tagId: "attr_gentle",
+          name: "温和",
+          category: "content",
+          scopes: ["activity", "content"],
+          desc: "项目/内容属性：温和",
+        },
       ];
+
+      var TAG_CATEGORY_LABEL = {
+        fact: "事实",
+        order: "订单",
+        ai: "AI 推断",
+        content: "内容属性",
+      };
+
+      var TAG_SCOPE_LABEL = {
+        member: "会员画像",
+        product: "产品",
+        activity: "项目",
+        content: "内容/攻略",
+      };
+
+      function getTagById(tagId) {
+        for (var i = 0; i < DEMO_TAG_CATALOG.length; i++) {
+          if (DEMO_TAG_CATALOG[i].tagId === tagId) return DEMO_TAG_CATALOG[i];
+        }
+        return null;
+      }
+
+      function getTagByName(name) {
+        for (var i = 0; i < DEMO_TAG_CATALOG.length; i++) {
+          if (DEMO_TAG_CATALOG[i].name === name) return DEMO_TAG_CATALOG[i];
+        }
+        return null;
+      }
+
+      function tagsForScope(scope) {
+        return DEMO_TAG_CATALOG.filter(function (t) {
+          return t.scopes.indexOf(scope) !== -1;
+        });
+      }
+
+      var DEMO_TAG_RULES = [
+        {
+          ruleId: "rule_order_family",
+          name: "亲子订单",
+          when: "quantity.child >= 1 OR ticketType in (family_bundle, family_annual)",
+          tagId: "order_family",
+          enabled: true,
+        },
+        {
+          ruleId: "rule_order_couple",
+          name: "情侣出游",
+          when: "adult==2 AND child==0 AND (adult+child)<5 AND ticketType not in (family_bundle, family_annual)",
+          tagId: "order_couple",
+          enabled: true,
+        },
+        {
+          ruleId: "rule_order_group",
+          name: "团队游客",
+          when: "adult + child >= 5",
+          tagId: "order_group",
+          enabled: false,
+        },
+        {
+          ruleId: "rule_new_guest",
+          name: "新客（事实）",
+          when: "completed_order_count == 0",
+          tagId: "new_guest",
+          enabled: true,
+        },
+      ];
+
+      function getTagRuleById(ruleId) {
+        for (var i = 0; i < DEMO_TAG_RULES.length; i++) {
+          if (DEMO_TAG_RULES[i].ruleId === ruleId) return DEMO_TAG_RULES[i];
+        }
+        return null;
+      }
+
+      function prepTagForm(root, mode, tagId) {
+        var tag = mode === "edit" ? getTagById(tagId) : null;
+        var idInput = root.querySelector('[name="tag-id"]');
+        var nameInput = root.querySelector('[name="tag-name"]');
+        var catSelect = root.querySelector('[name="tag-category"]');
+        var descInput = root.querySelector('[name="tag-desc"]');
+        var scopes = (tag && tag.scopes) || [];
+        if (idInput) {
+          idInput.value = tag ? tag.tagId : "";
+          if (mode === "edit") {
+            idInput.readOnly = true;
+            idInput.style.background = "#f5f5f5";
+          }
+        }
+        if (nameInput) nameInput.value = tag ? tag.name : "";
+        if (catSelect) catSelect.value = tag ? tag.category : "fact";
+        if (descInput) descInput.value = tag ? tag.desc || "" : "";
+        root.querySelectorAll('[name="tag-scope"]').forEach(function (cb) {
+          cb.checked = scopes.indexOf(cb.value) !== -1;
+        });
+      }
+
+      function prepTagRuleForm(root, mode, ruleId) {
+        var rule = mode === "edit" ? getTagRuleById(ruleId) : null;
+        var nameInput = root.querySelector('[name="rule-name"]');
+        var whenInput = root.querySelector('[name="rule-when"]');
+        var tagSelect = root.querySelector("[data-rule-tag-select]");
+        var enabledSw = root.querySelector('[name="rule-enabled"]');
+        var memberTags = tagsForScope("member");
+        if (tagSelect) {
+          tagSelect.innerHTML =
+            '<option value="" disabled' +
+            (rule ? "" : " selected") +
+            ">请选择会员画像标签</option>" +
+            memberTags
+              .map(function (t) {
+                var selected =
+                  rule && rule.tagId === t.tagId ? " selected" : "";
+                return (
+                  '<option value="' +
+                  escapeHtml(t.tagId) +
+                  '"' +
+                  selected +
+                  ">" +
+                  escapeHtml(t.name) +
+                  "（" +
+                  escapeHtml(t.tagId) +
+                  "）</option>"
+                );
+              })
+              .join("");
+        }
+        if (nameInput) nameInput.value = rule ? rule.name : "";
+        if (whenInput) whenInput.value = rule ? rule.when : "";
+        if (enabledSw) {
+          var on = !rule || rule.enabled;
+          enabledSw.classList.toggle("on", on);
+          enabledSw.setAttribute("aria-pressed", on ? "true" : "false");
+          enabledSw.title = on ? "启用" : "禁用";
+        }
+      }
+
+      function resolveTagIds(list) {
+        return (list || [])
+          .map(function (item) {
+            if (!item) return null;
+            if (typeof item === "string") {
+              return getTagById(item) || getTagByName(item);
+            }
+            return getTagById(item.tagId) || item;
+          })
+          .filter(Boolean);
+      }
+
+      function renderScopeChips(scopes) {
+        return (
+          '<div class="scope-chips">' +
+          (scopes || [])
+            .map(function (s) {
+              return (
+                '<span class="scope-chip">' +
+                escapeHtml(TAG_SCOPE_LABEL[s] || s) +
+                "</span>"
+              );
+            })
+            .join("") +
+          "</div>"
+        );
+      }
+
+      function renderTagCatalogTable() {
+        var tbody = document.getElementById("tag-catalog-tbody");
+        var countEl = document.getElementById("tag-catalog-count");
+        if (!tbody) return;
+        var qEl = document.getElementById("tag-catalog-q");
+        var catEl = document.getElementById("tag-catalog-category");
+        var scopeEl = document.getElementById("tag-catalog-scope");
+        var q = qEl ? qEl.value.trim().toLowerCase() : "";
+        var cat = catEl ? catEl.value : "";
+        var scope = scopeEl ? scopeEl.value : "";
+        var rows = DEMO_TAG_CATALOG.filter(function (t) {
+          if (cat && t.category !== cat) return false;
+          if (scope && t.scopes.indexOf(scope) === -1) return false;
+          if (q) {
+            var hay = (t.tagId + " " + t.name + " " + (t.desc || "")).toLowerCase();
+            if (hay.indexOf(q) === -1) return false;
+          }
+          return true;
+        });
+        tbody.innerHTML = "";
+        if (!rows.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="6"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>';
+        } else {
+          rows.forEach(function (t) {
+            var tr = document.createElement("tr");
+            tr.innerHTML =
+              "<td><code>" +
+              escapeHtml(t.tagId) +
+              "</code></td>" +
+              "<td>" +
+              escapeHtml(t.name) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(TAG_CATEGORY_LABEL[t.category] || t.category) +
+              "</td>" +
+              "<td>" +
+              renderScopeChips(t.scopes) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(t.desc || "—") +
+              "</td>" +
+              '<td><div class="table-ops"><button type="button" class="btn-link" data-open-drawer="tag" data-drawer-mode="edit" data-tag-id="' +
+              escapeHtml(t.tagId) +
+              '">编辑</button></div></td>';
+            tbody.appendChild(tr);
+          });
+        }
+        if (countEl) countEl.textContent = "共 " + rows.length + " 条";
+      }
+
+      function bindTagCatalogPage() {
+        var searchBtn = document.getElementById("tag-catalog-search");
+        var qEl = document.getElementById("tag-catalog-q");
+        var catEl = document.getElementById("tag-catalog-category");
+        var scopeEl = document.getElementById("tag-catalog-scope");
+        if (searchBtn) searchBtn.addEventListener("click", renderTagCatalogTable);
+        if (qEl) {
+          qEl.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") renderTagCatalogTable();
+          });
+        }
+        if (catEl) catEl.addEventListener("change", renderTagCatalogTable);
+        if (scopeEl) scopeEl.addEventListener("change", renderTagCatalogTable);
+        enhanceSelects(document.getElementById("page-tags"));
+        renderTagCatalogTable();
+      }
 
       function bindProductTagsField(root, initialTags) {
         var selectedWrap = root.querySelector("#product-tags-selected");
         var tagAdd = root.querySelector("#product-tag-add");
         var maskEl = document.getElementById("tag-picker-mask");
         var gridEl = document.getElementById("tag-picker-grid");
-        var selected = (initialTags || []).slice();
+        var titleEl = document.getElementById("tag-picker-title");
+        var selected = resolveTagIds(initialTags).map(function (t) {
+          return t.tagId;
+        });
         var draft = [];
+        var productTags = tagsForScope("product");
 
         function renderSelected() {
           if (!selectedWrap) return;
           selectedWrap.innerHTML = "";
-          selected.forEach(function (name) {
+          selected.forEach(function (tagId) {
+            var meta = getTagById(tagId);
+            var name = meta ? meta.name : tagId;
             var chip = document.createElement("span");
             chip.className = "tag-chip";
             chip.innerHTML =
@@ -5270,7 +6269,7 @@
               .querySelector(".tag-chip__remove")
               .addEventListener("click", function () {
                 selected = selected.filter(function (t) {
-                  return t !== name;
+                  return t !== tagId;
                 });
                 renderSelected();
               });
@@ -5281,17 +6280,27 @@
         function renderPickerOptions() {
           if (!gridEl) return;
           gridEl.innerHTML = "";
-          DEMO_TAG_CATALOG.forEach(function (name) {
+          if (!productTags.length) {
+            gridEl.innerHTML =
+              '<div class="empty" style="padding:16px"><div>目录中暂无适用「产品」的标签</div></div>';
+            return;
+          }
+          productTags.forEach(function (t) {
             var opt = document.createElement("button");
             opt.type = "button";
             opt.className =
-              "tag-picker-option" + (draft.indexOf(name) >= 0 ? " is-on" : "");
-            opt.textContent = name;
+              "tag-picker-option" + (draft.indexOf(t.tagId) >= 0 ? " is-on" : "");
+            opt.innerHTML =
+              "<span>" +
+              escapeHtml(t.name) +
+              '</span><span class="tag-picker-option__meta">' +
+              escapeHtml(t.tagId) +
+              "</span>";
             opt.addEventListener("click", function () {
-              var i = draft.indexOf(name);
+              var i = draft.indexOf(t.tagId);
               if (i >= 0) draft.splice(i, 1);
-              else draft.push(name);
-              opt.classList.toggle("is-on", draft.indexOf(name) >= 0);
+              else draft.push(t.tagId);
+              opt.classList.toggle("is-on", draft.indexOf(t.tagId) >= 0);
             });
             gridEl.appendChild(opt);
           });
@@ -5299,6 +6308,7 @@
 
         function openPicker() {
           draft = selected.slice();
+          if (titleEl) titleEl.textContent = "选择标签（适用：产品）";
           renderPickerOptions();
           if (maskEl) {
             maskEl.classList.add("open");
@@ -5345,18 +6355,15 @@
         if (drawerSubmit) drawerSubmit.style.display = "";
       }
 
-      document.querySelectorAll("[data-open-drawer]").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          openDrawer(btn.getAttribute("data-open-drawer"), {
-            mode: btn.getAttribute("data-drawer-mode") || "edit",
-            skillId: btn.getAttribute("data-skill-id") || "",
-            productType: btn.getAttribute("data-product-type") || "",
-          });
-        });
-      });
-      document.querySelectorAll("#page-products .switch").forEach(function (sw) {
-        sw.addEventListener("click", function () {
-          sw.classList.toggle("on");
+      document.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-open-drawer]");
+        if (!btn) return;
+        openDrawer(btn.getAttribute("data-open-drawer"), {
+          mode: btn.getAttribute("data-drawer-mode") || "edit",
+          skillId: btn.getAttribute("data-skill-id") || "",
+          productType: btn.getAttribute("data-product-type") || "",
+          tagId: btn.getAttribute("data-tag-id") || "",
+          ruleId: btn.getAttribute("data-rule-id") || "",
         });
       });
       mask.addEventListener("click", closeDrawer);
@@ -5456,6 +6463,183 @@
       }
 
       bindChatBgMode(document.getElementById("page-ui"));
+
+      function cloneSkillTools(arr) {
+        return (arr || []).map(function (t) {
+          return { name: t.name || "", label: t.label || "", access: t.access || "read" };
+        });
+      }
+
+      function createSkillToolRow(t, editing) {
+        t = t || {};
+        var row = document.createElement("div");
+        row.className = "skill-tool-row";
+        if (!editing) {
+          row.innerHTML =
+            '<span class="skill-tool-row__id">' +
+            escapeHtml(t.name || "—") +
+            "</span>" +
+            '<span class="skill-tool-row__label">' +
+            escapeHtml(t.label || "—") +
+            "</span>" +
+            '<span class="skill-tool-row__access-text">' +
+            (t.access === "write" ? "写入" : "只读") +
+            "</span>";
+          return row;
+        }
+        row.innerHTML =
+          '<input class="input skill-tool-row__id" data-tool-name type="text" placeholder="能力标识，如 getProductCatalog" value="' +
+          escapeHtml(t.name || "") +
+          '" />' +
+          '<input class="input skill-tool-row__label" data-tool-label type="text" placeholder="名称" value="' +
+          escapeHtml(t.label || "") +
+          '" />' +
+          '<select class="select" data-tool-access aria-label="读写">' +
+          '<option value="read"' +
+          (t.access === "write" ? "" : " selected") +
+          ">只读</option>" +
+          '<option value="write"' +
+          (t.access === "write" ? " selected" : "") +
+          ">写入</option>" +
+          "</select>" +
+          '<button type="button" class="tool-bind__remove" data-ops-tool-remove aria-label="删除" title="删除">' +
+          toolBindRemoveIcon +
+          "</button>";
+        return row;
+      }
+
+      function captureOpsInputs(page) {
+        var data = {};
+        page.querySelectorAll("[data-ops-key]").forEach(function (el) {
+          data[el.getAttribute("data-ops-key")] = el.value;
+        });
+        return data;
+      }
+
+      function restoreOpsInputs(page, data) {
+        page.querySelectorAll("[data-ops-key]").forEach(function (el) {
+          var key = el.getAttribute("data-ops-key");
+          if (data && Object.prototype.hasOwnProperty.call(data, key)) el.value = data[key];
+        });
+      }
+
+      function readSkillToolRows(list) {
+        var rows = [];
+        if (!list) return rows;
+        list.querySelectorAll(".skill-tool-row").forEach(function (row) {
+          var nameEl = row.querySelector("[data-tool-name]");
+          if (!nameEl) return;
+          var labelEl = row.querySelector("[data-tool-label]");
+          var accessEl = row.querySelector("[data-tool-access]");
+          rows.push({
+            name: nameEl.value.trim(),
+            label: labelEl ? labelEl.value.trim() : "",
+            access: accessEl ? accessEl.value : "read",
+          });
+        });
+        return rows;
+      }
+
+      function bindOpsFormPage(page) {
+        var viewFoot = page.querySelector(".page-foot__view");
+        var editFoot = page.querySelector(".page-foot__edit");
+        var list = page.querySelector("[data-ops-tool-list]");
+        var addBtn = page.querySelector("[data-ops-tool-add]");
+        var committedInputs = captureOpsInputs(page);
+        var committedTools = list ? cloneSkillTools(DEMO_SKILL_CATALOG) : null;
+        var draftTools = committedTools ? cloneSkillTools(committedTools) : null;
+        var editing = false;
+
+        function syncAddBtn() {
+          if (!addBtn) return;
+          var n = ((editing ? draftTools : committedTools) || []).length;
+          addBtn.textContent = "添加工具（" + n + "/" + TOOL_BIND_MAX + "）";
+          addBtn.disabled = !editing || n >= TOOL_BIND_MAX;
+        }
+
+        function renderTools() {
+          if (!list) return;
+          var tools = editing ? draftTools : committedTools;
+          list.innerHTML = "";
+          (tools || []).forEach(function (t) {
+            list.appendChild(createSkillToolRow(t, editing));
+          });
+          if (editing) enhanceSelects(list);
+          syncAddBtn();
+        }
+
+        function setMode(nextEditing, restore) {
+          if (!nextEditing && restore) {
+            restoreOpsInputs(page, committedInputs);
+            if (list) draftTools = cloneSkillTools(committedTools);
+          }
+          editing = nextEditing;
+          page.classList.toggle("is-view", !editing);
+          page.classList.toggle("is-edit", editing);
+          page.querySelectorAll("[data-ops-key]").forEach(function (el) {
+            el.readOnly = !editing;
+          });
+          if (viewFoot) viewFoot.hidden = editing;
+          if (editFoot) editFoot.hidden = !editing;
+          renderTools();
+        }
+
+        if (addBtn) {
+          addBtn.addEventListener("click", function () {
+            if (!editing) return;
+            draftTools = readSkillToolRows(list);
+            if (draftTools.length >= TOOL_BIND_MAX) return;
+            draftTools.push({ name: "", label: "", access: "read" });
+            renderTools();
+          });
+        }
+
+        if (list) {
+          list.addEventListener("click", function (e) {
+            var btn = e.target.closest("[data-ops-tool-remove]");
+            if (!btn || !editing) return;
+            var row = btn.closest(".skill-tool-row");
+            if (row) row.remove();
+            draftTools = readSkillToolRows(list);
+            syncAddBtn();
+          });
+        }
+
+        var editBtn = page.querySelector("[data-ops-edit]");
+        var cancelBtn = page.querySelector("[data-ops-cancel]");
+        var submitBtn = page.querySelector("[data-ops-submit]");
+        if (editBtn) {
+          editBtn.addEventListener("click", function () {
+            if (list) draftTools = cloneSkillTools(committedTools);
+            setMode(true, false);
+          });
+        }
+        if (cancelBtn) {
+          cancelBtn.addEventListener("click", function () {
+            setMode(false, true);
+          });
+        }
+        if (submitBtn) {
+          submitBtn.addEventListener("click", function () {
+            committedInputs = captureOpsInputs(page);
+            if (list) {
+              committedTools = readSkillToolRows(list);
+              draftTools = cloneSkillTools(committedTools);
+            }
+            setMode(false, false);
+            showOkToast("已提交");
+          });
+        }
+
+        page._opsResetView = function () {
+          if (editing) setMode(false, true);
+        };
+
+        setMode(false, false);
+      }
+
+      document.querySelectorAll("[data-ops-form]").forEach(bindOpsFormPage);
+      bindTagCatalogPage();
     })();
   </script>
 </body>

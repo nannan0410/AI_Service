@@ -85,7 +85,8 @@ flowchart TB
   subgraph Config["配置域（JSON + Mock API）"]
     P[产品库：票/券/二消 + 渠道]
     UI[助手 UI：背景/头像/标题/昵称]
-    S[Skill 场景 + toolBindings 绑定工具]
+    T[SKILL工具全局目录]
+    S[Skill 场景 toolBindings 从目录选择]
     E[推荐操作入口 + 规则]
     CMS[独立内容：交通/入园提醒]
   end
@@ -103,6 +104,7 @@ flowchart TB
   end
 
   Config --> Runtime
+  T --> S
   Phase --> SkillRouter
   SkillRouter --> Tools
   Tools --> MockAPI[Mock / 真实 API]
@@ -130,8 +132,8 @@ AI：  DeepSeek / 硅基流动兼容 + Tool Calling + Skill / Workflow
 
 ### 4.1 产品库 — 票 / 券 / 二消，区分渠道
 
-> **运营后台「产品管理」（HTML 原型已定稿口径）**：维护 AI **可售/可推清单**，**必须**经供应商「来源 + 对接产品 ID」精确查询绑定，**不允许纯手工建档**（否则无法下单）。一期类型：**门票 / 卡票 / 组合产品**（餐饮、零售需门店筛选后续再开）。列表含对接状态、参考售价、标签等；详情见 [`prototypes/README.md`](./prototypes/README.md)。券模板仍在「券管理」。  
-> 下文 `channels: self|ota|ta` 与 Mock JSON 描述的是**演示数据源 / 销售渠道**；与后台「来源=对接供应商」不是同一字段。
+> **运营后台「产品管理」（HTML 原型已定稿口径）**：维护 AI **可售/可推清单**，**必须**经供应商「来源 + 对接产品 ID」精确查询绑定，**不允许纯手工建档**（否则无法下单）。一期类型：**门票 / 卡票 / 组合产品**（餐饮、零售需门店筛选后续再开）。列表在产品类型右侧含**游玩期限 / 可售期限 / 是否自销可售**，另有对接状态、参考售价、标签等；对接摘要含期限字段（游玩/可售/提前售卖）与是否自销可售。详情见 [`prototypes/README.md`](./prototypes/README.md)。券模板仍在「券管理」。  
+> 下文 `channels: self|ota|ta` 与 Mock JSON 描述的是**演示数据源 / 销售渠道**；与后台「来源=对接供应商」不是同一字段。与「是否自销可售」（对接回写：是否含自销小程序）相关但展示字段不同。
 
 #### 渠道定义
 
@@ -159,9 +161,17 @@ interface ProductBase {
 interface TicketProduct extends ProductBase {
   type: 'ticket'
   ticketKind?: 'calendar' | 'period'  // 门票类型：日历票 / 期票（对接回写）
+  /** 游玩期限：有效开始 ~ 有效结束（后台摘要/列表合并展示） */
   validStart?: string
   validEnd?: string
-  playPeriod?: string
+  /** 可售期限：售卖开始 ~ 售卖结束 */
+  saleStart?: string
+  saleEnd?: string
+  /** 提前售卖期限：最小 / 最大预订天数 */
+  bookMinDays?: number
+  bookMaxDays?: number
+  /** 是否自销可售（是否含自销小程序渠道） */
+  selfChannelSaleable?: boolean
   composition?: { adult: number; child: number }
 }
 ```
@@ -219,10 +229,10 @@ interface AssistantSkillConfig {
     rules?: RuleExpression[]    // 见 §4.5
   }
   tools: string[]               // 运行时 Tool 白名单（可由 toolBindings 推导）
-  /** 运维后台编辑态：能力标识 + 读写；合并原 tools 与 apiBindings */
+  /** 运维后台编辑态：从「SKILL工具」目录选择；合并原 tools 与 apiBindings */
   toolBindings?: {
-    name: string                // 如 getProductCatalog / createOrderDraft
-    access: 'read' | 'write'
+    name: string                // 必须 ∈ 全局工具目录，如 getProductCatalog
+    access: 'read' | 'write'    // 不得宽于目录该项默认
   }[]                           // 最多 20 项
   promptAddon: string
   linkedMotions?: {
@@ -235,11 +245,15 @@ interface AssistantSkillConfig {
 
 **文件**：`mock/assistant/skills.json`
 
-**Skill 与 Tool 关系**：Skill = 场景编排；Tool = 原子能力。运维后台以 **绑定工具** 统一配置「能力标识 + 只读/写入」（最多 **20** 组）。**子意图**内嵌于 Skill **新增/编辑**抽屉（**0～10，可选**）：每子意图含**默认关键字** + 多工具（须 ∈ Skill 工具池；读写不得宽于 Skill）。无子意图时默认关键字挂 Skill；有子意图时 Skill 为合集只读。**0→1 子意图按方案 B 同页自动迁入默认词**。演示数据建议同时覆盖「有子意图 / 无子意图」两种形态。
+**Skill 与 Tool 关系**：Skill = 场景编排；Tool = 原子能力。
 
-**后台编辑边界**：运营侧维护 **补充关键字** `customKeywords`（与默认同级挂载；默认/工具/指令只读；**无启停**，状态只读展示）；运维侧维护 `enabled`、`skillId`（**仅新增可写**）、`toolBindings` / 子意图（含默认关键字）/ `promptAddon` / 无子意图时的 `defaultKeywords`，并只读可见补充关键字。列表操作：运营 **编辑关键字**、日志；运维 **编辑**、日志（无独立「子意图配置」）。
+- **运维管理 → SKILL工具**：维护**全局工具目录**（能力标识 + 名称 + 默认只读/写入，最多 **20**）；不可在 Skill 抽屉手填发明标识。
+- **运维管理 → Skill 场景 → 绑定工具**：从目录**下拉选择**添加（最多 **20** 组；读写不得宽于目录默认）。
+- **子意图**内嵌于 Skill **新增/编辑**抽屉（**0～10，可选**）：每子意图含**默认关键字** + 多工具（须 ∈ Skill 工具池；读写不得宽于 Skill）。无子意图时默认关键字挂 Skill；有子意图时 Skill 为合集只读。**0→1 子意图按方案 B 同页自动迁入默认词**。演示数据建议同时覆盖「有子意图 / 无子意图」两种形态。
 
-**建议记入操作日志的动作**：Skill 新增/编辑/状态开关（运维）；子意图增删改；默认与补充关键字迁移（0→1 / N→0）；子意图工具绑定变更；运营补充关键字增删。
+**后台编辑边界**：运营侧维护 **补充关键字** `customKeywords`（与默认同级挂载；默认/工具/指令只读；**无启停**，状态只读展示）；运维侧维护工具目录、`enabled`、`skillId`（**仅新增可写**）、`toolBindings`（选自目录）/ 子意图（含默认关键字）/ `promptAddon` / 无子意图时的 `defaultKeywords`，并只读可见补充关键字。列表操作：运营 **编辑关键字**、日志；运维 **编辑**、日志（无独立「子意图配置」）。环境级外部接口在 **外部接口对接**（原「接口配置」拆分）。
+
+**建议记入操作日志的动作**：SKILL工具目录增删改；Skill 新增/编辑/状态开关（运维）；子意图增删改；默认与补充关键字迁移（0→1 / N→0）；Skill / 子意图工具绑定变更；运营补充关键字增删；外部接口对接变更。
 
 ---
 

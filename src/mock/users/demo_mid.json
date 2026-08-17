@@ -172,7 +172,7 @@
       "scenicId": "scenic_hlg"
     },
     {
-      "orderId": "ORD20260818001",
+      "orderId": "ORD20260820001",
       "ticketType": "family_bundle",
       "ticketName": "家庭套票（2大1小）×2套",
       "quantity": {
@@ -182,7 +182,7 @@
       "totalAmount": 1338,
       "status": "paid",
       "source": "self",
-      "visitDate": "2026-08-18",
+      "visitDate": "2026-08-20",
       "invoiceStatus": "none",
       "createdAt": "2026-08-05T10:00:00.000Z",
       "scenicId": "scenic_hlg"
