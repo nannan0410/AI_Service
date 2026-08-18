@@ -2,7 +2,7 @@ import type { PersonaId } from '../src/types/index'
 import type { RuleExpression } from '../src/types/businessConfig'
 import { evaluateRule, evaluateRules, type RuleContext } from '../src/utils/ruleEngine'
 import { hasNewGuestCoupon, canClaimNewGuestCoupon } from '../src/utils/newGuestCoupon'
-import { getSnapshot, parsePersonaFromAuthHeader } from './_utils'
+import { getReviewEligibility, getSnapshot, parsePersonaFromAuthHeader } from './_utils'
 import {
   getUpcomingVisitOrders,
   hasVisitToday,
@@ -40,6 +40,7 @@ export function buildRuleContext(
     const completed = o.completedAt ? new Date(o.completedAt).getTime() : 0
     return completed > 0 && now - completed <= ninetyDays
   })
+  const canScenicReviewToday = getReviewEligibility(personaId, scenicId).canReview
 
   let visitorPhase: RuleContext['visitorPhase'] = 'pre'
   if (snapshot.visitorState.inPark) {
@@ -62,6 +63,7 @@ export function buildRuleContext(
     hasVisitToday: hasVisitTodayOrder,
     hasInvoiceableOrders,
     hasReviewableOrders,
+    canScenicReviewToday,
     hasNewGuestCoupon: hasNewGuestCoupon(coupons),
     canClaimNewGuestCoupon: canClaimNewGuestCoupon({
       personaId,

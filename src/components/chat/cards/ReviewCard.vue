@@ -197,6 +197,11 @@ function onPickChannel(channel: ReviewShareChannel) {
   emit("share", channel);
 }
 
+/** ActionSheet @select 回调（模板内勿写 TS 类型注解，否则 vue-tsc 报错） */
+function onSelectShareAction(action: { value?: ReviewShareChannel }) {
+  if (action.value) onPickChannel(action.value);
+}
+
 defineExpose({ resetSubmitting });
 </script>
 
@@ -333,7 +338,7 @@ defineExpose({ resetSubmitting });
       "
       cancel-text="取消"
       close-on-click-action
-      @select="(action: { value: ReviewShareChannel }) => onPickChannel(action.value)"
+      @select="onSelectShareAction"
     />
   </ChatCardShell>
 </template>

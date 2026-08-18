@@ -133,7 +133,6 @@ import type {
   PersonaId,
   QuizCardPayload,
   RecommendEntry,
-  ReviewCardPayload,
   ReviewShareChannel,
   ReviewSubmitDraft,
   TicketCardPayload,
