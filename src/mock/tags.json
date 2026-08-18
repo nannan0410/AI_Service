@@ -46,7 +46,7 @@
   },
   {
     "tagId": "order_couple",
-    "name": "情侣出游",
+    "name": "双人套票",
     "description": "2 成人 0 儿童且非团队规模",
     "category": "order",
     "defaultConfidence": 1

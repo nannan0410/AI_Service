@@ -14,8 +14,8 @@
   {
     "ruleId": "rule_order_couple",
     "tagId": "order_couple",
-    "name": "情侣出游",
-    "description": "若单笔 2 成人 0 儿童，且合计人数 < 5，且非家庭票种，则打情侣出游",
+    "name": "双人套票",
+    "description": "若单笔 2 成人 0 儿童，且合计人数 < 5，且非家庭票种，则打双人套票",
     "when": "adult==2 AND child==0 AND (adult+child)<5 AND ticketType not in (family_bundle, family_annual)",
     "exampleHitOrderIds": {}
   },
