@@ -2,7 +2,7 @@
 
 > **文档用途**：将 `/config/*` 从 Vant 移动端样式升级为 **Element Plus PC 后台**，供后续开发落地参考。  
 > **状态**：规划文档（未实施）  
-> **更新日期**：2026-07-08  
+> **更新日期**：2026-08-18  
 > **前置**：方案 A 已完成（统一 `/config` 路由壳 + H5 预览入口 + Profile 单入口）
 
 **相关文档：**
@@ -10,6 +10,7 @@
 - 业务配置架构：[`业务场景配置与实现.md`](./业务场景配置与实现.md)
 - 项目现状：[`项目现状.md`](./项目现状.md)
 - 总方案：[`AI景区智能聊天助手-落地计划.md`](./AI景区智能聊天助手-落地计划.md)
+- HTML 原型：[`prototypes/README.md`](./prototypes/README.md)（单智能体 [`ai-admin-prototype.html`](./prototypes/ai-admin-prototype.html)；智能体平台 [`ai-agent-platform-prototype.html`](./prototypes/ai-agent-platform-prototype.html)）
 
 ---
 
@@ -254,7 +255,7 @@ src/components/config/         # 可选：可复用 EP 子组件
 
 **顶层 Tab**（演示迁移期可暂保留）：`el-tabs` — Skill 场景 | 欢迎页入口  
 
-**正式信息架构**（对齐 [`prototypes/ai-admin-prototype.html`](./prototypes/ai-admin-prototype.html)）：
+**正式信息架构**（菜单树对齐 [`prototypes/ai-admin-prototype.html`](./prototypes/ai-admin-prototype.html)；**参数配置底栏交互**对齐智能体平台 [`prototypes/ai-agent-platform-prototype.html`](./prototypes/ai-agent-platform-prototype.html)）：
 
 | 菜单 | 角色 | 页面职责 |
 |------|------|----------|
@@ -262,7 +263,7 @@ src/components/config/         # 可选：可复用 EP 子组件
 | 运维管理 → SKILL工具 | 仅技术人员 | **全局工具目录**（能力标识 / 名称 / 默认读写，≤20）；默认查看，底栏「编辑」→「取消 / 提交」；黄条提示勿随意变更 |
 | 运维管理 → 外部接口对接 | 仅技术人员 | 环境级 Base URL（地图 / 订单 / 天气 / LLM）；查看 / 编辑交互同左；未来并入运维中心 |
 | 运维管理 → Skill 场景 | 仅技术人员 | 新增/编辑同一抽屉：SkillID（仅新增可写）、**绑定工具从目录下拉选择**、`promptAddon`、默认关键字、补充只读、子意图 0～10 内嵌（0→1/N→0 默认同补充同迁）；列表启停；日志独立抽屉 |
-| 系统与反馈 → 参数配置 | 运营 | 业务阈值、规则字段只读（不含接口 URL） |
+| 系统与反馈 → 参数配置 | 运营 | 业务阈值（可开票窗口等）+ 规则字段只读区（不含接口 URL）；**默认查看，底栏「编辑」→「取消 / 提交」**（与外部接口同交互；**无**右上角保存） |
 
 运维一级菜单正式按角色隐藏，不对客户开放。原「接口配置」已拆为 **外部接口对接** + **SKILL工具**。
 
@@ -296,6 +297,18 @@ src/components/config/         # 可选：可复用 EP 子组件
 |------|---------|
 | 表单 | 地图 / 订单 / 天气 / LLM 等 Base URL 或标识 |
 | 交互 | 同 SKILL工具：默认查看 + 底栏编辑 / 取消 / 提交 |
+| 提示 | `el-alert` 警告：请检查后填写，请勿随意变更影响使用 |
+
+#### 系统页：参数配置
+
+| 区域 | EP 组件 |
+|------|---------|
+| 业务阈值 | `el-form`：客流偏高/拥挤阈值、新客领券窗口(天)、可开票窗口(天) 等（对接后补齐单位与校验） |
+| 规则字段说明 | 只读区块（`field_catalog`：字段名 / 类型 / 取值说明）；**不**随编辑态开放增删 |
+| 交互 | 同外部接口：**默认查看**（阈值灰底只读）；底栏「编辑」→「取消 / 提交」；取消还原未提交草稿 |
+| 提示 | 可选；正式可不强制黄条（与运维「勿随意变更」区分） |
+
+**不在此页**：技术接口 Base URL（见外部接口对接）。
 
 #### 运维页：Skill 场景（技术）
 
