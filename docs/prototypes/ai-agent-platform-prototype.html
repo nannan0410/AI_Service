@@ -24,6 +24,7 @@
       --inner-nav-w: 176px;
       --sidebar-w: 64px;
       --header-h: 56px;
+      --tips-w: 300px;
       --radius: 4px;
       --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02),
         0 2px 4px 0 rgba(0, 0, 0, 0.02);
@@ -133,7 +134,7 @@
       overflow-y: auto;
       padding: 8px 0 24px;
     }
-    .app.has-inner-nav .inner-nav { display: flex; }
+    .app.has-inner-nav .inner-nav:not([hidden]) { display: flex; }
     .inner-nav__group { margin-bottom: 8px; }
     .inner-nav__label {
       padding: 8px 16px 4px;
@@ -200,20 +201,47 @@
     .header__mode .seg-radio__item {
       width: 64px;
     }
+    .header__mode.seg-radio {
+      overflow: visible;
+    }
+    .header__mode .seg-radio__item.has-tip-ref {
+      position: relative;
+      overflow: visible;
+      z-index: 1;
+    }
+    .header__mode .seg-radio__item .tip-marker {
+      top: -8px;
+      right: -6px;
+      z-index: 6;
+    }
     .header__mode[hidden] {
       display: none !important;
     }
-    .header__right { display: flex; align-items: center; gap: 16px; }
-    .header__hint {
-      font-size: 12px;
-      color: var(--text-muted);
+    .header__right .has-tip-ref {
+      position: relative;
+      overflow: visible;
     }
+    .header__right .tip-marker {
+      top: -8px;
+      right: -6px;
+      z-index: 6;
+    }
+    .header__scenic-wrap {
+      display: inline-flex;
+      flex-shrink: 0;
+    }
+    .header__scenic-wrap .select {
+      width: 160px;
+      max-width: 160px;
+    }
+    .header__right { display: flex; align-items: center; gap: 16px; }
     .header__user {
       display: flex;
       align-items: center;
       gap: 8px;
       color: var(--text-secondary);
       font-size: 14px;
+      cursor: pointer;
     }
     .header__avatar {
       width: 24px;
@@ -230,14 +258,186 @@
       font-size: 13px;
     }
 
-    .main {
+    .workspace {
       grid-column: 3;
+      grid-row: 2;
+      display: flex;
+      min-height: 0;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .main {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
       overflow: auto;
       padding: 16px 24px 24px;
       background: var(--bg);
     }
+    .main:has(.page.active.page--with-foot) {
+      padding-bottom: 0;
+    }
+    .app.is-tips-hidden .tips { display: none; }
+    .tips {
+      width: var(--tips-w);
+      flex-shrink: 0;
+      min-height: 0;
+      align-self: stretch;
+      border-left: 1px solid var(--border);
+      background: #fbfcfe;
+      padding: 16px;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    .tips__title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      margin: 0 0 12px;
+      font-size: 14px;
+    }
+    .tips__title .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      flex-shrink: 0;
+    }
+    .tips-section__hd {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin: 12px 0 8px;
+    }
+    .tips-section:first-child .tips-section__hd { margin-top: 0; }
+    .tip {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .tip h4 {
+      margin: 0 0 4px;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .tip p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-secondary);
+    }
+    .tip__tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--primary);
+      background: var(--primary-bg);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-bottom: 6px;
+    }
+    .tips-empty {
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-muted);
+    }
+    [data-tip-ref].has-tip-ref { position: relative; }
+    .agent-card.has-tip-ref { position: relative; }
+    .app.is-tips-hidden .tip-marker { display: none; }
+    .drawer .field-block__label.has-tip-ref,
+    .drawer .field-row > label.has-tip-ref,
+    .drawer .log-placeholder.has-tip-ref,
+    #page-ops-skill th.has-tip-ref {
+      overflow: visible;
+    }
+    #page-ops-skill .btn-link.has-tip-ref {
+      overflow: visible;
+      display: inline-block;
+    }
+    .drawer .field-block__label .tip-marker,
+    .drawer .field-row > label .tip-marker,
+    .drawer .log-placeholder .tip-marker {
+      top: -6px;
+      right: -8px;
+      z-index: 6;
+    }
+    #page-ops-skill th .tip-marker,
+    #page-ops-skill .btn-link .tip-marker {
+      top: -8px;
+      right: -8px;
+      z-index: 6;
+    }
+    #page-ui .tabs .tab.has-tip-ref,
+    #page-ui .field-row > label.has-tip-ref {
+      overflow: visible;
+    }
+    #page-ui .tabs .tab .tip-marker,
+    #page-ui .field-row > label .tip-marker {
+      top: -6px;
+      right: -6px;
+      z-index: 6;
+    }
+    .tip-marker {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 4;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: #ff4d4f;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 16px;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    }
+    .tip-marker:hover { background: #ff7875; }
+    .tip.is-active {
+      border-color: #ff4d4f;
+      box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.2);
+    }
+    .tip__num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ff4d4f;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-right: 4px;
+    }
+    .tip__go {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--primary);
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+    .tip__go:hover { color: var(--primary-hover); text-decoration: underline; }
     .page { display: none; }
     .page.active { display: block; }
+    .page.active.page--with-foot {
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
 
     .page-head {
       display: flex;
@@ -253,17 +453,15 @@
       display: none; /* 标题已上移到顶栏 */
     }
     .page-head__actions { display: flex; gap: 8px; flex-shrink: 0; }
-    .page--with-foot {
-      padding-bottom: 72px;
-    }
     .page-foot {
       display: none;
-      position: fixed;
-      left: var(--rail-w);
-      right: 0;
+      position: sticky;
       bottom: 0;
       z-index: 40;
-      margin: 0;
+      flex-shrink: 0;
+      margin-top: auto;
+      margin-left: -24px;
+      margin-right: -24px;
       padding: 12px 24px;
       background: #fff;
       border-top: 1px solid var(--border);
@@ -285,11 +483,25 @@
     .page-foot__edit[hidden] {
       display: none !important;
     }
+    .page.is-view .input[data-ops-reserved],
+    .page.is-view .textarea[data-ops-reserved],
+    .input[data-ops-reserved],
+    .textarea[data-ops-reserved] {
+      background: #f5f5f5;
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
     .page.is-view .input,
     .page.is-view .textarea {
       background: #f5f5f5;
       color: var(--text);
       cursor: default;
+    }
+    .field-row__hint {
+      grid-column: 2;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
     }
     .page.is-view .input:focus,
     .page.is-view .textarea:focus {
@@ -2308,7 +2520,7 @@
     .drawer-mask {
       display: none;
       position: fixed;
-      inset: 0;
+      inset: 0 var(--tips-w) 0 0;
       background: rgba(0, 0, 0, 0.45);
       z-index: 100;
     }
@@ -2316,19 +2528,37 @@
     .drawer {
       position: fixed;
       top: 0;
-      right: 0;
+      right: var(--tips-w);
       width: 880px;
-      max-width: 100%;
+      max-width: calc(100% - var(--tips-w));
       height: 100%;
       background: #fff;
       z-index: 101;
-      transform: translateX(100%);
-      transition: transform .2s;
+      /* 要点栏占位时，仅 translateX(100%) 仍会露出 tips 宽度，需额外移出视口 */
+      transform: translateX(calc(100% + var(--tips-w)));
+      transition: transform .2s, visibility .2s;
+      visibility: hidden;
+      pointer-events: none;
       display: flex;
       flex-direction: column;
       box-shadow: -6px 0 16px rgba(0, 0, 0, 0.08);
     }
-    .drawer.open { transform: translateX(0); }
+    .drawer.open {
+      transform: translateX(0);
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .app.is-tips-hidden ~ .drawer-mask {
+      inset: 0;
+    }
+    .app.is-tips-hidden ~ .drawer {
+      right: 0;
+      max-width: 100%;
+      transform: translateX(100%);
+    }
+    .app.is-tips-hidden ~ .drawer.open {
+      transform: translateX(0);
+    }
     .drawer__head {
       padding: 16px 24px;
       border-bottom: 1px solid var(--border);
@@ -2403,9 +2633,6 @@
       background: #fff7e6;
       color: #d46b08;
       vertical-align: middle;
-    }
-    .app.has-inner-nav .page-foot {
-      left: calc(var(--rail-w) + var(--inner-nav-w));
     }
     .split-2 {
       display: grid;
@@ -2693,18 +2920,6 @@
           <svg class="rail__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13.5L12.5 21a1.5 1.5 0 0 1-2.1 0L3 13.6V4h9.6L20 11.4a1.5 1.5 0 0 1 0 2.1z"/><circle cx="8.2" cy="8.2" r="1.2"/></svg>
           标签
         </button>
-        <button type="button" class="rail__item" data-agent="inspect" title="内容巡检">
-          <svg class="rail__icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/><path d="M9 11h4M11 9v4"/></svg>
-          巡检
-        </button>
-        <button type="button" class="rail__item" data-agent="kb" title="知识库">
-          <svg class="rail__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3V5z"/><path d="M20 5h-7a3 3 0 0 0-3 3v13h7a3 3 0 0 1 3 3V5z"/></svg>
-          知识库
-        </button>
-        <button type="button" class="rail__item" data-agent="opinion" title="舆情分析">
-          <svg class="rail__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="M8 15l3-4 3 2 4-6"/></svg>
-          舆情
-        </button>
       </nav>
     </aside>
 
@@ -2715,7 +2930,7 @@
           <div class="header__sub" id="header-sub">选择智能体进入对话或配置</div>
         </div>
         <div class="seg-radio header__mode" id="agent-mode" hidden>
-          <label class="seg-radio__item is-active">
+          <label class="seg-radio__item is-active" data-tip-ref="assist-mode-toggle">
             <input type="radio" name="agent-mode" value="chat" checked />
             对话
           </label>
@@ -2726,25 +2941,27 @@
         </div>
       </div>
       <div class="header__right">
-        <span class="header__hint">配置上下文随当前景区</span>
-        <select class="select" aria-label="当前景区">
-          <option value="">请选择景区</option>
-        </select>
-        <button type="button" class="btn btn-primary btn-sm" id="btn-preview-h5">预览 H5</button>
-        <div class="header__user">
+        <span class="header__scenic-wrap" data-tip-ref="assist-scenic-select">
+          <select class="select" aria-label="当前景区">
+            <option value="">请选择景区</option>
+          </select>
+        </span>
+        <button type="button" class="btn btn-sm" data-toggle-tips>隐藏提示要点</button>
+        <button type="button" class="btn btn-sm" data-tip-ref="assist-home-back" data-go-page="home">返回平台首页</button>
+        <div class="header__user" data-tip-ref="assist-header-user" role="button" tabindex="0" aria-haspopup="true" aria-label="账号菜单">
           <span class="header__avatar" aria-hidden="true"></span>
           admin
         </div>
       </div>
     </header>
 
-    <aside class="inner-nav" id="inner-nav" aria-label="景区助手配置">
+    <aside class="inner-nav" id="inner-nav-assist" data-inner-nav="assist" aria-label="景区助手配置">
       <div class="inner-nav__group">
         <div class="inner-nav__label">对话与技能</div>
+        <button type="button" class="inner-nav__item" data-page="skill-tools" data-title="Skill 工具">Skill 工具</button>
+        <button type="button" class="inner-nav__item" data-page="ops-skill" data-title="Skill 场景">Skill 场景</button>
         <button type="button" class="inner-nav__item" data-page="skill" data-title="Skill 关键词">Skill 关键词</button>
         <button type="button" class="inner-nav__item" data-page="conflict" data-title="冲突检查">冲突检查</button>
-        <button type="button" class="inner-nav__item" data-page="ops-skill" data-title="Skill 场景">Skill 场景</button>
-        <button type="button" class="inner-nav__item" data-page="skill-tools" data-title="Skill 工具">Skill 工具</button>
       </div>
       <div class="inner-nav__group">
         <div class="inner-nav__label">推荐与外观</div>
@@ -2762,10 +2979,30 @@
       <div class="inner-nav__group">
         <div class="inner-nav__label">系统</div>
         <button type="button" class="inner-nav__item" data-page="params" data-title="参数配置">参数配置</button>
-        <button type="button" class="inner-nav__item" data-page="api-ext" data-title="外部接口对接">外部接口对接</button>
+        <button type="button" class="inner-nav__item" data-page="api-ext" data-title="接口配置">接口配置</button>
       </div>
     </aside>
 
+    <aside class="inner-nav" id="inner-nav-tags" data-inner-nav="tags" hidden aria-label="AI 标签配置">
+      <div class="inner-nav__group">
+        <div class="inner-nav__label">目录</div>
+        <button type="button" class="inner-nav__item" data-page="tags-order" data-title="订单标签">订单标签</button>
+        <button type="button" class="inner-nav__item" data-page="tags-member" data-title="会员标签">会员标签</button>
+        <button type="button" class="inner-nav__item" data-page="tags-product" data-title="产品标签">产品标签</button>
+      </div>
+      <div class="inner-nav__group">
+        <div class="inner-nav__label">规则与关系</div>
+        <button type="button" class="inner-nav__item" data-page="tags-rules" data-title="打标规则">打标规则</button>
+        <button type="button" class="inner-nav__item" data-page="tags-rel" data-title="打标关系">打标关系</button>
+      </div>
+      <div class="inner-nav__group">
+        <div class="inner-nav__label">运维</div>
+        <button type="button" class="inner-nav__item" data-page="tags-coverage" data-title="覆盖统计">覆盖统计</button>
+        <button type="button" class="inner-nav__item" data-page="tags-logs" data-title="运行日志">运行日志</button>
+      </div>
+    </aside>
+
+    <div class="workspace" id="workspace">
     <main class="main">
       <!-- 工作台首页 -->
       <section class="page page--home active" id="page-home">
@@ -2775,10 +3012,10 @@
           </div>
         </div>
         <div class="alert alert--warn agent-home-flow">
-          <div><strong>能力关系：</strong>AI 标签、知识库为景区助手提供画像与检索；内容巡检与舆情互相喂线索。标签已从景区助手拆为独立智能体，产品管理仍可勾选产品标签，维护入口在「AI 标签」。</div>
+          <div><strong>能力关系：</strong>AI 标签为景区助手、产品管理提供画像标签；标签已从景区助手拆为独立智能体，产品管理仍可勾选产品标签，维护入口在「AI 标签」。</div>
         </div>
         <div class="agent-home-grid">
-          <button type="button" class="agent-card" data-agent="assist">
+          <button type="button" class="agent-card" data-agent="assist" data-tip-ref="agent-assist">
             <div class="agent-card__top">
               <span class="agent-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 10h8M8 14h5"/><path d="M5 5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-4 3V7a2 2 0 0 1 2-2z"/></svg></span>
               <span class="agent-card__status">运行中</span>
@@ -2788,7 +3025,7 @@
             <div class="agent-card__metric"><strong>2</strong>个 Skill 示例 · 对话可试</div>
             <span class="agent-card__go">进入工作台 →</span>
           </button>
-          <button type="button" class="agent-card" data-agent="tags">
+          <button type="button" class="agent-card" data-agent="tags" data-tip-ref="agent-tags">
             <div class="agent-card__top">
               <span class="agent-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 13.5L12.5 21a1.5 1.5 0 0 1-2.1 0L3 13.6V4h9.6L20 11.4a1.5 1.5 0 0 1 0 2.1z"/><circle cx="8.2" cy="8.2" r="1.2"/></svg></span>
               <span class="agent-card__status">运行中</span>
@@ -2796,36 +3033,6 @@
             <h2>AI 标签</h2>
             <p>订单 / 会员 / 产品标签目录与打标规则。景区助手只消费，不在此维护。</p>
             <div class="agent-card__metric"><strong>15</strong>个标签 · 6 条规则启用</div>
-            <span class="agent-card__go">进入工作台 →</span>
-          </button>
-          <button type="button" class="agent-card" data-agent="inspect">
-            <div class="agent-card__top">
-              <span class="agent-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l5 5"/><path d="M9 11h4M11 9v4"/></svg></span>
-              <span class="agent-card__status is-plan">规划中</span>
-            </div>
-            <h2>内容巡检</h2>
-            <p>扫描活动、内容块与 UGC 的过期、错价与合规问题。</p>
-            <div class="agent-card__metric"><strong>3</strong>条待处理 · 今日已扫 128</div>
-            <span class="agent-card__go">进入工作台 →</span>
-          </button>
-          <button type="button" class="agent-card" data-agent="kb">
-            <div class="agent-card__top">
-              <span class="agent-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h7a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3V5z"/><path d="M20 5h-7a3 3 0 0 0-3 3v13h7a3 3 0 0 1 3 3V5z"/></svg></span>
-              <span class="agent-card__status is-plan">规划中</span>
-            </div>
-            <h2>知识库</h2>
-            <p>FAQ 与文档分段发布，供景区助手检索；可做召回测试。</p>
-            <div class="agent-card__metric"><strong>4</strong>篇已发布 · 1 篇草稿</div>
-            <span class="agent-card__go">进入工作台 →</span>
-          </button>
-          <button type="button" class="agent-card" data-agent="opinion">
-            <div class="agent-card__top">
-              <span class="agent-card__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"/><path d="M8 15l3-4 3 2 4-6"/></svg></span>
-              <span class="agent-card__status is-plan">规划中</span>
-            </div>
-            <h2>舆情分析</h2>
-            <p>评价与社媒情绪、议题与告警，可对话问趋势。</p>
-            <div class="agent-card__metric"><strong>82%</strong>正向 · 1 条待处理告警</div>
             <span class="agent-card__go">进入工作台 →</span>
           </button>
         </div>
@@ -2885,78 +3092,6 @@
         </div>
       </section>
 
-      <!-- 内容巡检 · 对话 -->
-      <section class="page page--chat" id="page-inspect-chat">
-        <div class="chat-bench" data-chat-agent="inspect">
-          <div class="chat-thread">
-            <div class="chat-thread__msgs" data-chat-msgs></div>
-            <div class="chat-chips">
-              <button type="button" class="chat-chip" data-chat-q="帮我看看今天待审内容">帮我看看今天待审内容</button>
-              <button type="button" class="chat-chip" data-chat-q="扫一遍过期活动">扫一遍过期活动</button>
-            </div>
-            <div class="chat-composer">
-              <input class="input" type="text" placeholder="发起巡检或询问待办…" data-chat-input />
-              <button type="button" class="btn btn-primary" data-chat-send>发送</button>
-            </div>
-          </div>
-          <aside class="chat-side">
-            <div class="chat-side__title">上下文</div>
-            <div class="chat-side__body" data-chat-side>
-              <h3>规划能力</h3>
-              过期活动、错价、违规词、缺失封面。结果进待办队列，可回流知识库或舆情。
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <!-- 知识库 · 对话 -->
-      <section class="page page--chat" id="page-kb-chat">
-        <div class="chat-bench" data-chat-agent="kb">
-          <div class="chat-thread">
-            <div class="chat-thread__msgs" data-chat-msgs></div>
-            <div class="chat-chips">
-              <button type="button" class="chat-chip" data-chat-q="退票规则怎么写？">退票规则怎么写？</button>
-              <button type="button" class="chat-chip" data-chat-q="测试召回停车缴费">测试召回停车缴费</button>
-            </div>
-            <div class="chat-composer">
-              <input class="input" type="text" placeholder="问知识怎么写、怎么被召回…" data-chat-input />
-              <button type="button" class="btn btn-primary" data-chat-send>发送</button>
-            </div>
-          </div>
-          <aside class="chat-side">
-            <div class="chat-side__title">上下文</div>
-            <div class="chat-side__body" data-chat-side>
-              <h3>规划能力</h3>
-              文档分段、发布版本、召回测试。景区助手检索已发布知识，不在助手内编文档。
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <!-- 舆情分析 · 对话 -->
-      <section class="page page--chat" id="page-opinion-chat">
-        <div class="chat-bench" data-chat-agent="opinion">
-          <div class="chat-thread">
-            <div class="chat-thread__msgs" data-chat-msgs></div>
-            <div class="chat-chips">
-              <button type="button" class="chat-chip" data-chat-q="这周差评在说什么？">这周差评在说什么？</button>
-              <button type="button" class="chat-chip" data-chat-q="有没有安全相关告警？">有没有安全相关告警？</button>
-            </div>
-            <div class="chat-composer">
-              <input class="input" type="text" placeholder="问情绪、议题或告警…" data-chat-input />
-              <button type="button" class="btn btn-primary" data-chat-send>发送</button>
-            </div>
-          </div>
-          <aside class="chat-side">
-            <div class="chat-side__title">上下文</div>
-            <div class="chat-side__body" data-chat-side>
-              <h3>规划能力</h3>
-              评价 / 社媒聚合、议题聚类、告警。可把差评线索交给内容巡检。
-            </div>
-          </aside>
-        </div>
-      </section>
-
       <!-- Skill 关键词（运营侧：列表 / 补充关键词） -->
       <section class="page" id="page-skill">
         <div class="page-head">
@@ -2964,6 +3099,7 @@
             <h1>Skill 关键词</h1>
           </div>
         </div>
+        <div class="alert alert--warn">一期不做：运营侧 Skill 关键词独立维护不在本期范围，以下为原型示意。未来运营有独立维护需求时，再开发本页面及对应功能。</div>
         <div class="filter-bar">
           <div class="filter-item">
             <span>名称</span>
@@ -3092,7 +3228,7 @@
           <div class="tabs" data-tabs="ui">
             <button type="button" class="tab active" data-tab="ui-base">基础与主色</button>
             <button type="button" class="tab" data-tab="ui-assets">形象资源</button>
-            <button type="button" class="tab" data-tab="ui-welcome">欢迎文案</button>
+            <button type="button" class="tab" data-tab="ui-welcome" data-tip-ref="ui-welcome-tab">欢迎文案</button>
           </div>
         </div>
 
@@ -3199,7 +3335,7 @@
               <div class="upload-box">+ 上传</div>
             </div>
             <div class="field-row field-row--wide">
-              <label>对话形态图</label>
+              <label data-tip-ref="ui-chat-motions">对话形态图</label>
               <div class="upload-row upload-row--nowrap">
                 <div class="upload-box">待机</div>
                 <div class="upload-box">思考</div>
@@ -3295,7 +3431,7 @@
                     <th style="width:120px">点击行为</th>
                     <th style="width:72px">置顶</th>
                     <th>规则摘要</th>
-                    <th style="width:88px">状态</th>
+                    <th style="width:88px" data-tip-ref="welcome-q-enabled">状态</th>
                     <th style="width:120px">操作</th>
                   </tr>
                 </thead>
@@ -3379,7 +3515,7 @@
                     <th>标题</th>
                     <th style="width:120px">点击行为</th>
                     <th>规则摘要</th>
-                    <th style="width:88px">状态</th>
+                    <th style="width:88px" data-tip-ref="service-enabled">状态</th>
                     <th style="width:120px">操作</th>
                   </tr>
                 </thead>
@@ -3424,259 +3560,298 @@
         </div>
       </section>
 
-      <!-- 标签：订单 / 会员 / 产品目录 + 汇总打标规则 -->
-      <section class="page page--list-scroll" id="page-tags">
+      <!-- 标签：订单目录 -->
+      <section class="page page--list-scroll" id="page-tags-order">
         <div class="page-list-chrome">
-        <div class="page-head">
-          <div>
-            <h1>标签配置</h1>
+          <div class="page-head"><div><h1>订单标签</h1></div></div>
+          <div class="alert alert--warn">
+            <div><strong>名称：</strong>同景区、同域唯一；运营只维护名称，内部键不展示，<strong>改名不改内部键</strong>。已被打标关系引用的标签<strong>只能禁用、不能删除</strong>。</div>
+            <div><strong>来源：</strong>目录条目均来自<strong>规则模板</strong>，不可空手新建；阈值与启停见「打标规则」。读单或批跑现算后写入打标关系。</div>
           </div>
-        </div>
-        <div class="alert alert--warn">
-          <div><strong>AI 标签</strong>智能体，为景区助手、产品管理的标签来源。</div>
-          <div><strong>硬约束：</strong>规则类产生逻辑仅来自预置模板；目录新建名称不会自动变成可配规则。</div>
-          <div><strong>名称：</strong>同景区、同域唯一。运营只维护名称；内部键不展示，<strong>改名不改内部键</strong>。已被打标关系引用的标签<strong>只能禁用、不能删除</strong>。</div>
-          <div><strong>打标关系（一期）：</strong>订单规则、会员规则、产品勾选写入关系表，可供数据中台拉取。会员手动、对话智能标签不在一期。</div>
-          <div><strong>对话打标：</strong>仅会话内，<strong>不落库、不回写</strong>会员（二期 / 三期规划）。喜好目录在会员系统，本页只读对照。</div>
-          <div><strong>订单 / 会员规则：</strong>读单或批跑现算后<strong>写入关系表</strong>（幂等）。目录不可空手新建规则标签；阈值在打标规则。</div>
-          <div><strong>产品标签：</strong>目录供产品管理勾选，勾选结果写入关系表。本页「同步商品中心」按名称拉业务字典（产品 / 项目优先），来源列展示；同步<strong>不</strong>产生打标规则、不写关系。项目 / 内容标签待未来项目列表。</div>
-        </div>
-        <div class="tabs" data-tabs="tags">
-          <button type="button" class="tab active" data-tab="tags-order">订单标签</button>
-          <button type="button" class="tab" data-tab="tags-member">会员标签</button>
-          <button type="button" class="tab" data-tab="tags-product">产品标签</button>
-          <button type="button" class="tab" data-tab="tags-rules">打标规则</button>
-          <button type="button" class="tab" data-tab="tags-rel">打标关系</button>
-          <button type="button" class="tab" data-tab="tags-coverage">覆盖统计</button>
-          <button type="button" class="tab" data-tab="tags-logs">运行日志</button>
-        </div>
         </div>
         <div class="page-list-body">
-
-        <div class="card tab-panel page-list-card active" data-tab-panel="tags-order">
-          <div class="card__body--flush table-wrap">
-            <table class="data" style="table-layout:fixed;width:100%">
-              <colgroup>
-                <col style="width:22%" />
-                <col style="width:48%" />
-                <col style="width:15%" />
-                <col style="width:15%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>名称</th>
-                  <th>说明</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="tag-order-catalog-tbody"></tbody>
-            </table>
-          </div>
-          <div class="table-footer">
-            <span id="tag-order-catalog-count">共 0 条</span>
-            <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
-              <option>20条/页</option>
-              <option>50条/页</option>
-            </select>
-            <div class="pager">
-              <button type="button" disabled>&lt;</button>
-              <button type="button" class="is-active">1</button>
-              <button type="button" disabled>&gt;</button>
+          <div class="card page-list-card">
+            <div class="card__body--flush table-wrap">
+              <table class="data" style="table-layout:fixed;width:100%">
+                <colgroup>
+                  <col style="width:18%" />
+                  <col style="width:38%" />
+                  <col style="width:14%" />
+                  <col style="width:15%" />
+                  <col style="width:15%" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>名称</th>
+                    <th>说明</th>
+                    <th>来源</th>
+                    <th data-tip-ref="tags-order-enabled">状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="tag-order-catalog-tbody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="tag-order-catalog-count">共 0 条</span>
+              <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
+                <option>20条/页</option>
+                <option>50条/页</option>
+              </select>
+              <div class="pager">
+                <button type="button" disabled>&lt;</button>
+                <button type="button" class="is-active">1</button>
+                <button type="button" disabled>&gt;</button>
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <div class="card tab-panel page-list-card" data-tab-panel="tags-member">
-          <div class="tags-rules-head">
-            <div class="filter-actions">
-              <button type="button" class="btn" id="tag-manual-stamp">手动打标（规划）</button>
-              <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create" data-tag-domain="member">新增手动标签</button>
+      <!-- 标签：会员目录 -->
+      <section class="page page--list-scroll" id="page-tags-member">
+        <div class="page-list-chrome">
+          <div class="page-head"><div><h1>会员标签</h1></div></div>
+          <div class="alert alert--warn">
+            <div><strong>名称：</strong>同景区、同域唯一；<strong>改名不改内部键</strong>；已被关系引用<strong>只能禁用、不能删除</strong>。</div>
+            <div><strong>类型：</strong>规则类来自模板；新建仅<strong>手动标签</strong>（一期不写入打标关系）。喜好目录在会员系统，本页只读对照。</div>
+            <div><strong>对话打标：</strong>仅会话内，<strong>不落库、不回写</strong>会员（二期 / 三期规划）。「同步业务系统标签」按名称拉会员系统字典，不写打标关系。</div>
+          </div>
+        </div>
+        <div class="page-list-body">
+          <div class="card page-list-card">
+            <div class="tags-rules-head">
+              <div class="filter-actions">
+                <button type="button" class="btn" id="tag-manual-stamp">手动打标（规划）</button>
+                <button type="button" class="btn" data-tag-catalog-sync data-tag-sync-domain="member" data-tip-ref="tags-member-sync">同步业务系统标签</button>
+                <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create" data-tag-domain="member">新增标签</button>
+              </div>
             </div>
-          </div>
-          <div class="card__body--flush table-wrap">
-            <table class="data" style="table-layout:fixed;width:100%">
-              <colgroup>
-                <col style="width:16%" />
-                <col style="width:12%" />
-                <col style="width:28%" />
-                <col style="width:16%" />
-                <col style="width:13%" />
-                <col style="width:15%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>名称</th>
-                  <th>类型</th>
-                  <th>说明</th>
-                  <th>来源</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="tag-member-catalog-tbody"></tbody>
-            </table>
-          </div>
-          <div class="table-footer">
-            <span id="tag-member-catalog-count">共 0 条</span>
-            <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
-              <option>20条/页</option>
-              <option>50条/页</option>
-            </select>
-            <div class="pager">
-              <button type="button" disabled>&lt;</button>
-              <button type="button" class="is-active">1</button>
-              <button type="button" disabled>&gt;</button>
+            <div class="card__body--flush table-wrap">
+              <table class="data" style="table-layout:fixed;width:100%">
+                <colgroup>
+                  <col style="width:16%" />
+                  <col style="width:12%" />
+                  <col style="width:28%" />
+                  <col style="width:16%" />
+                  <col style="width:13%" />
+                  <col style="width:15%" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>名称</th>
+                    <th>类型</th>
+                    <th>说明</th>
+                    <th data-tip-ref="tags-member-origin">来源</th>
+                    <th data-tip-ref="tags-member-enabled">状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="tag-member-catalog-tbody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="tag-member-catalog-count">共 0 条</span>
+              <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
+                <option>20条/页</option>
+                <option>50条/页</option>
+              </select>
+              <div class="pager">
+                <button type="button" disabled>&lt;</button>
+                <button type="button" class="is-active">1</button>
+                <button type="button" disabled>&gt;</button>
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <div class="card tab-panel page-list-card" data-tab-panel="tags-product">
-          <div class="tags-rules-head">
-            <div class="filter-actions">
-              <button type="button" class="btn" data-tag-catalog-sync>同步商品中心</button>
-              <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create" data-tag-domain="product">新增标签</button>
-            </div>
-          </div>
-          <div class="card__body--flush table-wrap">
-            <table class="data" style="table-layout:fixed;width:100%">
-              <colgroup>
-                <col style="width:18%" />
-                <col style="width:32%" />
-                <col style="width:20%" />
-                <col style="width:15%" />
-                <col style="width:15%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>名称</th>
-                  <th>说明</th>
-                  <th>来源</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="tag-product-catalog-tbody"></tbody>
-            </table>
-          </div>
-          <div class="table-footer">
-            <span id="tag-product-catalog-count">共 0 条</span>
-            <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
-              <option>20条/页</option>
-              <option>50条/页</option>
-            </select>
-            <div class="pager">
-              <button type="button" disabled>&lt;</button>
-              <button type="button" class="is-active">1</button>
-              <button type="button" disabled>&gt;</button>
-            </div>
+      <!-- 标签：产品目录 -->
+      <section class="page page--list-scroll" id="page-tags-product">
+        <div class="page-list-chrome">
+          <div class="page-head"><div><h1>产品标签</h1></div></div>
+          <div class="alert alert--warn">
+            <div><strong>名称：</strong>同景区、同域唯一；<strong>改名不改内部键</strong>；已被关系引用<strong>只能禁用、不能删除</strong>。</div>
+            <div><strong>用途：</strong>目录供产品管理勾选，勾选结果写入打标关系。「同步业务系统标签」按名称拉业务字典（产品 / 项目优先）；同步<strong>不</strong>产生打标规则、不写关系。项目 / 内容标签待未来项目列表。</div>
           </div>
         </div>
-
-        <div class="card tab-panel page-list-card" data-tab-panel="tags-rules">
-          <div class="card__body--flush table-wrap">
-            <table class="data" style="table-layout:fixed;width:100%">
-              <colgroup>
-                <col style="width:9.09%" />
-                <col style="width:9.09%" />
-                <col style="width:27.27%" />
-                <col style="width:9.09%" />
-                <col style="width:27.27%" />
-                <col style="width:9.09%" />
-                <col style="width:9.09%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>标签类型</th>
-                  <th>规则名称</th>
-                  <th>固定逻辑</th>
-                  <th>可配参数</th>
-                  <th>写入标签</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="tag-rules-tbody"></tbody>
-            </table>
-          </div>
-          <div class="table-footer">
-            <span id="tag-rules-count">共 0 条</span>
-            <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
-              <option>20条/页</option>
-              <option>50条/页</option>
-            </select>
-            <div class="pager">
-              <button type="button" disabled>&lt;</button>
-              <button type="button" class="is-active">1</button>
-              <button type="button" disabled>&gt;</button>
+        <div class="page-list-body">
+          <div class="card page-list-card">
+            <div class="tags-rules-head">
+              <div class="filter-actions">
+                <button type="button" class="btn" data-tag-catalog-sync data-tag-sync-domain="product" data-tip-ref="tags-product-sync">同步业务系统标签</button>
+                <button type="button" class="btn btn-primary" data-open-drawer="tag" data-drawer-mode="create" data-tag-domain="product">新增标签</button>
+              </div>
+            </div>
+            <div class="card__body--flush table-wrap">
+              <table class="data" style="table-layout:fixed;width:100%">
+                <colgroup>
+                  <col style="width:18%" />
+                  <col style="width:32%" />
+                  <col style="width:20%" />
+                  <col style="width:15%" />
+                  <col style="width:15%" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>名称</th>
+                    <th>说明</th>
+                    <th data-tip-ref="tags-product-origin">来源</th>
+                    <th data-tip-ref="tags-product-enabled">状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="tag-product-catalog-tbody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="tag-product-catalog-count">共 0 条</span>
+              <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
+                <option>20条/页</option>
+                <option>50条/页</option>
+              </select>
+              <div class="pager">
+                <button type="button" disabled>&lt;</button>
+                <button type="button" class="is-active">1</button>
+                <button type="button" disabled>&gt;</button>
+              </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <div class="card tab-panel page-list-card" data-tab-panel="tags-rel">
-          <div class="card__body--flush table-wrap">
-            <table class="data" style="table-layout:fixed;width:100%">
-              <colgroup>
-                <col style="width:12%" />
-                <col style="width:22%" />
-                <col style="width:18%" />
-                <col style="width:18%" />
-                <col style="width:30%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th>对象类型</th>
-                  <th>对象</th>
-                  <th>标签</th>
-                  <th>来源</th>
-                  <th>更新时间</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>订单</td>
-                  <td>ORD20260818012</td>
-                  <td>亲子订单</td>
-                  <td>订单规则</td>
-                  <td>2026-08-18 14:02</td>
-                </tr>
-                <tr>
-                  <td>会员</td>
-                  <td>demo_vip</td>
-                  <td>高消费</td>
-                  <td>会员规则</td>
-                  <td>2026-08-18 11:20</td>
-                </tr>
-                <tr>
-                  <td>会员</td>
-                  <td>demo_new</td>
-                  <td>新客</td>
-                  <td>会员规则</td>
-                  <td>2026-08-18 09:00</td>
-                </tr>
-                <tr>
-                  <td>产品</td>
-                  <td>家庭套票</td>
-                  <td>亲子</td>
-                  <td>产品勾选</td>
-                  <td>2026-08-17 16:40</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="table-footer table-footer--stat">
-            <span>一期仅订单规则 / 会员规则 / 产品勾选。会员手动、对话打标不写入。</span>
+      <!-- 标签：打标规则 -->
+      <section class="page page--list-scroll" id="page-tags-rules">
+        <div class="page-list-chrome">
+          <div class="page-head"><div><h1>打标规则</h1></div></div>
+          <div class="alert alert--warn">
+            <div><strong>硬约束：</strong>规则产生逻辑<strong>仅来自预置模板</strong>；目录新建名称不会自动变成可配规则；无「新增规则」。</div>
+            <div><strong>配置：</strong>仅调整阈值与启停。订单 / 会员规则读单或日批现算后<strong>幂等写入打标关系</strong>。</div>
           </div>
         </div>
+        <div class="page-list-body">
+          <div class="card page-list-card">
+            <div class="card__body--flush table-wrap">
+              <table class="data" style="table-layout:fixed;width:100%">
+                <colgroup>
+                  <col style="width:9.09%" />
+                  <col style="width:9.09%" />
+                  <col style="width:27.27%" />
+                  <col style="width:9.09%" />
+                  <col style="width:27.27%" />
+                  <col style="width:9.09%" />
+                  <col style="width:9.09%" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>标签类型</th>
+                    <th>规则名称</th>
+                    <th data-tip-ref="tags-rules-logic">固定逻辑</th>
+                    <th data-tip-ref="tags-rules-param">可配参数</th>
+                    <th>写入标签</th>
+                    <th data-tip-ref="tags-rules-enabled">状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="tag-rules-tbody"></tbody>
+              </table>
+            </div>
+            <div class="table-footer">
+              <span id="tag-rules-count">共 0 条</span>
+              <select class="select" style="width: 100px; max-width: 100px; height: 28px;" aria-label="每页条数">
+                <option>20条/页</option>
+                <option>50条/页</option>
+              </select>
+              <div class="pager">
+                <button type="button" disabled>&lt;</button>
+                <button type="button" class="is-active">1</button>
+                <button type="button" disabled>&gt;</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <div class="card tab-panel" data-tab-panel="tags-coverage">
+      <!-- 标签：打标关系 -->
+      <section class="page page--list-scroll" id="page-tags-rel">
+        <div class="page-list-chrome">
+          <div class="page-head"><div><h1>打标关系</h1></div></div>
+          <div class="alert alert--warn">
+            <div><strong>一期范围：</strong>订单规则、会员规则、产品勾选写入关系表，可供数据中台拉取。</div>
+            <div><strong>不在一期：</strong>会员手动打标、对话智能标签<strong>不写入</strong>本表。</div>
+          </div>
+        </div>
+        <div class="page-list-body">
+          <div class="card page-list-card">
+            <div class="card__body--flush table-wrap">
+              <table class="data" style="table-layout:fixed;width:100%">
+                <colgroup>
+                  <col style="width:12%" />
+                  <col style="width:22%" />
+                  <col style="width:18%" />
+                  <col style="width:18%" />
+                  <col style="width:30%" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th data-tip-ref="tags-rel-object-type">对象类型</th>
+                    <th>对象</th>
+                    <th>标签</th>
+                    <th data-tip-ref="tags-rel-source">来源</th>
+                    <th data-tip-ref="tags-rel-updated">更新时间</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>订单</td>
+                    <td>ORD20260818012</td>
+                    <td>亲子订单</td>
+                    <td>订单规则</td>
+                    <td>2026-08-18 14:02</td>
+                  </tr>
+                  <tr>
+                    <td>会员</td>
+                    <td>demo_vip</td>
+                    <td>高消费</td>
+                    <td>会员规则</td>
+                    <td>2026-08-18 11:20</td>
+                  </tr>
+                  <tr>
+                    <td>会员</td>
+                    <td>demo_new</td>
+                    <td>新客</td>
+                    <td>会员规则</td>
+                    <td>2026-08-18 09:00</td>
+                  </tr>
+                  <tr>
+                    <td>产品</td>
+                    <td>家庭套票</td>
+                    <td>亲子</td>
+                    <td>产品勾选</td>
+                    <td>2026-08-17 16:40</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer table-footer--stat">
+              <span>共 4 条</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 标签：覆盖统计 -->
+      <section class="page" id="page-tags-coverage">
+        <div class="page-head"><div><h1>覆盖统计</h1></div></div>
+        <div class="alert alert--warn">示意数据，对接后按景区、标签类型聚合；具体图表以实现为准。</div>
+        <div class="card">
           <div class="card__body--flush table-wrap">
             <table class="data">
               <thead>
                 <tr>
                   <th>标签</th>
                   <th>类型</th>
-                  <th>覆盖人数 / 笔数</th>
+                  <th data-tip-ref="tags-coverage-metric">覆盖人数 / 笔数</th>
                   <th>占比</th>
                   <th>近 7 日变化</th>
                 </tr>
@@ -3714,18 +3889,23 @@
             </table>
           </div>
           <div class="table-footer table-footer--stat">
-            <span>示意数据，对接后按景区统计</span>
+            <span>共 4 条</span>
           </div>
         </div>
+      </section>
 
-        <div class="card tab-panel" data-tab-panel="tags-logs">
+      <!-- 标签：运行日志 -->
+      <section class="page" id="page-tags-logs">
+        <div class="page-head"><div><h1>运行日志</h1></div></div>
+        <div class="alert alert--warn">打标任务、规则启停、目录同步等运行记录；原型为示意数据。</div>
+        <div class="card">
           <div class="card__body--flush table-wrap">
             <table class="data">
               <thead>
                 <tr>
                   <th>时间</th>
-                  <th>主题</th>
-                  <th>动作</th>
+                  <th data-tip-ref="tags-logs-theme">主题</th>
+                  <th data-tip-ref="tags-logs-action">动作</th>
                   <th>对象</th>
                   <th>结果</th>
                 </tr>
@@ -3747,7 +3927,7 @@
                 </tr>
                 <tr>
                   <td>08-18 08:30</td>
-                  <td>商品中心</td>
+                  <td>业务系统</td>
                   <td>目录同步</td>
                   <td>产品标签</td>
                   <td>按名称对齐 3 条（亲子 / 成人 / 儿童）</td>
@@ -3763,7 +3943,7 @@
             </table>
           </div>
           <div class="table-footer table-footer--stat">
-            <span>共 3 条示意</span>
+            <span>共 4 条</span>
           </div>
         </div>
       </section>
@@ -3776,8 +3956,8 @@
               <h1>产品管理</h1>
             </div>
           </div>
-          <div class="alert alert--warn">
-            仅对接供应商产品（按对接产品 ID 精确查询绑定），不支持纯手工建档（否则无法下单）。一期类型：门票 / 卡票 / 组合产品；餐饮与零售需门店筛选，后续再开。券模板仍在「券管理」。产品标签在 <button type="button" class="btn-link" data-go-page="tags">AI 标签</button> 维护，本页只勾选。
+          <div class="alert alert--warn" data-tip-ref="products-scope">
+            仅对接供应商产品（按对接产品 ID 精确查询绑定），不支持纯手工建档（否则无法下单）。对话内下单须在自销小程序完成，入库产品须为自销渠道可售。一期类型：门票 / 卡票 / 组合产品；餐饮与零售需门店筛选，后续再开。券模板仍在「券管理」。产品标签在 <button type="button" class="btn-link" data-go-page="tags-product">AI 标签</button> 维护，本页只勾选。
           </div>
           <div class="filter-bar">
             <div class="filter-item">
@@ -3818,12 +3998,12 @@
                     <th style="width:88px">产品类型</th>
                     <th style="width:120px">游玩期限</th>
                     <th style="width:120px">可售期限</th>
-                    <th style="width:100px">是否自销可售</th>
+                    <th style="width:100px" data-tip-ref="products-self-channel">是否自销可售</th>
                     <th style="width:88px">参考售价</th>
                     <th>标签</th>
                     <th style="width:88px">对接状态</th>
                     <th style="width:120px">来源</th>
-                    <th style="width:72px">状态</th>
+                    <th style="width:72px" data-tip-ref="products-enabled">状态</th>
                     <th style="width:72px">操作</th>
                   </tr>
                 </thead>
@@ -3902,6 +4082,7 @@
             <h1>券管理</h1>
           </div>
         </div>
+        <div class="alert alert--warn">一期不做：券模板管理不在本期范围，以下为原型示意。</div>
         <div class="filter-bar">
           <div class="filter-item">
             <span>券名称</span>
@@ -3945,6 +4126,7 @@
             <h1>内容配置</h1>
           </div>
         </div>
+        <div class="alert alert--warn">一期不做：内容块 / 项目活动配置不在本期范围，以下为原型示意。</div>
         <div class="tabs" data-tabs="content">
           <button type="button" class="tab active" data-tab="content-blocks">内容块</button>
           <button type="button" class="tab" data-tab="content-activities">项目 / 活动</button>
@@ -4035,32 +4217,56 @@
           <div class="card__body" data-ops-fields>
             <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
               <label>客流偏高阈值</label>
-              <input class="input" data-ops-key="crowd-high" type="text" placeholder="数值，对接后定义单位" readonly />
+              <input class="input" data-ops-key="crowd-high" type="text" placeholder="数值，对接后定义单位" value="5000" readonly />
             </div>
             <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
               <label>客流拥挤阈值</label>
-              <input class="input" data-ops-key="crowd-busy" type="text" placeholder="数值，对接后定义单位" readonly />
+              <input class="input" data-ops-key="crowd-busy" type="text" placeholder="数值，对接后定义单位" value="8000" readonly />
             </div>
             <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
               <label>新客领券窗口(天)</label>
-              <input class="input" data-ops-key="new-guest-days" type="text" placeholder="请输入" readonly />
+              <input class="input" data-ops-key="new-guest-days" type="text" placeholder="请输入" value="30" readonly />
             </div>
             <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
               <label>可开票窗口(天)</label>
-              <input class="input" data-ops-key="invoice-days" type="text" placeholder="请输入" readonly />
+              <input class="input" data-ops-key="invoice-days" type="text" placeholder="请输入" value="90" readonly />
+            </div>
+            <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+              <label>儿童票身高上限</label>
+              <input class="input" data-ops-key="child-max-height" data-ops-reserved type="text" value="120" placeholder="cm" disabled />
+            </div>
+            <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+              <label>儿童票年龄上限</label>
+              <input class="input" data-ops-key="child-max-age" data-ops-reserved type="text" value="12" placeholder="周岁" disabled />
+            </div>
+            <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+              <label>老人票满周岁</label>
+              <input class="input" data-ops-key="elder-min-age" data-ops-reserved type="text" value="60" placeholder="周岁" disabled />
             </div>
           </div>
         </div>
         <div class="card">
-          <div class="card__title">规则字段说明 <span class="tag">只读</span></div>
-          <div class="card__body">
-            <div class="readonly-block">
-              展示规则引擎可用字段目录（原 field_catalog）：字段名、类型、取值说明。<br />
-              本区只读，不在此增删字段。对接后由接口返回。
+          <div class="card__title">兜底提示语</div>
+          <div class="card__body" data-ops-fields>
+            <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+              <label>儿童身高超限</label>
+              <textarea class="textarea" data-ops-key="fallback-child-over-limit" rows="2" readonly>由于身高超过儿童购票限制，推荐购买成人票。</textarea>
             </div>
-            <div class="empty" style="padding-top:24px">
-              <div class="empty__icon"></div>
-              <div>暂无数据</div>
+            <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+              <label>老人未满龄</label>
+              <textarea class="textarea" data-ops-key="fallback-elder-under-age" rows="2" readonly>未满年龄要求，推荐购买成人票。</textarea>
+            </div>
+            <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+              <label>购票无法闭环</label>
+              <textarea class="textarea" data-ops-key="fallback-no-product" rows="3" readonly>当前没有符合规则的可售产品。建议前往购票列表查看其它票种，或调整出行人数后我再帮您推荐。</textarea>
+            </div>
+            <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+              <label>人数组合不支持</label>
+              <textarea class="textarea" data-ops-key="fallback-unsupported-party" rows="3" readonly>当前人数组合暂无匹配的可售产品（例如含老人票需求）。建议前往购票列表查看其它票种，或调整出行人数后我再帮您推荐。</textarea>
+            </div>
+            <div class="field-row" style="max-width:none;grid-template-columns:140px 1fr">
+              <label>兜底优享券</label>
+              <textarea class="textarea" data-ops-key="fallback-coupon-caption" rows="2" readonly>为您准备了一张购票优享券，可在购票列表下单时使用。</textarea>
             </div>
           </div>
         </div>
@@ -4075,14 +4281,14 @@
         </div>
       </section>
 
-      <!-- 运维：外部接口对接 -->
+      <!-- 运维：接口配置 -->
       <section class="page page--with-foot is-view" id="page-api-ext" data-ops-form>
         <div class="page-head">
           <div>
-            <h1>外部接口对接 <span class="proto-badge">内部</span></h1>
+            <h1>接口配置 <span class="proto-badge">内部</span></h1>
           </div>
         </div>
-        <div class="alert alert--warn">请检查后填写，请勿随意变更影响使用。</div>
+        <div class="alert alert--warn">需与研发确认各接口实际字段后再落地。例如：天气接口是否需另附地址信息；LLM 可能包含 model 与 api-key（密钥展示需打码）。请检查后填写，请勿随意变更影响使用。</div>
         <div class="card">
           <div class="card__body" data-ops-fields>
             <div class="field-row">
@@ -4128,8 +4334,8 @@
               <div class="field-block__label">工具目录</div>
               <div class="field-block__content">
                 <div class="field-block__toolbar">
-                  <button type="button" class="btn btn-sm btn-primary ops-edit-only" data-ops-tool-add>添加工具（0/20）</button>
-                  <span class="field-block__hint">全局能力目录；Skill 场景绑定工具时从此选择（能力标识 + 读写），最多 20 组。</span>
+                  <button type="button" class="btn btn-sm btn-primary ops-edit-only" data-ops-tool-add>添加工具（0）</button>
+                  <span class="field-block__hint">全局能力目录；Skill 场景绑定工具时从此选择（能力标识 + 读写）。</span>
                 </div>
                 <div class="skill-tool-head">
                   <span class="skill-tool-head__id">能力标识</span>
@@ -4186,7 +4392,7 @@
                   <th>SkillID</th>
                   <th>名称</th>
                   <th>子意图</th>
-                  <th>状态</th>
+                  <th data-tip-ref="ops-skill-enabled">状态</th>
                   <th>操作</th>
                 </tr>
               </thead>
@@ -4240,6 +4446,7 @@
             <h1>问题记录</h1>
           </div>
         </div>
+        <div class="alert alert--warn">一期不做：踩上报与赞统计不在本期范围，以下为原型示意。</div>
         <div class="tabs" data-tabs="feedback">
           <button type="button" class="tab active" data-tab="fb-down">踩上报</button>
           <button type="button" class="tab" data-tab="fb-up">赞统计</button>
@@ -4304,229 +4511,9 @@
           </div>
         </div>
       </section>
-
-      <!-- 内容巡检 · 配置 -->
-      <section class="page" id="page-inspect">
-        <div class="page-head">
-          <div>
-            <h1>巡检任务</h1>
-          </div>
-          <div class="page-head__actions">
-            <button type="button" class="btn btn-primary">新建任务</button>
-          </div>
-        </div>
-        <div class="alert alert--warn">规划骨架：扫描活动、内容块与 UGC。结果可回流知识库或舆情。本页不对客户演示环境开放完整能力。</div>
-        <div class="tabs" data-tabs="inspect">
-          <button type="button" class="tab active" data-tab="inspect-queue">待处理</button>
-          <button type="button" class="tab" data-tab="inspect-tasks">任务</button>
-        </div>
-        <div class="card tab-panel active" data-tab-panel="inspect-queue">
-          <div class="card__body--flush">
-            <table class="data">
-              <thead>
-                <tr>
-                  <th>对象</th>
-                  <th>问题</th>
-                  <th>来源</th>
-                  <th>发现时间</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>水上灯光秀</td>
-                  <td>开放时段与内容块不一致</td>
-                  <td>定时巡检</td>
-                  <td>08-18 08:00</td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">查看</button></div></td>
-                </tr>
-                <tr>
-                  <td>亲子漂流介绍</td>
-                  <td>缺封面图</td>
-                  <td>发布抽检</td>
-                  <td>08-17 16:22</td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">查看</button></div></td>
-                </tr>
-                <tr>
-                  <td>暑假夜场票文案</td>
-                  <td>活动已过期仍在架</td>
-                  <td>过期扫描</td>
-                  <td>08-17 09:10</td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">查看</button></div></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="table-footer table-footer--stat"><span>共 3 条待处理</span></div>
-        </div>
-        <div class="card tab-panel" data-tab-panel="inspect-tasks">
-          <div class="card__body--flush">
-            <table class="data">
-              <thead>
-                <tr>
-                  <th>任务</th>
-                  <th>范围</th>
-                  <th>周期</th>
-                  <th>最近完成</th>
-                  <th>状态</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>过期活动扫描</td>
-                  <td>内容配置 · 项目/活动</td>
-                  <td>每日 08:00</td>
-                  <td>08-18 08:00</td>
-                  <td><span class="status-text">启用</span></td>
-                </tr>
-                <tr>
-                  <td>缺图抽检</td>
-                  <td>内容块</td>
-                  <td>每 6 小时</td>
-                  <td>08-18 12:00</td>
-                  <td><span class="status-text">启用</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- 知识库 · 配置 -->
-      <section class="page" id="page-kb">
-        <div class="page-head">
-          <div>
-            <h1>知识文档</h1>
-          </div>
-          <div class="page-head__actions">
-            <button type="button" class="btn btn-primary">新建文档</button>
-          </div>
-        </div>
-        <div class="alert alert--warn">规划骨架：FAQ / 文档分段发布后，供景区助手检索。召回测试在对话工作台发起。</div>
-        <div class="card">
-          <div class="card__body--flush">
-            <table class="data">
-              <thead>
-                <tr>
-                  <th>标题</th>
-                  <th>类型</th>
-                  <th>分段</th>
-                  <th>版本</th>
-                  <th>状态</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>退票与改期说明</td>
-                  <td>FAQ</td>
-                  <td>6</td>
-                  <td>v3</td>
-                  <td><span class="status-text">已发布</span></td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">编辑</button></div></td>
-                </tr>
-                <tr>
-                  <td>停车缴费指引</td>
-                  <td>FAQ</td>
-                  <td>3</td>
-                  <td>v2</td>
-                  <td><span class="status-text">已发布</span></td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">编辑</button></div></td>
-                </tr>
-                <tr>
-                  <td>家庭票购票须知</td>
-                  <td>业务说明</td>
-                  <td>4</td>
-                  <td>v1</td>
-                  <td><span class="status-text">已发布</span></td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">编辑</button></div></td>
-                </tr>
-                <tr>
-                  <td>夜场安检须知</td>
-                  <td>FAQ</td>
-                  <td>2</td>
-                  <td>草稿</td>
-                  <td><span class="status-text is-off">草稿</span></td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">编辑</button></div></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="table-footer table-footer--stat"><span>共 4 条</span></div>
-        </div>
-      </section>
-
-      <!-- 舆情分析 · 配置 -->
-      <section class="page" id="page-opinion">
-        <div class="page-head">
-          <div>
-            <h1>舆情看板</h1>
-          </div>
-        </div>
-        <div class="alert alert--warn">规划骨架：评价与社媒聚合。差评线索可交给内容巡检。</div>
-        <div class="stat-grid">
-          <div class="stat-card">
-            <div class="stat-card__label">近 7 日正向</div>
-            <div class="stat-card__value">82%</div>
-            <div class="stat-card__hint">较上周 +3pt</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">评价量</div>
-            <div class="stat-card__value">1,204</div>
-            <div class="stat-card__hint">含景区点评 + 渠道</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">待处理告警</div>
-            <div class="stat-card__value">1</div>
-            <div class="stat-card__hint">安全相关</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card__label">热点议题</div>
-            <div class="stat-card__value">5</div>
-            <div class="stat-card__hint">排队 / 餐饮 / 夜场</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card__title">议题</div>
-          <div class="card__body--flush">
-            <table class="data">
-              <thead>
-                <tr>
-                  <th>议题</th>
-                  <th>情绪</th>
-                  <th>提及</th>
-                  <th>示例</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>过山车排队过长</td>
-                  <td><span class="tag tag-orange">偏负</span></td>
-                  <td>86</td>
-                  <td>周末下午极限区要排 90 分钟</td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">详情</button></div></td>
-                </tr>
-                <tr>
-                  <td>灯光秀好看</td>
-                  <td><span class="tag tag-green">正向</span></td>
-                  <td>142</td>
-                  <td>夜场水上灯光秀值得留下来</td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">详情</button></div></td>
-                </tr>
-                <tr>
-                  <td>儿童区安全提示不清</td>
-                  <td><span class="tag tag-orange">告警</span></td>
-                  <td>12</td>
-                  <td>漂流入口没有身高标尺说明</td>
-                  <td><div class="table-ops"><button type="button" class="btn-link">详情</button></div></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
     </main>
+    <aside class="tips" data-tips-root aria-label="研发提示要点"></aside>
+    </div>
   </div>
 
   <!-- 抽屉：Skill 编辑示意 -->
@@ -4807,47 +4794,29 @@
           sub: "标签目录与打标规则，供景区助手等消费",
           hasMode: true,
           chat: "tag-chat",
-          config: "tags",
-          innerNav: false,
+          config: "tags-order",
+          innerNav: true,
         },
         assist: {
           title: "景区助手",
           sub: "游客对话、Skill 与可售内容；标签已拆至 AI 标签",
           hasMode: true,
           chat: "assist-chat",
-          config: "skill",
+          config: "skill-tools",
           innerNav: true,
-        },
-        inspect: {
-          title: "内容巡检",
-          sub: "扫描内容质量、过期与合规",
-          hasMode: true,
-          chat: "inspect-chat",
-          config: "inspect",
-          innerNav: false,
-        },
-        kb: {
-          title: "知识库",
-          sub: "FAQ 与文档，供助手检索",
-          hasMode: true,
-          chat: "kb-chat",
-          config: "kb",
-          innerNav: false,
-        },
-        opinion: {
-          title: "舆情分析",
-          sub: "评价与社媒情绪、议题告警",
-          hasMode: true,
-          chat: "opinion-chat",
-          config: "opinion",
-          innerNav: false,
         },
       };
 
       var PAGE_AGENT = {
         home: "home",
         "tag-chat": "tags",
-        tags: "tags",
+        "tags-order": "tags",
+        "tags-member": "tags",
+        "tags-product": "tags",
+        "tags-rules": "tags",
+        "tags-rel": "tags",
+        "tags-coverage": "tags",
+        "tags-logs": "tags",
         "assist-chat": "assist",
         skill: "assist",
         conflict: "assist",
@@ -4862,18 +4831,18 @@
         params: "assist",
         feedback: "assist",
         "api-ext": "assist",
-        "inspect-chat": "inspect",
-        inspect: "inspect",
-        "kb-chat": "kb",
-        kb: "kb",
-        "opinion-chat": "opinion",
-        opinion: "opinion",
       };
 
       var PAGE_TITLE = {
         home: "工作台",
         "tag-chat": "AI 标签",
-        tags: "标签配置",
+        "tags-order": "订单标签",
+        "tags-member": "会员标签",
+        "tags-product": "产品标签",
+        "tags-rules": "打标规则",
+        "tags-rel": "打标关系",
+        "tags-coverage": "覆盖统计",
+        "tags-logs": "运行日志",
         "assist-chat": "景区助手",
         skill: "Skill 关键词",
         conflict: "冲突检查",
@@ -4887,29 +4856,17 @@
         content: "内容配置",
         params: "参数配置",
         feedback: "问题记录",
-        "api-ext": "外部接口对接",
-        "inspect-chat": "内容巡检",
-        inspect: "巡检任务",
-        "kb-chat": "知识库",
-        kb: "知识文档",
-        "opinion-chat": "舆情分析",
-        opinion: "舆情看板",
+        "api-ext": "接口配置",
       };
 
       var lastPageByAgent = {
         home: "home",
-        tags: "tag-chat",
-        assist: "assist-chat",
-        inspect: "inspect-chat",
-        kb: "kb-chat",
-        opinion: "opinion-chat",
+        tags: "tags-order",
+        assist: "skill-tools",
       };
       var lastConfigByAgent = {
-        tags: "tags",
-        assist: "skill",
-        inspect: "inspect",
-        kb: "kb",
-        opinion: "opinion",
+        tags: "tags-order",
+        assist: "skill-tools",
       };
       var currentPageId = "home";
 
@@ -4932,6 +4889,995 @@
           if (radio) radio.checked = !!on;
         });
       }
+
+      var TIPS_VISIBLE_KEY = "ai-proto-tips-visible";
+      var TIPS_SECTION_LABEL = {
+        overview: "整体功能说明",
+        flow: "流程性说明",
+        action: "操作说明",
+        note: "备注",
+      };
+      var TIPS_SECTION_ORDER = ["overview", "flow", "action", "note"];
+      var TIPS_TAG_LABEL = {
+        overview: "整体",
+        flow: "流程",
+        action: "操作",
+        note: "备注",
+      };
+      var PROTO_TIPS = {
+        home: [
+          {
+            category: "overview",
+            title: "工作台",
+            body: "卡片与左侧 rail 进入「景区助手」「AI 标签」。卡片右上角编号锚点对照右侧说明；说明内链接可直达对应入口。",
+          },
+          {
+            category: "action",
+            id: "tip-agent-assist",
+            anchor: "agent-assist",
+            title: "景区助手",
+            body: "左侧 rail「景区助手」→ 默认进入配置（Skill 工具为首项）。顶栏「对话」为演示，不在一期范围。",
+            navAgent: "assist",
+            navMode: "config",
+            navLabel: "→ 进入景区助手 · 配置",
+          },
+          {
+            category: "action",
+            id: "tip-agent-tags",
+            anchor: "agent-tags",
+            title: "AI 标签",
+            body: "左侧 rail「标签」→ 默认进入配置。一期必做：订单 / 会员 / 产品目录、打标规则、打标关系；覆盖统计与运行日志为示意。顶栏「对话」为演示，不在一期范围。",
+            navAgent: "tags",
+            navMode: "config",
+            navLabel: "→ 进入 AI 标签 · 配置",
+          },
+        ],
+        "assist-chat": [
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "对话工作台仅原型演示用，不在一期落地范围。一期只交付景区助手配置：Skill 工具 / 场景、推荐与外观、产品管理、参数配置 / 接口配置等；Skill 关键词与运营补充词、券管理、内容配置、问题记录一期不做。",
+          },
+          { category: "note", title: "演示交互", body: "快捷问题与输入框可试对话；回复为 Mock，不落库、不联动真实业务。" },
+        ],
+        "tag-chat": [
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "对话工作台仅原型演示用，不在一期落地范围。一期交付配置侧：订单 / 会员 / 产品标签目录、打标规则、打标关系（核心）；覆盖统计与运行日志为示意页，完整统计 / 监控后续迭代。",
+          },
+          { category: "note", title: "演示交互", body: "可试询问覆盖率、改阈值等；改规则仅出草稿示意，确认写入请走配置页。" },
+        ],
+        "tags-order": [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "订单域标签目录。条目均来自预置规则模板（如亲子订单、双人套票），供打标规则引用；读单现算后写入打标关系，供助手推荐与数据中台拉取。",
+          },
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "一期必做。维护名称、说明、启停；阈值与规则启停在「打标规则」页配置。",
+          },
+          {
+            category: "flow",
+            title: "何时给订单打标",
+            body: "非运营在本页手工指定某单。系统在读取订单 / 订单快照时，按「打标规则」中已启用的预置模板现算（如儿童数 ≥ N → 亲子订单）；命中后幂等写入打标关系表。另可日批 / 补跑任务对历史订单补打。助手推荐可读现算结果；禁用规则后不再新打，已有关系保留。",
+          },
+          {
+            category: "flow",
+            title: "不可空手新建",
+            body: "订单标签不能运营侧空手新建；新标签须随产品 + 研发上线预置模板后出现。目录新建不会自动产生可配规则。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-order-enabled",
+            anchor: "tags-order-enabled",
+            title: "启用 / 禁用",
+            body: "状态开关控制该标签是否参与后续打标。禁用不会删除目录项，也不会清除打标关系里已有记录；读单 / 批跑不再为该标签写入新关系（不再新打），历史关系保留，中台可按「当前有效」过滤。已被引用的标签不可删除，只能禁用；重新启用后恢复对新订单的标记。打标规则页的启停同理，规则禁用时不现算、不新打。",
+          },
+          {
+            category: "note",
+            title: "名称与生命周期",
+            body: "同景区同域名称唯一；运营不展示内部 ID，改名不改内部键。已被打标关系引用的标签只能禁用、不能删除。来源列均显示「规则模板」。",
+          },
+          {
+            category: "note",
+            title: "内部 ID 与改名",
+            body: "每条标签后台均有固定内部 ID（如 order_family），命中规则由代码 / 预置模板写死，运营不能改表达式。界面仅可编辑展示名称；保存后按 ID 刷新各处的展示文案（打标关系冗余名、助手消费等），内部键不变，历史关系仍挂在原 ID 上。",
+          },
+        ],
+        "tags-member": [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "会员域标签目录。列表示例：规则类「新客、高消费、多次入园、黄金会员」；手动类「重点关怀」；会员喜好「喜欢刺激、偏好拍照、慢节奏」（只读）。规则类现算 / 日批后写入打标关系，供助手与数据中台消费。",
+          },
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "一期必做。列表查看 / 编辑 / 启停（规则类、手动类）；「新增标签」仅建手动类；「同步业务系统标签」可有入口。「手动打标（规划）」弹窗一期不交付。",
+          },
+          {
+            category: "flow",
+            title: "标签类型",
+            body: "类型列：规则（新客、高消费、多次入园、黄金会员）→ 打标规则配阈值，命中写关系；手动（重点关怀）→ 本页新建，一期仅目录；会员喜好（喜欢刺激、偏好拍照、慢节奏）→ 只读对照，状态列显示「只读」。",
+          },
+          {
+            category: "flow",
+            title: "何时给会员打标",
+            body: "非本页手工指定会员。读会员信息或日批时，按已启用规则现算（如「新客」「高消费」「多次入园」）；命中后幂等写入打标关系。「重点关怀」等手动类一期不入关系；喜好行不参与打标关系。",
+          },
+          {
+            category: "flow",
+            title: "可新建范围",
+            body: "「新增标签」只能建手动类（如「重点关怀」），不会自动生成打标规则。规则类（新客、高消费等）须随预置模板上线，不可空手新建。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-member-origin",
+            anchor: "tags-member-origin",
+            title: "来源",
+            body: "来源列三类：① 规则模板 — 规则类行（新客、高消费、多次入园、黄金会员），逻辑预置，阈值在「打标规则」；② 手动新增 — 本页新建（如重点关怀），一期不入关系；③ 系统同步 — 会员喜好行（喜欢刺激、偏好拍照、慢节奏）及同步按钮对齐的会员系统字典，只读 / 只更目录名，不产生规则、不写关系。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-member-enabled",
+            anchor: "tags-member-enabled",
+            title: "启用 / 禁用",
+            body: "规则类、手动类可启停；会员喜好行固定「只读」无开关。禁用不删目录、不清关系；现算 / 日批不再新打，历史保留。有关联只能禁用不能删；重新启用后恢复新打。打标规则页启停同理。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-member-sync",
+            anchor: "tags-member-sync",
+            title: "同步业务系统标签",
+            body: "按名称从会员系统拉标签字典，对齐进本域目录（原型 toast 示意）。只更新「有哪些名称」，不产生打标规则、不写入打标关系；正式可记运行日志。与产品标签「同步业务系统标签」同思路。",
+          },
+          {
+            category: "note",
+            title: "一期不做",
+            body: "「手动打标（规划）」：为 demo 账号等指定「重点关怀」等手动标签，一期不交付。对话推断标签仅会话内，不落库、不回写会员（二期 / 三期）。",
+          },
+          {
+            category: "note",
+            title: "内部 ID 与改名",
+            body: "后台有固定 ID（如 new_guest 对应列表名「新客」，manual_care 对应「重点关怀」），规则逻辑写死在模板。界面可改展示名称；保存后按 ID 刷新关系表冗余名等，内部键不变。",
+          },
+          {
+            category: "note",
+            title: "喜好对照",
+            body: "「喜欢刺激、偏好拍照、慢节奏」映射会员系统 HOBBY_* 参数，本页不可编辑。推荐吃会员字段或会话 prefer_*，不在此 duplicate 目录；对话不回写会员。",
+          },
+        ],
+        "tags-product": [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "产品域标签名称目录。列表示例：系统同步「成人、儿童、亲子」；手动新增「年卡」。供景区助手「产品管理」勾选，勾选结果写入打标关系，供购票匹配与推荐过滤；与订单 / 会员标签分域。本页无打标规则。",
+          },
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "一期必做。列表查看 / 编辑 / 启停；「新增标签」建手动类；「同步业务系统标签」按名称对齐商品中心等字典（只更新目录，不产生规则、不写关系）。项目 / 内容标签正式页一期不做。",
+          },
+          {
+            category: "flow",
+            title: "何时给产品打标",
+            body: "非本页手工指定某产品。运营在「产品管理」添加 / 编辑产品时，从本目录多选标签（如给家庭年卡勾选「亲子」「年卡」）；保存后写入「产品 ↔ 标签」打标关系。添加产品时不整包灌业务字典，名称须已在本页新建或已同步进目录。",
+          },
+          {
+            category: "flow",
+            title: "目录 vs 关系",
+            body: "本页同步 / 新建只维护「有哪些标签名」；「谁打了哪个标签」在产品管理勾选时写入关系表。查询产品详情路径不 upsert 目录；目录对齐走手动 / 批任务（项目尚无主数据列表时尤其如此）。",
+          },
+          {
+            category: "flow",
+            title: "可新建范围",
+            body: "「新增标签」可建手动类（如「年卡」），来源为手动新增，名称同景区同域唯一。系统同步行（成人、儿童、亲子）须由「同步业务系统标签」或批任务按名称对齐，本页不可空手新建同名同步项。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-product-origin",
+            anchor: "tags-product-origin",
+            title: "来源",
+            body: "来源列两类：① 系统同步 — 业务字典按名称对齐（演示：成人、儿童、亲子来自商品中心），抽屉以查看为主、只更目录展示名，不产生打标规则；② 手动新增 — 本页「新增标签」创建（如年卡），可编辑名称 / 说明，勾选后写入打标关系。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-product-enabled",
+            anchor: "tags-product-enabled",
+            title: "启用 / 禁用",
+            body: "状态开关控制该标签是否可供产品管理勾选、是否参与后续推荐过滤。禁用不删目录、不清已有产品 ↔ 标签关系；新产品无法再勾选该标签，历史关系保留。已被引用的标签只能禁用、不能删除；重新启用后恢复可选。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-product-sync",
+            anchor: "tags-product-sync",
+            title: "同步业务系统标签",
+            body: "按名称从商品中心（等业务系统）拉标签字典，对齐进本域目录（原型 toast 示意：亲子 / 成人 / 儿童）。只更新「有哪些名称」，不产生打标规则、不写入打标关系；正式可记入运行日志。与会员标签「同步业务系统标签」同思路。",
+          },
+          {
+            category: "note",
+            title: "一期不做",
+            body: "项目 / 内容标签独立目录一期不做，待未来项目列表；过渡可用同步按名称对齐部分业务字典。产品侧无规则现算，不打标规则页配置项。",
+          },
+          {
+            category: "note",
+            title: "内部 ID 与改名",
+            body: "后台有固定 ID（如 family 对应列表名「亲子」，product_annual 对应「年卡」）。界面不展示 ID，可改展示名称与说明；保存后按 ID 刷新关系表冗余名、产品管理已选展示等，内部键不变。",
+          },
+          {
+            category: "note",
+            title: "与产品管理",
+            body: "维护入口在本页；产品管理抽屉「标签」仅多选目录中已启用项（弹窗仅名称），勾选写入关系。与订单 / 会员分域；编辑产品时可改标签，不可改类型 / 来源 / 对接 ID。",
+          },
+        ],
+        "tags-rules": [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "订单 / 会员规则类标签的预置打标模板配置页。列表示例：订单「亲子订单、双人套票、团队游客」；会员「新客、高消费、多次入园」。运营仅改可配阈值与启停；固定逻辑只读。产品标签无规则项，勾选在产品管理完成。",
+          },
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "一期必做。列表查看、编辑抽屉改阈值 / 启停；无「新增规则」入口。新模板须产品 + 研发上线后才出现在列表。",
+          },
+          {
+            category: "flow",
+            title: "与标签目录关系",
+            body: "「写入标签」列对应该域目录项（名称可改）。目录页可启停标签、改展示名；本页可启停规则、改阈值。规则禁用或目录标签禁用后均不再新打，历史关系保留。目录新建名称不会自动出现在本页。",
+          },
+          {
+            category: "flow",
+            title: "写入打标关系",
+            body: "订单规则：读单 / 订单快照时现算，命中幂等写入（如儿童数 ≥ N → 亲子订单）。会员规则：读会员或日批现算（新客、高消费、多次入园等）。助手推荐可读现算结果；数据中台从打标关系表拉取。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-rules-logic",
+            anchor: "tags-rules-logic",
+            title: "固定逻辑",
+            body: "命中表达式由预置模板写死，运营不可改。示例：「儿童数 ≥ N，或票种 ∈ 家庭票种白名单」「累计实付 ≥ 金额」。编辑抽屉中只读；改逻辑须研发发版新模板。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-rules-param",
+            anchor: "tags-rules-param",
+            title: "可配参数",
+            body: "运营可在编辑抽屉调整的阈值。有参：亲子订单（儿童数 N）、团队游客（人数 N）、高消费（累计实付）、多次入园（完成订单数 N）。无参：双人套票、新客等列显示「—」。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-rules-enabled",
+            anchor: "tags-rules-enabled",
+            title: "启用 / 禁用",
+            body: "控制该规则是否参与现算 / 日批。禁用后不再为新对象写入关系，已有关系保留；运行日志可记「规则禁用 · 跳过」（如团队游客）。与目录页标签启停配合：任一侧禁用均不再新打。",
+          },
+          {
+            category: "note",
+            title: "硬约束",
+            body: "规则产生逻辑仅来自预置模板；运营不能自写新表达式。无产品域规则；黄金会员等待模板上线后才会出现可配项。",
+          },
+        ],
+        "tags-rel": [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "打标关系表查询页，存「对象 ↔ 标签」事实（内部键 + 冗余展示名），供数据中台拉取；景区助手只读消费。列表示例：订单 ORD20260818012 → 亲子订单；会员 demo_vip → 高消费；产品 家庭套票 → 亲子。",
+          },
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "一期核心交付。展示订单规则、会员规则、产品勾选三类来源写入的关系；本页只读查询，不在此手工增删关系。",
+          },
+          {
+            category: "flow",
+            title: "一期写入来源",
+            body: "① 订单规则现算 → 对象类型「订单」、来源「订单规则」；② 会员规则 → 「会员 / 会员规则」；③ 产品管理勾选 → 「产品 / 产品勾选」。均为幂等 upsert，重复命中刷新「更新时间」。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-rel-object-type",
+            anchor: "tags-rel-object-type",
+            title: "对象类型",
+            body: "关系所属实体域：订单（订单号）、会员（会员标识）、产品（产品名称冗余）。与三域标签目录对应；跨域标签名可相近但内部键不同（如订单「亲子订单」与产品「亲子」）。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-rel-source",
+            anchor: "tags-rel-source",
+            title: "来源",
+            body: "该条关系的产生方式：订单规则 / 会员规则（现算或日批写入）；产品勾选（产品管理保存时写入）。不含目录同步、会员手动打标、对话推断（后两者一期不入表）。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-rel-updated",
+            anchor: "tags-rel-updated",
+            title: "更新时间",
+            body: "该对象 ↔ 标签关系最后一次写入或刷新时间（`yyyy-mm-dd hh:mm`）。补跑 / 重复命中会更新；规则或标签禁用后不再新增或刷新，历史行保留，中台可按「当前有效」过滤。",
+          },
+          {
+            category: "note",
+            title: "一期不写入",
+            body: "会员手动打标（如重点关怀）、对话智能标签一期不写入本表；对话推断仅会话内，二期 / 三期才规划落库。会员喜好不参与打标关系。",
+          },
+          {
+            category: "note",
+            title: "名称与内部键",
+            body: "列表展示对象与标签名称（冗余字段），便于运营阅读；后台以内部键关联。目录改名后按 ID 刷新冗余名，历史关系仍挂原键。",
+          },
+        ],
+        "tags-coverage": [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "标签覆盖情况统计示意页。按标签汇总覆盖笔数 / 人数 / 挂接 SKU 数及占比，辅助运营了解标签实际覆盖面。",
+          },
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "非一期核心必交付。当前为 Mock 列表（亲子订单、新客、高消费、亲子产品等）；对接后按景区、标签类型聚合，具体图表与口径以实现为准。",
+          },
+          {
+            category: "flow",
+            title: "指标口径",
+            body: "订单标签统计订单笔数与占比（如亲子订单 1,286 笔 · 18.4%）；会员标签统计覆盖人数；产品标签统计挂接 SKU 数（演示「亲子 · 挂 6 个 SKU」）。近 7 日变化为趋势示意，正式须与关系表对齐。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-coverage-metric",
+            anchor: "tags-coverage-metric",
+            title: "覆盖人数 / 笔数",
+            body: "该标签当前有效覆盖量：订单域为命中规则的订单笔数；会员域为关系表中的会员人数；产品域为勾选该标签的产品 / SKU 数量。占比分母为同域对象总量（产品行可为「—」）。",
+          },
+          {
+            category: "note",
+            title: "与打标关系",
+            body: "统计由打标关系表及业务主数据聚合，不替代关系表明细查询。一期可先保留菜单 + 示意，完整统计分析后续迭代。",
+          },
+        ],
+        "tags-logs": [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "AI 标签域运行事件日志示意页。记录打标任务、规则启停、目录同步等与标签相关的后台动作，便于运维排查与审计。",
+          },
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "非一期完整监控台。当前为示意列表；正式须能记录目录同步、规则启停 / 阈值变更、读单现算 / 日批写入等（可对接统一日志或简版列表）。",
+          },
+          {
+            category: "flow",
+            title: "典型事件",
+            body: "演示含：读单现算（亲子订单 · ORD20260818012）、日批（高消费 · member_8842）、目录同步（产品标签 · 亲子/成人/儿童）、规则禁用跳过（团队游客）。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-logs-theme",
+            anchor: "tags-logs-theme",
+            title: "主题",
+            body: "规则类事件主题多为规则 / 标签名（亲子订单、高消费、团队游客）；目录同步主题为业务系统名（如「业务系统」），对象列指向同步域（产品标签、会员标签等）。",
+          },
+          {
+            category: "action",
+            id: "tip-tags-logs-action",
+            anchor: "tags-logs-action",
+            title: "动作",
+            body: "事件类型：读单现算、日批（会员规则补跑）、目录同步（按名称对齐字典，不写关系）、规则禁用 / 启用、阈值变更等。结果列摘要成败与写入的标签名。",
+          },
+          {
+            category: "note",
+            title: "与目录同步",
+            body: "目录同步只更新「有哪些标签名」，不产生规则、不写入打标关系；但须在运行日志留痕。同步走手动 / 批任务，不走查询热路径。",
+          },
+        ],
+        coupons: [
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "券模板管理一期不做；当前为原型示意。领券 / 购票推券等 Workflow 与快捷服务规则引用券产品（如 cp_prod_new）；券模板在本页维护，待后续有运营需求再开发。",
+          },
+        ],
+        content: [
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "内容块 / 项目活动配置一期不做；当前为原型示意。主动营销等 Skill 推荐内容依赖本页数据，待后续再开发。",
+          },
+        ],
+        feedback: [
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "踩上报与赞统计一期不做；当前为原型示意。对话质量复盘与运营分析待后续有需求再开发本页。",
+          },
+          { category: "note", title: "赞统计", body: "按日 / 按 Skill / 按景区聚合，具体图表以实现为准；原型仅保留筛选与结果区结构。" },
+        ],
+        params: [
+          {
+            category: "overview",
+            title: "阈值维护",
+            body: "一期可维护客流偏高/拥挤、新客领券窗口、可开票窗口等业务阈值，以及兜底提示语（购票无法闭环、优享券说明等）。默认查看，底栏编辑 / 取消 / 提交。",
+          },
+          {
+            category: "note",
+            title: "购票资格阈值",
+            body: "儿童票身高上限、儿童票年龄上限、老人票满周岁为预留字段，当前不可编辑，不在一期落地范围。",
+          },
+          {
+            category: "note",
+            title: "园区围栏（在园判定）",
+            body: "开启定位授权后，GPS 是否在园 = 坐标是否落入该景区围栏。围栏不在本页维护，也不放接口配置（接口配置只配 URL / 密钥）。优先复用景区业务侧已有的 GPS 园区边界（多边形或圆心+半径，与客户端同坐标系）。导览底图的平面坐标（mapX/mapY）不能当围栏。无 GPS 围栏时一期可不做定位判在园，仍靠核销 + 自报兜底。",
+          },
+        ],
+        skill: [
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "本页一期不做；当前为原型示意。运营侧「补充关键词」一期明确不交付：无本页编辑、无独立维护入口，路由匹配仅用运维配置的子意图默认关键词。",
+          },
+          { category: "overview", title: "运营 vs 运维", body: "与 Skill 场景同源数据；本页只读状态、无启停；启停只在 Skill 场景改。" },
+          { category: "action", title: "可编辑范围", body: "（后续迭代）才开放抽屉内「补充关键词」编辑；一期场景指令、绑定工具、默认关键词均只读。" },
+          { category: "flow", title: "唯一性校验", body: "（未来）本 Skill 内（含各子意图）关键词唯一，保存时校验；跨 Skill 撞词见冲突检查。" },
+          { category: "note", title: "Mock", body: "示例 ticket_purchase / parking_pay；提交不落库，toast 示意。" },
+        ],
+        conflict: [
+          { category: "overview", title: "只读页", body: "不提供增删改；对照 intent_exclusions 路由排他，给运营/研发看规则口径。" },
+          { category: "flow", title: "两层校验", body: "① 跨 Skill 排他（本页表格）；② 本 Skill 内唯一（Skill 关键词保存时）。" },
+          { category: "note", title: "示例", body: "主动营销压制项目查询；出行攻略压制购票——对齐代码里 exclusion 配置。" },
+        ],
+        "api-ext": [
+          {
+            category: "overview",
+            title: "字段需研发确认",
+            body: "当前表单为示意。落地前需与研发确认各接口入参：天气接口是否需另附地址信息；LLM 可能包含 model 与 api-key，密钥查看/编辑均需打码处理。",
+          },
+          { category: "note", title: "变更风险", body: "环境级配置，请检查后填写，勿随意变更影响使用。默认查看，底栏编辑 / 取消 / 提交。" },
+        ],
+        "ops-skill": [
+          {
+            category: "overview",
+            title: "主要功能",
+            body: "运维侧 Skill 主入口：列表查询、新增/编辑、启停、日志。在此定义 Skill 身份、绑定工具集、配置子意图（默认关键词 + 场景指令）。运营「Skill 关键词」页与补充关键词维护一期明确不做。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-id",
+            anchor: "ops-skill-id",
+            title: "SkillID",
+            body: "新增时填写：英文/数字/下划线，≤40 字，全局唯一，提交后不可改；编辑态标题旁只读展示 skillId。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-name",
+            anchor: "ops-skill-name",
+            title: "名称",
+            body: "展示名称，同景区下须唯一，不可与已有 Skill 场景重复；保存时校验。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-tools",
+            anchor: "ops-skill-tools",
+            title: "工具集",
+            body: "只能从「Skill 工具」目录选择，不可手填新标识；读写不得宽于目录。子意图「条件→工具」也只能从本 Skill 已绑定工具集中选。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-sub-intents",
+            anchor: "ops-skill-sub-intents",
+            title: "子意图",
+            body: "一期起每个 Skill 必须至少 1 条、最多 10 条，不可为 0；删至最后一条时不可移除整组。抽屉内嵌编辑，关键字与场景指令均在子意图卡片内维护。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-keywords",
+            anchor: "ops-skill-keywords",
+            title: "关键词",
+            body: "用于命中该子意图。同一 Skill 场景下，各子意图的关键词不能重复（本 Skill 内唯一，保存时校验）。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-custom-kw",
+            anchor: "ops-skill-custom-kw",
+            title: "补充关键词",
+            body: "运营补充关键词一期明确不做：无「Skill 关键词」页、本抽屉只读占位，不可编辑；路由命中仅用各子意图默认关键词。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-instruction",
+            anchor: "ops-skill-instruction",
+            title: "场景指令",
+            body: "汇总 prompt（角色、需追问、条件→工具、禁止等），供大语言模型定义并驱动该 Skill 的工作流与对话行为。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-log",
+            anchor: "ops-skill-log",
+            title: "日志",
+            body: "按 skillId 过滤的变更记录（占位）。建议记入：新增/编辑提交/启停，以及子意图、条件→工具的增删改。",
+          },
+          {
+            category: "action",
+            id: "tip-ops-skill-enabled",
+            anchor: "ops-skill-enabled",
+            title: "启用 / 禁用",
+            body: "列表开关控制该场景是否可被命中。禁用后当前 Skill 场景无法命中（对话侧不再进入该场景）。",
+          },
+        ],
+        ui: [
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "一期可维护「基础与主色」（助手名称/昵称/对话标题/主题色/聊天背景等）及「形象资源」中的助手头像、默认全身图。整页底栏取消 / 提交保存。不含演示专用「推荐解释层」。",
+          },
+          {
+            category: "action",
+            id: "tip-ui-welcome-tab",
+            anchor: "ui-welcome-tab",
+            title: "欢迎文案",
+            body: "按会员态 / 在园态等条件配置欢迎 title / subtitle / body，一期不做；当前为原型示意。正式欢迎区标题可先走默认模板或对接后单独迭代。",
+          },
+          {
+            category: "action",
+            id: "tip-ui-chat-motions",
+            anchor: "ui-chat-motions",
+            title: "对话形态图",
+            body: "待机 / 思考 / 点头等动作形态图一期不做；当前为占位上传。一期仅配助手头像与默认全身图即可。",
+          },
+          {
+            category: "note",
+            title: "形象资源",
+            body: "助手头像、助手默认全身图在一期范围内；会员默认头像不在本页维护。",
+          },
+          {
+            category: "note",
+            title: "聊天背景",
+            body: "支持无 / 纯色 / 上传底图；上传体积与格式限制以实现为准。",
+          },
+        ],
+        "welcome-q": [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "维护欢迎区「推荐对话」入口，数据对应 welcome_questions。游客端区块标题可仍显示「游游推荐」。与「快捷服务」chips 区分：本页为推荐问题列表；与 UI 配置「欢迎文案」区分：那是标题区模板，不是本列表。",
+          },
+          {
+            category: "flow",
+            title: "展示与排序",
+            body: "运行时按展示规则 evaluateRules 过滤，仅启用项参与。欢迎区最多展示 8 条：置顶优先，其余按优先级降序。多条件为 AND；不配置条件则始终展示。",
+          },
+          {
+            category: "action",
+            title: "列表",
+            body: "筛选：文案 / prompt、状态；查询、新增。无分页，底栏「共 N 条」。列含优先级、展示文案、点击行为、置顶、规则摘要、状态开关、编辑 / 日志。",
+          },
+          {
+            category: "action",
+            id: "tip-welcome-q-enabled",
+            anchor: "welcome-q-enabled",
+            title: "启用 / 禁用",
+            body: "列表开关控制该条是否参与端上展示与排序。禁用后从欢迎区候选池移除，已填文案、规则与点击行为仍保留，可随时再启用。",
+          },
+          {
+            category: "action",
+            id: "tip-welcome-q-click-target",
+            anchor: "welcome-q-click-target",
+            title: "点击行为",
+            body: "切换选项后，下方仅展示对应必填区：进行对话 → prompt（≤100，点击后作为用户话术发出）；小程序链接 / H5 → URL；小程序页面 → 自有小程序菜单页下拉。保存以当前选中项为准，隐藏区字段不参与校验。",
+          },
+          {
+            category: "action",
+            id: "tip-welcome-q-pin-top",
+            anchor: "welcome-q-pin-top",
+            title: "置顶",
+            body: "开启后排在非置顶项之前，用于标记当前重点运营内容（活动、季节性话术、景区主推问题等）。可有多条置顶，彼此之间仍按优先级排序。",
+          },
+          {
+            category: "flow",
+            id: "tip-welcome-q-priority",
+            anchor: "welcome-q-priority",
+            title: "优先级",
+            body: "数字越大越靠前。总排序：置顶组（组内按优先级降序）→ 非置顶组（组内按优先级降序）；欢迎区最终取符合条件的前 8 条。",
+          },
+          {
+            category: "flow",
+            id: "tip-welcome-q-display-rules",
+            anchor: "welcome-q-display-rules",
+            title: "展示规则",
+            body: "多条件为 AND；不配置则始终展示。与快捷服务共用 evaluateRules 引擎。布尔/枚举字段见下拉；「指定标签」预留，正式对接「AI 标签」用户画像后可按标签收窄（与产品标签、订单标签分域，不在本页维护标签值）。点评类：原型为 hasReviewableOrders，业务「服务点评」常用 canScenicReviewToday，正式按 field_catalog 归一。",
+          },
+          {
+            category: "action",
+            id: "tip-welcome-q-log",
+            anchor: "welcome-q-log",
+            title: "操作日志",
+            body: "平台通用日志结构：操作人、时间、动作类型、变更摘要（字段 diff 可选）。推荐对话建议记录：新增、编辑提交、列表启停；按条目 id 过滤。正式环境由统一日志时间线组件渲染，本原型为占位说明。",
+          },
+          {
+            category: "note",
+            title: "与快捷服务",
+            body: "共用同一套 rules 模型与点击行为四类。快捷服务无置顶 / 辅助文案，标题 ≤10，欢迎区最多 4 条 chips；本页有置顶与辅助文案，最多 8 条问题。",
+          },
+          {
+            category: "note",
+            title: "路线入口互斥",
+            body: "示例：「今日推荐路线」= 待出行且已在园；「帮我规划路线」= 待出行且不在园。配置时避免同屏重复推同类入口。",
+          },
+        ],
+        service: [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "维护欢迎区「快捷服务」chips 入口，数据对应 recommend_entries.json。游客端区块标题同为「快捷服务」。与「推荐对话」区分：本页为短标题能力入口（领券、停车、点评等），非推荐问题列表。",
+          },
+          {
+            category: "flow",
+            title: "展示与排序",
+            body: "运行时按展示规则 evaluateRules 过滤，仅启用项参与。欢迎区最多展示 4 条 chips，按优先级降序取前 N 条（无置顶）。多条件为 AND；不配置条件则始终展示。",
+          },
+          {
+            category: "action",
+            title: "列表",
+            body: "筛选：标题、状态；查询、新增。无分页，底栏「共 N 条」。列含优先级、标题、点击行为、规则摘要、状态开关、编辑 / 日志。",
+          },
+          {
+            category: "action",
+            id: "tip-service-enabled",
+            anchor: "service-enabled",
+            title: "启用 / 禁用",
+            body: "列表开关控制该条是否参与端上展示与排序。禁用后从 chips 候选池移除，已填标题、规则与点击行为仍保留，可随时再启用。",
+          },
+          {
+            category: "action",
+            id: "tip-service-title",
+            anchor: "service-title",
+            title: "标题",
+            body: "chip 上展示的短文案，≤10 字。与推荐对话「展示文案 + 辅助文案」不同，本页仅一个标题字段，需精炼（如「领取新客券」「停车缴费」）。",
+          },
+          {
+            category: "action",
+            id: "tip-service-click-target",
+            anchor: "service-click-target",
+            title: "点击行为",
+            body: "切换选项后，下方仅展示对应必填区：进行对话 → prompt（≤100，点击后作为用户话术发出）；小程序链接 / H5 → URL；小程序页面 → 自有小程序菜单页下拉。保存以当前选中项为准，隐藏区字段不参与校验。",
+          },
+          {
+            category: "flow",
+            id: "tip-service-priority",
+            anchor: "service-priority",
+            title: "优先级",
+            body: "数字越大越靠前。命中展示规则后按优先级降序排序，欢迎区最终取符合条件的前 4 条（无置顶分组）。",
+          },
+          {
+            category: "flow",
+            id: "tip-service-display-rules",
+            anchor: "service-display-rules",
+            title: "展示规则",
+            body: "多条件为 AND；不配置则始终展示。与推荐对话共用 evaluateRules 引擎。布尔/枚举字段见下拉；「指定标签」预留，正式对接「AI 标签」用户画像后可按标签收窄（与产品标签、订单标签分域，不在本页维护标签值）。点评类：原型为 hasReviewableOrders，业务「服务点评」常用 canScenicReviewToday，正式按 field_catalog 归一。",
+          },
+          {
+            category: "action",
+            id: "tip-service-log",
+            anchor: "service-log",
+            title: "操作日志",
+            body: "平台通用日志结构：操作人、时间、动作类型、变更摘要（字段 diff 可选）。快捷服务建议记录：新增、编辑提交、列表启停；按条目 id 过滤。正式环境由统一日志时间线组件渲染，本原型为占位说明。",
+          },
+          {
+            category: "note",
+            title: "与推荐对话",
+            body: "共用 rules 模型与点击行为四类。推荐对话有置顶 / 辅助文案，展示文案 ≤40，最多 8 条问题；本页无置顶与辅助文案，标题 ≤10，最多 4 条 chips。",
+          },
+          {
+            category: "note",
+            title: "典型配置",
+            body: "示例：领取新客券（canClaimNewGuestCoupon）、停车缴费（inPark）、服务点评（hasReviewableOrders）、开发票（hasInvoiceableOrders）。可绑 skillId 或跳页，点击「进行对话」时发固定 prompt。",
+          },
+          {
+            category: "note",
+            title: "点评规则字段",
+            body: "原型展示规则下拉为 hasReviewableOrders（可评价订单）；业务文档快捷入口「服务点评」常用 canScenicReviewToday（今日可景区点评）。二者语义接近，正式环境可在 field_catalog 中归一或并存，配置时以对齐后的字段名为准。",
+          },
+        ],
+        products: [
+          {
+            category: "overview",
+            title: "页面定位",
+            body: "维护 AI 助手可售 / 可推的产品清单（合列表）。对话内购票 / 下单须在自销小程序闭环，故入库产品须为自销渠道可售（见「是否自销可售」）。数据经供应商对接回写，供购票 Skill、推荐等引用。券模板在「券管理」，不在本页维护。",
+          },
+          {
+            category: "overview",
+            id: "tip-products-scope",
+            anchor: "products-scope",
+            title: "一期范围",
+            body: "必须「来源 + 对接产品 ID」精确查询绑定，禁止纯手工建档（无对接无法下单）。AI 侧仅维护可在自销小程序下单的产品，须为自销渠道售卖。一期类型：门票 / 卡票 / 组合产品；餐饮、零售需门店筛选，后续再开。产品标签在 AI 标签 → 产品标签维护，本页只勾选。",
+          },
+          {
+            category: "action",
+            title: "列表",
+            body: "筛选：产品名称、产品类型、状态；查询、新增。无分页，底栏「共 N 条」。列含对接产品 ID、名称、类型、游玩 / 可售期限、是否自销可售、参考售价、标签、对接状态、来源、上下架、编辑。",
+          },
+          {
+            category: "action",
+            id: "tip-products-enabled",
+            anchor: "products-enabled",
+            title: "上下架",
+            body: "仅列表开关控制是否在 AI 侧可售 / 可推；表单内无上架项。下架后保留绑定与标签，可随时再上架。对接状态「停用」等以供应商回写为准，与本开关独立。",
+          },
+          {
+            category: "flow",
+            id: "tip-products-self-channel",
+            anchor: "products-self-channel",
+            title: "是否自销可售",
+            body: "供应商回写字段：是否含自销小程序售卖渠道。对话内购票 / 下单须在自销小程序闭环，故为「否」时 AI 选品与推荐池应过滤该产品（不可推荐、不可对话下单），仅「是」可进入可售候选。",
+          },
+          {
+            category: "flow",
+            id: "tip-product-type",
+            anchor: "product-type",
+            title: "产品类型",
+            body: "新增时必选（门票 / 卡票 / 组合产品），用于校验对接 ID 所属类型。编辑已入库产品后类型不可改（只读）。",
+          },
+          {
+            category: "flow",
+            id: "tip-product-supplier",
+            anchor: "product-supplier",
+            title: "来源",
+            body: "对接系统（供应商票务等）下拉。须先选来源再查对接产品 ID；切换来源会清空已选产品。编辑模式下不可改。",
+          },
+          {
+            category: "action",
+            id: "tip-product-ext-id",
+            anchor: "product-ext-id",
+            title: "对接产品 ID",
+            body: "输入后精确查询供应商接口；命中显示 ID + 名称，单击选中并展示摘要。同一 ID 不可重复入库。编辑模式下只读；新增未选中 ID 不可提交。",
+          },
+          {
+            category: "flow",
+            id: "tip-product-snapshot",
+            anchor: "product-snapshot",
+            title: "对接摘要",
+            body: "选中 ID 后只读展示：名称、类型子项（门票类型 / 卡票类型 / 组合内容）、参考售价、游玩期限、可售期限、提前售卖天数、是否自销可售、对接状态。参考售价非日历实价，实价以选定出行日为准。",
+          },
+          {
+            category: "action",
+            id: "tip-product-tags",
+            anchor: "product-tags",
+            title: "标签",
+            body: "从「AI 标签 → 产品标签」目录多选（弹窗仅名称）；已选可移除。勾选结果写入产品 ↔ 标签关系表，供购票匹配与推荐过滤；与订单 / 会员标签分域。编辑时可改标签，不可改类型 / 来源 / 对接 ID。",
+          },
+          {
+            category: "note",
+            title: "与购票 Skill",
+            body: "对话购票按人数 / 年龄等规则在产品池中选品；标签（如成人、亲子、老人）辅助匹配。无符合规则 SKU 时走兜底话术（参数配置「兜底提示语」）。",
+          },
+          {
+            category: "note",
+            title: "列表字段说明",
+            body: "游玩期限 = 有效游玩起止；可售期限 = 可售卖起止；对接状态由供应商同步（正常 / 停用等）。是否自销可售见列表列头说明。",
+          },
+        ],
+        "skill-tools": [
+          {
+            category: "overview",
+            title: "工具配置范围",
+            body: "需与开发对齐：每个工具应包含 API 与字段的配置，不能只做能力标识 + 读写的目录示意。",
+          },
+          {
+            category: "action",
+            id: "tip-assist-mode",
+            anchor: "assist-mode-toggle",
+            title: "对话 / 配置",
+            body: "「对话」为原型演示用对话工作台，不在一期落地范围；一期只交付配置能力（Skill 工具 / 场景等）。Skill 关键词页与运营补充词一期明确不做。",
+          },
+          {
+            category: "action",
+            id: "tip-assist-home",
+            anchor: "assist-home-back",
+            title: "返回平台首页",
+            body: "点击回到登录成功后的景区平台首页（工作台），退出当前智能体配置上下文。",
+          },
+          {
+            category: "action",
+            id: "tip-assist-user",
+            anchor: "assist-header-user",
+            title: "账号菜单",
+            body: "平台通用账号下拉菜单：个人设置、退出登录等（原型仅占位，未展开下拉）。",
+          },
+          {
+            category: "action",
+            id: "tip-assist-scenic",
+            anchor: "assist-scenic-select",
+            title: "景区选择",
+            body: "演示用控件；一期版本不需要考虑集团 / 子公司切换，配置上下文固定单景区。",
+          },
+          { category: "overview", title: "全局目录", body: "能力标识 + 名称 + 默认读写；Skill 场景只能从此选，不可手填新标识。" },
+          { category: "note", title: "依赖方向", body: "工具目录 → Skill.toolBindings → 子意图 conditionRules[].tool（读写不得更宽）。" },
+        ],
+      };
+      var tipsRoot = document.querySelector("[data-tips-root]");
+
+      function escapeTipsHtml(s) {
+        return String(s || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function assignProtoTipNumbers(tips) {
+        var num = 0;
+        return (tips || []).map(function (t) {
+          var copy = {
+            category: t.category,
+            title: t.title,
+            body: t.body,
+            id: t.id || "",
+            anchor: t.anchor || "",
+            navAgent: t.navAgent || "",
+            navMode: t.navMode || "",
+            navLabel: t.navLabel || "",
+          };
+          if (copy.anchor) {
+            num += 1;
+            copy.num = num;
+            if (!copy.id) copy.id = "tip-" + num;
+          }
+          return copy;
+        });
+      }
+
+      function markerScopeForPage(pageId) {
+        if (pageId === "ops-skill" || pageId === "welcome-q" || pageId === "service" || pageId === "products") return document;
+        if (pageId === "skill-tools") {
+          return document.getElementById("app-shell") || document;
+        }
+        return document.getElementById("page-" + pageId) || document;
+      }
+
+      function clearProtoTipMarkers(scope) {
+        var root = document;
+        root.querySelectorAll(".tip-marker").forEach(function (el) {
+          el.remove();
+        });
+        root.querySelectorAll(".has-tip-ref").forEach(function (el) {
+          el.classList.remove("has-tip-ref");
+        });
+      }
+
+      function focusProtoTip(tipId) {
+        if (!tipId || !tipsRoot) return;
+        applyTipsVisible(true);
+        tipsRoot.querySelectorAll(".tip.is-active").forEach(function (el) {
+          el.classList.remove("is-active");
+        });
+        var article = tipsRoot.querySelector('[data-tip-id="' + tipId + '"]');
+        if (!article) return;
+        article.classList.add("is-active");
+        article.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        window.setTimeout(function () {
+          article.classList.remove("is-active");
+        }, 2200);
+      }
+
+      function applyProtoTipMarkers(tips, scope) {
+        clearProtoTipMarkers(scope);
+        var drawerEl = document.getElementById("drawer");
+        var drawerOpen = !!(drawerEl && drawerEl.classList.contains("open"));
+        var normalized = assignProtoTipNumbers(tips);
+        normalized.forEach(function (t) {
+          if (!t.anchor || !t.num) return;
+          var hosts = (scope || document).querySelectorAll('[data-tip-ref="' + t.anchor + '"]');
+          hosts.forEach(function (host) {
+            if (!host || host.closest("[hidden]")) return;
+            if (drawerEl && drawerEl.contains(host) && !drawerOpen) return;
+            var tipId = t.id || "tip-" + t.num;
+            host.classList.add("has-tip-ref");
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "tip-marker";
+            btn.textContent = String(t.num);
+            btn.setAttribute("data-tip-focus", tipId);
+            btn.setAttribute("aria-label", "查看说明：" + (t.title || ""));
+            btn.addEventListener("click", function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              focusProtoTip(tipId);
+            });
+            host.appendChild(btn);
+          });
+        });
+      }
+
+      function refreshCurrentPageTipMarkers() {
+        applyProtoTipMarkers(PROTO_TIPS[currentPageId] || [], markerScopeForPage(currentPageId));
+      }
+
+      function renderProtoTips(pageId) {
+        if (!tipsRoot) return;
+        var tips = PROTO_TIPS[pageId];
+        var scope = markerScopeForPage(pageId);
+        if (!tips || !tips.length) {
+          tipsRoot.innerHTML =
+            '<div class="tips__title"><span class="dot"></span>提示要点</div>' +
+            '<p class="tips-empty">本页暂无研发备注。</p>';
+          clearProtoTipMarkers(scope);
+          return;
+        }
+        var normalized = assignProtoTipNumbers(tips);
+        var html = '<div class="tips__title"><span class="dot"></span>提示要点</div>';
+        TIPS_SECTION_ORDER.forEach(function (category) {
+          var items = normalized.filter(function (t) {
+            return t.category === category;
+          });
+          if (!items.length) return;
+          html += '<div class="tips-section"><div class="tips-section__hd">' + (TIPS_SECTION_LABEL[category] || category) + "</div>";
+          items.forEach(function (t) {
+            var tipId = t.id || (t.anchor ? "tip-" + t.num : "");
+            var numHtml = t.num ? '<span class="tip__num" aria-hidden="true">' + t.num + "</span>" : "";
+            var goHtml = t.navAgent
+              ? '<button type="button" class="tip__go" data-tip-go-agent="' +
+                escapeTipsHtml(t.navAgent) +
+                '"' +
+                (t.navMode ? ' data-tip-go-mode="' + escapeTipsHtml(t.navMode) + '"' : "") +
+                ">" +
+                escapeTipsHtml(t.navLabel || "→ 进入") +
+                "</button>"
+              : "";
+            html +=
+              '<article class="tip"' +
+              (tipId ? ' data-tip-id="' + escapeTipsHtml(tipId) + '"' : "") +
+              '><span class="tip__tag">' +
+              escapeTipsHtml(TIPS_TAG_LABEL[category] || category) +
+              "</span><h4>" +
+              numHtml +
+              escapeTipsHtml(t.title || "") +
+              "</h4><p>" +
+              escapeTipsHtml(t.body || "") +
+              "</p>" +
+              goHtml +
+              "</article>";
+          });
+          html += "</div>";
+        });
+        tipsRoot.innerHTML = html;
+        applyProtoTipMarkers(normalized, scope);
+      }
+
+      function tipsVisible() {
+        try {
+          var v = localStorage.getItem(TIPS_VISIBLE_KEY);
+          return v === null ? true : v === "1";
+        } catch (e) {
+          return true;
+        }
+      }
+
+      function applyTipsVisible(on) {
+        if (appShell) appShell.classList.toggle("is-tips-hidden", !on);
+        document.querySelectorAll("[data-toggle-tips]").forEach(function (btn) {
+          btn.textContent = on ? "隐藏提示要点" : "显示提示要点";
+        });
+        try {
+          localStorage.setItem(TIPS_VISIBLE_KEY, on ? "1" : "0");
+        } catch (e) {}
+      }
+
+      document.querySelectorAll("[data-toggle-tips]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          applyTipsVisible(appShell && appShell.classList.contains("is-tips-hidden"));
+        });
+      });
+      document.addEventListener("click", function (e) {
+        var go = e.target.closest("[data-tip-go-agent]");
+        if (!go) return;
+        e.preventDefault();
+        selectAgent(go.getAttribute("data-tip-go-agent"), go.getAttribute("data-tip-go-mode") || undefined);
+      });
+      applyTipsVisible(tipsVisible());
+      renderProtoTips(currentPageId);
 
       function showPage(id) {
         if (!PAGE_TITLE[id]) id = "home";
@@ -4965,10 +5911,16 @@
           n.classList.toggle("active", n.getAttribute("data-page") === id);
         });
 
+        document.querySelectorAll("[data-inner-nav]").forEach(function (nav) {
+          var navAgent = nav.getAttribute("data-inner-nav");
+          nav.hidden = !(meta.innerNav && mode === "config" && navAgent === agentId);
+        });
+
         if (appShell) {
           appShell.classList.toggle("has-inner-nav", !!(meta.innerNav && mode === "config"));
         }
         setModeToggle(agentId, mode === "config" ? "config" : "chat");
+        renderProtoTips(id);
       }
 
       function selectAgent(agentId, preferredMode) {
@@ -4997,7 +5949,8 @@
       });
       document.querySelectorAll(".agent-card[data-agent]").forEach(function (card) {
         card.addEventListener("click", function () {
-          selectAgent(card.getAttribute("data-agent"), "chat");
+          var agent = card.getAttribute("data-agent");
+          selectAgent(agent, "config");
         });
       });
       if (agentModeEl) {
@@ -5019,10 +5972,8 @@
 
       var tabPrefix = {
         ui: "ui-",
-        tags: "tags-",
         content: "content-",
         feedback: "fb-",
-        inspect: "inspect-",
       };
 
       document.querySelectorAll("[data-tabs]").forEach(function (tabsEl) {
@@ -5630,7 +6581,7 @@
 
       var templates = {
         "ops-log":
-          '<div class="log-placeholder">' +
+          '<div class="log-placeholder" data-tip-ref="ops-skill-log">' +
             '<strong>日志（占位）</strong>：对接统一日志展示模板，按 skillId 过滤。<br />' +
             '建议记入日志的动作：' +
             '<ul>' +
@@ -5656,7 +6607,7 @@
           '<span class="input-count">0/100</span>' +
           "</div></div>" +
           '<div class="field-row">' +
-          '<label><span class="req">*</span> 点击行为</label>' +
+          '<label data-tip-ref="welcome-q-click-target"><span class="req">*</span> 点击行为</label>' +
           '<div class="click-target-field" data-click-target>' +
           '<div class="seg-radio" role="radiogroup" aria-label="点击行为">' +
           '<label class="seg-radio__item is-active">' +
@@ -5696,17 +6647,20 @@
           "<label>图标</label>" +
           '<div class="upload-box upload-box--sm" role="button" tabindex="0" title="上传图标">上传</div>' +
           "</div>" +
-          '<div class="field-row"><label>置顶</label><button type="button" class="switch"></button></div>' +
+          '<div class="field-row"><label data-tip-ref="welcome-q-pin-top">置顶</label><button type="button" class="switch"></button></div>' +
           '<div class="field-row">' +
-          '<label>优先级</label>' +
+          '<label data-tip-ref="welcome-q-priority">优先级</label>' +
           '<input class="input input-num" type="text" placeholder="数字" />' +
           "</div>" +
-          DISPLAY_RULES_BLOCK_HTML +
+          DISPLAY_RULES_BLOCK_HTML.replace(
+            'class="field-block__label">展示规则',
+            'class="field-block__label" data-tip-ref="welcome-q-display-rules">展示规则'
+          ) +
           "</div>",
         product:
           '<div class="drawer-form drawer-form--product">' +
           '<div class="field-row">' +
-          '<label><span class="req">*</span> 产品类型</label>' +
+          '<label data-tip-ref="product-type"><span class="req">*</span> 产品类型</label>' +
           '<select class="select" id="product-type-select" aria-label="产品类型">' +
           '<option value="ticket" selected>门票</option>' +
           '<option value="pass">卡票</option>' +
@@ -5714,7 +6668,7 @@
           "</select>" +
           "</div>" +
           '<div class="field-row">' +
-          '<label><span class="req">*</span> 来源</label>' +
+          '<label data-tip-ref="product-supplier"><span class="req">*</span> 来源</label>' +
           '<select class="select" id="product-supplier-select" aria-label="来源">' +
           '<option value="" selected disabled>请选择对接系统</option>' +
           '<option value="park_ticket">智慧乐园票务</option>' +
@@ -5722,7 +6676,7 @@
           "</select>" +
           "</div>" +
           '<div class="field-row field-row--ext-id">' +
-          '<label><span class="req">*</span> 对接产品 ID</label>' +
+          '<label data-tip-ref="product-ext-id"><span class="req">*</span> 对接产品 ID</label>' +
           '<div class="field-control">' +
           '<div class="product-id-lookup" id="product-id-lookup">' +
           '<input class="input product-id-lookup__input" id="product-id-input" type="text" autocomplete="off" aria-autocomplete="list" aria-expanded="false" />' +
@@ -5732,15 +6686,15 @@
           "</div></div>" +
           '<div class="field-row field-row--snapshot" id="product-snapshot-row" hidden>' +
           '<label aria-hidden="true">&nbsp;</label>' +
-          '<div class="product-snapshot" id="product-snapshot" hidden></div>' +
+          '<div class="product-snapshot" id="product-snapshot" data-tip-ref="product-snapshot" hidden></div>' +
           "</div>" +
           '<div class="field-row field-row--tags">' +
-          "<label>标签</label>" +
+          '<label data-tip-ref="product-tags">标签</label>' +
           '<div class="product-tags-field">' +
           '<div class="product-tags-field__toolbar">' +
           '<button type="button" class="btn btn-sm" id="product-tag-add">选择标签</button>' +
           '<span class="product-tags-field__hint">从「AI 标签 → 产品标签」勾选；与订单/会员标签分域</span>' +
-          '<button type="button" class="btn-link" data-go-page="tags">去维护标签</button>' +
+          '<button type="button" class="btn-link" data-go-page="tags-product">去维护标签</button>' +
           "</div>" +
           '<div class="product-tags-field__selected" id="product-tags-selected"></div>' +
           "</div>" +
@@ -5749,13 +6703,13 @@
         service:
           '<div class="drawer-form drawer-form--service">' +
           '<div class="field-row">' +
-          '<label><span class="req">*</span> 标题</label>' +
+          '<label data-tip-ref="service-title"><span class="req">*</span> 标题</label>' +
           '<div class="input-with-count">' +
           '<input class="input" type="text" data-max-chars="10" placeholder="请输入" />' +
           '<span class="input-count">0/10</span>' +
           "</div></div>" +
           '<div class="field-row">' +
-          '<label><span class="req">*</span> 点击行为</label>' +
+          '<label data-tip-ref="service-click-target"><span class="req">*</span> 点击行为</label>' +
           '<div class="click-target-field" data-click-target>' +
           '<div class="seg-radio" role="radiogroup" aria-label="点击行为">' +
           '<label class="seg-radio__item is-active">' +
@@ -5796,10 +6750,13 @@
           '<div class="upload-box upload-box--sm" role="button" tabindex="0" title="上传图标">上传</div>' +
           "</div>" +
           '<div class="field-row">' +
-          '<label>优先级</label>' +
+          '<label data-tip-ref="service-priority">优先级</label>' +
           '<input class="input input-num" type="text" placeholder="数字" />' +
           "</div>" +
-          DISPLAY_RULES_BLOCK_HTML +
+          DISPLAY_RULES_BLOCK_HTML.replace(
+            'class="field-block__label">展示规则',
+            'class="field-block__label" data-tip-ref="service-display-rules">展示规则'
+          ) +
           "</div>",
         tag:
           '<div class="drawer-form drawer-form--tag">' +
@@ -5854,6 +6811,38 @@
           "</div>" +
           "</div>",
       };
+
+      function buildOpsLogHtml() {
+        if (currentPageId === "welcome-q") {
+          return (
+            '<div class="log-placeholder" data-tip-ref="welcome-q-log">' +
+            "<strong>操作日志（占位）</strong>：平台通用日志结构（操作人、时间、动作、变更摘要）。<br />" +
+            "推荐对话建议记入：" +
+            "<ul>" +
+            "<li>新增推荐条目</li>" +
+            "<li>编辑提交（文案、点击行为、置顶、优先级、展示规则等）</li>" +
+            "<li>列表启用 / 禁用</li>" +
+            "</ul>" +
+            "按条目 id 过滤；正式环境对接统一日志时间线组件，本原型仅定义范围。" +
+            "</div>"
+          );
+        }
+        if (currentPageId === "service") {
+          return (
+            '<div class="log-placeholder" data-tip-ref="service-log">' +
+            "<strong>操作日志（占位）</strong>：平台通用日志结构（操作人、时间、动作、变更摘要）。<br />" +
+            "快捷服务建议记入：" +
+            "<ul>" +
+            "<li>新增快捷服务条目</li>" +
+            "<li>编辑提交（标题、点击行为、优先级、展示规则等）</li>" +
+            "<li>列表启用 / 禁用</li>" +
+            "</ul>" +
+            "按条目 id 过滤；正式环境对接统一日志时间线组件，本原型仅定义范围。" +
+            "</div>"
+          );
+        }
+        return templates["ops-log"];
+      }
 
       var TOOL_BIND_MAX = 20;
       var SUB_INTENT_MIN = 1;
@@ -6489,7 +7478,7 @@
         if (isCreate) {
           html +=
             '<div class="field-row">' +
-            '<label><span class="req">*</span> SkillID</label>' +
+            '<label data-tip-ref="ops-skill-id"><span class="req">*</span> SkillID</label>' +
             '<div class="field-with-hint">' +
             '<div class="input-with-count">' +
             '<input class="input" type="text" id="ops-skill-id" data-max-chars="40" placeholder="如 ticket_purchase" name="skillId" autocomplete="off" />' +
@@ -6499,7 +7488,7 @@
             "</div></div>";
         }
         html +=
-          '<div class="field-row"><label><span class="req">*</span> 名称</label>' +
+          '<div class="field-row"><label data-tip-ref="ops-skill-name"><span class="req">*</span> 名称</label>' +
           '<div class="input-with-count">' +
           '<input class="input" type="text" id="ops-skill-name" data-max-chars="40" placeholder="请输入" value="' +
           escapeHtml(nameValue) +
@@ -6508,7 +7497,7 @@
           "</div></div>" +
           '<div class="drawer-toast" id="sub-intent-toast"></div>' +
           '<div class="field-block">' +
-          '<div class="field-block__label"><span class="req">*</span> 工具集</div>' +
+          '<div class="field-block__label" data-tip-ref="ops-skill-tools"><span class="req">*</span> 工具集</div>' +
           '<div class="field-block__content">' +
           '<div class="field-block__toolbar" id="tool-bind-toolbar">' +
           '<button type="button" class="btn btn-sm btn-primary" id="tool-bind-add">添加工具（0/20）</button>' +
@@ -6517,7 +7506,7 @@
           '<div class="tool-bind"><div class="tool-bind__list" id="tool-bind-list"></div></div>' +
           "</div></div>" +
           '<div class="field-block">' +
-          '<div class="field-block__label"><span class="req">*</span> 子意图</div>' +
+          '<div class="field-block__label" data-tip-ref="ops-skill-sub-intents"><span class="req">*</span> 子意图</div>' +
           '<div class="field-block__content">' +
           '<div class="field-block__toolbar" id="sub-intent-toolbar">' +
           '<button type="button" class="btn btn-sm btn-primary" id="sub-intent-add">新增子意图（1/10）</button>' +
@@ -6608,6 +7597,23 @@
             addBtn.title = count >= SUB_INTENT_MAX ? "最多 10 个子意图" : "";
           }
           syncRemoveButtons();
+          syncFirstSubIntentTipRefs();
+        }
+
+        function syncFirstSubIntentTipRefs() {
+          if (isKeyword) return;
+          list.querySelectorAll(".sub-intent-card [data-tip-ref]").forEach(function (el) {
+            el.removeAttribute("data-tip-ref");
+          });
+          var first = list.querySelector(".sub-intent-card");
+          if (!first) return;
+          var labels = first.querySelectorAll(":scope > .field-block > .field-block__label");
+          if (labels[1]) labels[1].setAttribute("data-tip-ref", "ops-skill-keywords");
+          if (labels[2]) labels[2].setAttribute("data-tip-ref", "ops-skill-custom-kw");
+          if (labels[3]) labels[3].setAttribute("data-tip-ref", "ops-skill-instruction");
+          if (typeof refreshCurrentPageTipMarkers === "function" && currentPageId === "ops-skill") {
+            refreshCurrentPageTipMarkers();
+          }
         }
 
         var cardOpts = {
@@ -6706,6 +7712,8 @@
             skillId || "ticket_purchase",
             type === "skill" ? "keyword" : "ops"
           );
+        } else if (type === "ops-log") {
+          drawerBody.innerHTML = buildOpsLogHtml();
         } else {
           drawerBody.innerHTML = templates[type] || "";
         }
@@ -6745,6 +7753,7 @@
         mask.classList.add("open");
         drawer.classList.add("open");
         drawer.setAttribute("aria-hidden", "false");
+        refreshCurrentPageTipMarkers();
       }
 
       function openTagFormModal(type, options) {
@@ -6770,7 +7779,7 @@
             mode === "edit"
               ? "编辑" + noun
               : d === "member"
-                ? "新增手动标签"
+                ? "新增标签"
                 : "新增" + noun;
         } else {
           title =
@@ -7247,9 +8256,9 @@
 
       var TAG_ORIGIN_LABEL = {
         template: "规则模板",
-        local: "本页新建",
-        sync: "商品中心（同步）",
-        member: "会员系统",
+        local: "手动新增",
+        sync: "系统同步",
+        member: "系统同步",
       };
 
       function tagOriginOf(t, domain) {
@@ -7426,16 +8435,16 @@
             domain === "order"
               ? "只改名称 / 说明。名称同域唯一，改名不改内部键。现算结果写入打标关系。"
               : domain === "product" && isSync
-                ? "商品中心按名称同步进本域。本页查看为主；已被引用则只能禁用。同步不产生打标规则。"
+                ? "业务系统按名称同步进本域。本页查看为主；已被引用则只能禁用。同步不产生打标规则。"
                 : domain === "product"
-                  ? "名称同域唯一。来源为本页新建。勾选结果写入打标关系。已被引用则只能禁用。"
+                  ? "名称同域唯一。来源为手动新增。勾选结果写入打标关系。已被引用则只能禁用。"
                   : isPrefer
                     ? "喜好在会员系统。本页只读对照。对话打标不落库、不回写（二期 / 三期）。"
                     : mode === "create"
-                      ? "新建为手动标签。来源为本页新建。名称同景区同域唯一；内部键系统生成。一期不写入打标关系。"
+                      ? "新建为手动标签。来源为手动新增。名称同景区同域唯一；内部键系统生成。一期不写入打标关系。"
                       : kind === "rule"
                         ? "规则模板写入。名称可改，内部键不变。阈值在打标规则；命中结果写入关系表。"
-                        : "手动标签。来源为本页新建。名称同域唯一。一期不写入打标关系。";
+                        : "手动标签。来源为手动新增。名称同域唯一。一期不写入打标关系。";
         }
         var titleEl = document.getElementById("tag-form-title");
         if (titleEl) {
@@ -7531,7 +8540,7 @@
         var countEl = countId ? document.getElementById(countId) : null;
         if (!tbody) return;
         tbody.innerHTML = "";
-        var colSpan = domain === "member" ? 6 : domain === "product" ? 5 : 4;
+        var colSpan = domain === "member" ? 6 : 5;
         if (!list.length) {
           tbody.innerHTML =
             '<tr><td colspan="' +
@@ -7548,7 +8557,7 @@
                 "<td>" + escapeHtml(MEMBER_KIND_LABEL[t.kind] || t.kind) + "</td>";
             }
             cols += "<td>" + escapeHtml(t.desc || "—") + "</td>";
-            if (domain === "member" || domain === "product") {
+            if (domain === "order" || domain === "member" || domain === "product") {
               cols += "<td>" + escapeHtml(tagOriginLabel(t, domain)) + "</td>";
             }
             var ops =
@@ -7662,10 +8671,10 @@
         }
         refresh();
         renderRuleTable();
-        var pageEl = document.getElementById("page-tags");
-        if (pageEl && !pageEl.dataset.tagDisableBound) {
-          pageEl.dataset.tagDisableBound = "1";
-          pageEl.addEventListener("click", function (e) {
+        var mainEl = document.querySelector(".main");
+        if (mainEl && !mainEl.dataset.tagDisableBound) {
+          mainEl.dataset.tagDisableBound = "1";
+          mainEl.addEventListener("click", function (e) {
             var btn = e.target.closest("[data-tag-disable]");
             if (!btn) return;
             var tag = getTagById(btn.getAttribute("data-tag-disable") || "");
@@ -7675,7 +8684,7 @@
             showOkToast(tag.enabled === false ? "已禁用（有关系不可删除）" : "已启用");
           });
         }
-        enhanceSelects(pageEl);
+        if (mainEl) enhanceSelects(mainEl);
       }
 
       function bindProductTagsField(root, initialTags) {
@@ -7785,6 +8794,12 @@
         drawer.setAttribute("aria-hidden", "true");
         setDrawerMeta("", "");
         if (drawerSubmit) drawerSubmit.style.display = "";
+        if (drawerBody) {
+          drawerBody.querySelectorAll("[data-tip-ref]").forEach(function (el) {
+            el.removeAttribute("data-tip-ref");
+          });
+        }
+        refreshCurrentPageTipMarkers();
       }
 
       document.addEventListener("click", function (e) {
@@ -7860,7 +8875,12 @@
       (function bindTagCatalogSync() {
         document.querySelectorAll("[data-tag-catalog-sync]").forEach(function (btn) {
           btn.addEventListener("click", function () {
-            showOkToast("已按名称对齐 3 条（亲子 / 成人 / 儿童），未写入打标关系");
+            var domain = btn.getAttribute("data-tag-sync-domain") || "product";
+            if (domain === "member") {
+              showOkToast("已按名称对齐会员系统标签（喜好等，示意），未写入打标关系");
+            } else {
+              showOkToast("已按名称对齐 3 条（亲子 / 成人 / 儿童），未写入打标关系");
+            }
           });
         });
       })();
@@ -8048,8 +9068,8 @@
         function syncAddBtn() {
           if (!addBtn) return;
           var n = ((editing ? draftTools : committedTools) || []).length;
-          addBtn.textContent = "添加工具（" + n + "/" + TOOL_BIND_MAX + "）";
-          addBtn.disabled = !editing || n >= TOOL_BIND_MAX;
+          addBtn.textContent = "添加工具（" + n + "）";
+          addBtn.disabled = !editing;
         }
 
         function renderTools() {
@@ -8072,6 +9092,7 @@
           page.classList.toggle("is-view", !editing);
           page.classList.toggle("is-edit", editing);
           page.querySelectorAll("[data-ops-key]").forEach(function (el) {
+            if (el.hasAttribute("data-ops-reserved")) return;
             el.readOnly = !editing;
           });
           if (viewFoot) viewFoot.hidden = editing;
@@ -8083,7 +9104,6 @@
           addBtn.addEventListener("click", function () {
             if (!editing) return;
             draftTools = readSkillToolRows(list);
-            if (draftTools.length >= TOOL_BIND_MAX) return;
             draftTools.push({ name: "", label: "", access: "read" });
             renderTools();
           });
@@ -8140,9 +9160,6 @@
         var HELLO = {
           tags: "你好，我是 AI 标签。可以问覆盖率、改阈值草稿，或查目录。景区助手只读取这些标签。",
           assist: "你好，我是景区助手。可以试购票、人流、附近推荐。标签请到「AI 标签」维护。",
-          inspect: "你好，我是内容巡检。可以发起扫描或问今天的待办。",
-          kb: "你好，我是知识库。可以问文档怎么写，或做召回测试。",
-          opinion: "你好，我是舆情分析。可以问这周差评、议题或告警。",
         };
 
         function replyFor(agent, q) {
@@ -8195,39 +9212,9 @@
               side: "",
             };
           }
-          if (agent === "inspect") {
-            if (q.indexOf("过期") >= 0) {
-              return {
-                text: "过期扫描完成（示意）：暑假夜场票文案仍在架，已写入待办。",
-                side: "<h3>建议操作</h3>切到配置查看待处理队列。",
-              };
-            }
-            return {
-              text: "今日待处理 3 条：灯光秀时段不一致、亲子漂流缺封面、夜场票过期在架。",
-              side: "<h3>本次结果</h3>待办 3 条<h3>建议操作</h3>配置 → 待处理",
-            };
-          }
-          if (agent === "kb") {
-            if (q.indexOf("召回") >= 0 || q.indexOf("停车") >= 0) {
-              return {
-                text: "召回测试「停车缴费」：命中《停车缴费指引》v2，3 个分段，相关度示意 0.81。",
-                side: "<h3>引用资产</h3>已发布 FAQ · 停车缴费指引",
-              };
-            }
-            return {
-              text: "退票规则建议分：条件、时限、手续费、例外。当前《退票与改期说明》v3 已发布，6 个分段。",
-              side: "<h3>建议操作</h3>配置里可改文档并发布新版本。",
-            };
-          }
-          if (q.indexOf("安全") >= 0 || q.indexOf("告警") >= 0) {
-            return {
-              text: "1 条待处理告警：儿童区安全提示不清（漂流入口缺身高标尺说明），近 7 日提及 12 次。",
-              side: "<h3>建议操作</h3>可交给内容巡检核验现场说明是否在内容块缺失。",
-            };
-          }
           return {
-            text: "近 7 日正向 82%。差评热点主要是「过山车排队过长」（86 次提及）。",
-            side: "<h3>本次结果</h3>议题：排队 / 餐饮 / 夜场",
+            text: "收到。请切换到对应智能体对话或配置页面试用。",
+            side: "",
           };
         }
 
