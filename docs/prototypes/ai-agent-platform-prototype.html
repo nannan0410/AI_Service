@@ -351,6 +351,7 @@
     .drawer .field-block__label.has-tip-ref,
     .drawer .field-row > label.has-tip-ref,
     .drawer .log-placeholder.has-tip-ref,
+    .drawer .desc-table th.has-tip-ref,
     #page-ops-skill th.has-tip-ref {
       overflow: visible;
     }
@@ -360,7 +361,8 @@
     }
     .drawer .field-block__label .tip-marker,
     .drawer .field-row > label .tip-marker,
-    .drawer .log-placeholder .tip-marker {
+    .drawer .log-placeholder .tip-marker,
+    .drawer .desc-table th .tip-marker {
       top: -6px;
       right: -8px;
       z-index: 6;
@@ -1154,6 +1156,16 @@
       text-align: left;
       flex-shrink: 0;
     }
+    .filter-item > span.has-tip-ref {
+      position: relative;
+      overflow: visible;
+      padding-right: 4px;
+    }
+    .filter-item > span .tip-marker {
+      top: -8px;
+      right: -10px;
+      z-index: 6;
+    }
     .filter-item .input,
     .filter-item .c-select {
       max-width: 200px;
@@ -1337,6 +1349,17 @@
     .desc-table td.desc-table__cell--top {
       vertical-align: top;
     }
+    .desc-table--drawer {
+      table-layout: auto;
+    }
+    .desc-table--drawer th {
+      width: 88px;
+      min-width: 88px;
+    }
+    .desc-table--drawer td {
+      width: auto;
+      min-width: 0;
+    }
     .kw-section {
       margin-bottom: 20px;
     }
@@ -1346,6 +1369,31 @@
       color: var(--text);
       margin-bottom: 12px;
       line-height: 22px;
+    }
+    .fb-snapshot-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .fb-snapshot-item {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #fafafa;
+      line-height: 1.5;
+    }
+    .fb-snapshot-item__name {
+      font-weight: 500;
+      color: var(--text);
+    }
+    .fb-snapshot-item__meta {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .fb-snapshot-kind {
+      display: inline-block;
+      margin-bottom: 8px;
     }
     .field-block--view-center {
       align-items: center;
@@ -1516,6 +1564,13 @@
       width: 100%;
       border-collapse: collapse;
       font-size: 14px;
+    }
+    table.data--equal-cols {
+      table-layout: fixed;
+    }
+    table.data--equal-cols th,
+    table.data--equal-cols td {
+      width: auto;
     }
     table.data th,
     table.data td {
@@ -1756,6 +1811,67 @@
       line-height: 1.2;
       text-align: center;
       padding: 4px;
+    }
+    .fb-upload {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      outline: none;
+    }
+    .fb-upload:focus .upload-box,
+    .fb-upload.is-paste-target .upload-box {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .fb-upload__preview {
+      position: relative;
+      width: 104px;
+      height: 104px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fafafa;
+    }
+    .fb-upload__preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .fb-upload__remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 20px;
+      height: 20px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      font-size: 12px;
+      line-height: 20px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+    }
+    .fb-upload__remove:hover {
+      background: rgba(0, 0, 0, 0.75);
+    }
+    .fb-upload__name {
+      font-size: 12px;
+      color: var(--text-secondary);
+      max-width: 240px;
+      word-break: break-all;
+    }
+    .fb-attach-thumb {
+      width: 104px;
+      height: 104px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      object-fit: cover;
+      display: block;
+      background: #fafafa;
     }
     .upload-row { display: flex; flex-wrap: wrap; gap: 12px; }
     .field-row--wide {
@@ -2885,6 +3001,41 @@
       margin-top: 4px;
       font-size: 12px;
       color: var(--text-muted);
+    }
+    .fb-up-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: #fafafa;
+    }
+    .fb-up-stat {
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .fb-up-stat__label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 20px;
+    }
+    .fb-up-stat__value {
+      margin-top: 4px;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 32px;
+    }
+    .fb-up-stat__hint {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 18px;
+    }
+    @media (max-width: 900px) {
+      .fb-up-stats { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -4446,7 +4597,6 @@
             <h1>问题记录</h1>
           </div>
         </div>
-        <div class="alert alert--warn">一期不做：踩上报与赞统计不在本期范围，以下为原型示意。</div>
         <div class="tabs" data-tabs="feedback">
           <button type="button" class="tab active" data-tab="fb-down">踩上报</button>
           <button type="button" class="tab" data-tab="fb-up">赞统计</button>
@@ -4455,59 +4605,90 @@
           <div class="filter-bar" style="border:none;margin:0;border-radius:0;border-bottom:1px solid var(--border)">
             <div class="filter-item">
               <span>时间范围</span>
-              <input class="input" type="text" placeholder="开始日期 ~ 结束日期" style="width:240px;max-width:240px" />
+              <input class="input" type="text" id="fb-down-date" placeholder="开始日期 ~ 结束日期" style="width:240px;max-width:240px" />
             </div>
-            <div class="filter-item">
-              <span>skillId</span>
-              <input class="input" type="text" placeholder="请输入" />
+            <div class="filter-item filter-item--status">
+              <span>状态</span>
+              <select class="select" id="fb-down-status" aria-label="状态">
+                <option value="">全部</option>
+                <option value="pending" selected>待处理</option>
+                <option value="optimized">已优化</option>
+                <option value="ignored">无需处理</option>
+              </select>
             </div>
             <div class="filter-actions">
-              <button type="button" class="btn btn-primary">查询</button>
+              <button type="button" class="btn btn-primary" id="fb-down-query">查询</button>
             </div>
           </div>
-          <div class="card__body--flush">
+          <div class="card__body--flush table-wrap">
             <table class="data">
               <thead>
                 <tr>
-                  <th>时间</th>
-                  <th>景区</th>
+                  <th style="width:160px">提交时间</th>
                   <th>用户话术</th>
                   <th>回复摘要</th>
-                  <th>skillId</th>
-                  <th>routeSource</th>
-                  <th>操作</th>
+                  <th style="width:140px">SkillID</th>
+                  <th style="width:120px">Skill场景</th>
+                  <th style="width:100px" data-tip-ref="fb-route">路由来源</th>
+                  <th style="width:100px">状态</th>
+                  <th style="width:140px">操作</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td colspan="7"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>
-              </tbody>
+              <tbody id="fb-down-tbody"></tbody>
             </table>
+          </div>
+          <div class="table-footer table-footer--stat">
+            <span id="fb-down-count">共 0 条</span>
           </div>
         </div>
         <div class="card tab-panel" data-tab-panel="fb-up">
-          <div class="card__body">
-            <div class="alert alert--warn">赞统计：按日 / 按 Skill / 按景区聚合，具体图表以实现为准。原型仅保留筛选与结果区结构。</div>
-            <div class="filter-bar" style="padding:0;border:none;margin-bottom:16px">
-              <div class="filter-item">
-                <span>统计维度</span>
-                <select class="select">
-                  <option>按日</option>
-                  <option>按 Skill</option>
-                  <option>按景区</option>
-                </select>
-              </div>
-              <div class="filter-item">
-                <span>时间范围</span>
-                <input class="input" type="text" placeholder="开始日期 ~ 结束日期" style="width:240px;max-width:240px" />
-              </div>
-              <div class="filter-actions" style="margin-left:0">
-                <button type="button" class="btn btn-primary">查询</button>
-              </div>
+          <div class="filter-bar" style="border:none;margin:0;border-radius:0;border-bottom:1px solid var(--border)">
+            <div class="filter-item filter-item--status">
+              <span>统计维度</span>
+              <select class="select" id="fb-up-dim" aria-label="统计维度" data-tip-ref="fb-up">
+                <option value="day" selected>按日</option>
+                <option value="skill">按 Skill</option>
+              </select>
             </div>
-            <div class="empty">
-              <div class="empty__icon"></div>
-              <div>暂无数据</div>
+            <div class="filter-item">
+              <span data-tip-ref="fb-up-date">时间范围</span>
+              <input class="input" type="text" id="fb-up-date" placeholder="开始日期 ~ 结束日期" style="width:240px;max-width:240px" />
             </div>
+            <div class="filter-actions">
+              <button type="button" class="btn btn-primary" id="fb-up-query">查询</button>
+            </div>
+          </div>
+          <div class="fb-up-stats" id="fb-up-stats">
+            <div class="fb-up-stat">
+              <div class="fb-up-stat__label">点赞总数</div>
+              <div class="fb-up-stat__value" id="fb-up-total">1,286</div>
+              <div class="fb-up-stat__hint">所选时间范围内</div>
+            </div>
+            <div class="fb-up-stat">
+              <div class="fb-up-stat__label">日均点赞</div>
+              <div class="fb-up-stat__value" id="fb-up-avg">183.7</div>
+              <div class="fb-up-stat__hint">按有数据天数均摊</div>
+            </div>
+            <div class="fb-up-stat">
+              <div class="fb-up-stat__label">最高 Skill</div>
+              <div class="fb-up-stat__value" id="fb-up-top" style="font-size:18px;line-height:32px">智能购票</div>
+              <div class="fb-up-stat__hint" id="fb-up-top-hint">412 次 · 占比 32.0%</div>
+            </div>
+          </div>
+          <div class="card__body--flush table-wrap">
+            <table class="data data--equal-cols" id="fb-up-table">
+              <thead>
+                <tr id="fb-up-thead">
+                  <th>日期</th>
+                  <th>点赞数</th>
+                  <th>环比</th>
+                </tr>
+              </thead>
+              <tbody id="fb-up-tbody"></tbody>
+            </table>
+          </div>
+          <div class="table-footer table-footer--stat">
+            <span id="fb-up-count">共 0 条</span>
           </div>
         </div>
       </section>
@@ -4532,6 +4713,7 @@
     </div>
     <div class="drawer__foot">
       <button type="button" class="btn" id="drawer-cancel">取消</button>
+      <button type="button" class="btn" id="drawer-fb-ignore" hidden data-tip-ref="fb-ignore">暂不处理</button>
       <button type="button" class="btn btn-primary">提交</button>
     </div>
   </aside>
@@ -4596,6 +4778,22 @@
       <div class="modal__foot">
         <button type="button" class="btn" id="tag-stamp-cancel">取消</button>
         <button type="button" class="btn btn-primary" id="tag-stamp-submit">提交</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-mask" id="fb-ignore-mask" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="fb-ignore-title">
+      <div class="modal__head">
+        <span id="fb-ignore-title">确认更新</span>
+        <button type="button" class="modal__close" id="fb-ignore-close" aria-label="关闭">×</button>
+      </div>
+      <div class="modal__body" data-tip-ref="fb-ignore-confirm">
+        <p style="margin:0;line-height:1.7;color:var(--text)">确认更新状态为【无需处理】吗？提交后仍可在后续更新优化。</p>
+      </div>
+      <div class="modal__foot">
+        <button type="button" class="btn" id="fb-ignore-cancel">我再想想</button>
+        <button type="button" class="btn btn-primary" id="fb-ignore-ok">确认更新</button>
       </div>
     </div>
   </div>
@@ -5291,10 +5489,75 @@
         feedback: [
           {
             category: "overview",
-            title: "一期范围",
-            body: "踩上报与赞统计一期不做；当前为原型示意。对话质量复盘与运营分析待后续有需求再开发本页。",
+            title: "页面定位",
+            body: "景区助手「问题记录」两 Tab：踩上报（负反馈处理）与赞统计（正向聚合）。无景区列；列表 / 详情「路由来源」= FeedbackRouteSource。仅平台原型有完整交互示意。",
           },
-          { category: "note", title: "赞统计", body: "按日 / 按 Skill / 按景区聚合，具体图表以实现为准；原型仅保留筛选与结果区结构。" },
+          {
+            category: "overview",
+            title: "一期范围",
+            body: "正式一期不做踩上报 / 赞统计业务交付；当前页为可点可走的原型示意。右侧要点与锚点对齐本页交互，供评审与后续开发对照。",
+          },
+          {
+            category: "flow",
+            title: "踩上报流程",
+            body: "游客对助手回复点「踩」后写入列表，默认「待处理」（筛选默认同）。操作统一「查看」进详情抽屉（标题「踩上报详情」）。基本信息顺序：提交时间 → 用户话术 → 回复摘要 → 消息类型 → 快照内容 → SkillID → Skill场景 → 路由来源 → 当前状态。底栏：待处理「取消 / 暂不处理 / 提交优化」；无需处理「取消 / 提交优化」；已优化仅「关闭」。提交优化时处理说明必填。",
+          },
+          {
+            category: "action",
+            id: "tip-fb-note",
+            anchor: "fb-note",
+            title: "处理说明",
+            body: "待处理 / 无需处理可编；已优化只读（含处理时间 / 处理人）。placeholder「提交优化时该字段必填」；空点「提交优化」toast「请填写处理说明。」",
+          },
+          {
+            category: "action",
+            id: "tip-fb-ignore",
+            anchor: "fb-ignore",
+            title: "暂不处理",
+            body: "仅待处理详情底栏显示。点击后弹出确认框，不会立刻改状态。",
+          },
+          {
+            category: "action",
+            id: "tip-fb-ignore-confirm",
+            anchor: "fb-ignore-confirm",
+            title: "确认无需处理",
+            body: "文案：确认更新状态为【无需处理】吗？提交后仍可在后续更新优化。「我再想想」仅关弹窗；「确认更新」关弹窗与抽屉、写状态为无需处理，并 toast。",
+          },
+          {
+            category: "action",
+            id: "tip-fb-upload",
+            anchor: "fb-upload",
+            title: "优化附件",
+            body: "单文件 JPG/PNG，≤2M，支持直接粘贴截图，仅一件。提示「格式.JPG/.PNG，≤2M，支持直接粘贴截图，仅一件。」；点击「+ 上传」或抽屉内 Ctrl/Cmd+V 粘贴。",
+          },
+          {
+            category: "action",
+            id: "tip-fb-snapshot",
+            anchor: "fb-snapshot",
+            title: "快照内容",
+            body: "点踩时从消息 payload 固化展示态（产品名 / 当时价 / 项目集合等），写入 FeedbackEvent.snapshot。列表用回复摘要；详情在「回复摘要」下展示消息类型与快照。纯文本可无快照；无独立「内容快照」区块。",
+          },
+          {
+            category: "action",
+            id: "tip-fb-route",
+            anchor: "fb-route",
+            title: "路由来源",
+            body: "对应 FeedbackRouteSource：keyword（关键词）/ llm（LLM 分类）/ workflow（Workflow）/ general（通用兜底）。列表列头与详情均有锚点；用于复盘命中路径，不是处理状态。",
+          },
+          {
+            category: "action",
+            id: "tip-fb-up",
+            anchor: "fb-up",
+            title: "赞统计 · 统计维度",
+            body: "按日或按 Skill 聚合。改维度 / 时间后不自动刷新，须点「查询」。上方汇总（点赞总数、日均、最高 Skill），下方明细表（列宽均分、无备注列）。页内无黄条；图表以实现为准。",
+          },
+          {
+            category: "action",
+            id: "tip-fb-up-date",
+            anchor: "fb-up-date",
+            title: "赞统计 · 时间范围",
+            body: "默认当月（月初～月末）。可改后与维度一并点「查询」刷新汇总与明细（原型示意）。",
+          },
         ],
         params: [
           {
@@ -5730,7 +5993,15 @@
       }
 
       function markerScopeForPage(pageId) {
-        if (pageId === "ops-skill" || pageId === "welcome-q" || pageId === "service" || pageId === "products") return document;
+        if (
+          pageId === "ops-skill" ||
+          pageId === "welcome-q" ||
+          pageId === "service" ||
+          pageId === "products" ||
+          pageId === "feedback"
+        ) {
+          return document;
+        }
         if (pageId === "skill-tools") {
           return document.getElementById("app-shell") || document;
         }
@@ -6102,6 +6373,157 @@
         ticket_purchase: DEMO_SKILLS.ticket_purchase.name,
         parking_pay: DEMO_SKILLS.parking_pay.name,
       };
+
+      /** 踩上报示意（游客踩 → 默认 pending；snapshot 为点踩时内容快照） */
+      var DEMO_FEEDBACK_DISLIKES = [
+        {
+          id: "fb_d1",
+          submittedAt: "2026-08-28 14:22:08",
+          userText: "门票多少钱",
+          assistantSnippet: "目前有成人全日票、亲子套票等，需要帮你比价吗？",
+          skillId: "ticket_purchase",
+          skillName: "智能购票",
+          routeSource: "keyword",
+          status: "pending",
+          messageType: "ticket",
+          snapshot: {
+            kind: "ticket",
+            kindLabel: "门票推荐",
+            items: [
+              {
+                name: "成人全日票",
+                id: "TK10086",
+                priceLabel: "¥299",
+                extra: "游玩日 2026-08-30",
+              },
+              {
+                name: "亲子一日畅玩组合",
+                id: "BDL3008",
+                priceLabel: "¥668",
+                extra: "2大1小",
+              },
+            ],
+          },
+        },
+        {
+          id: "fb_d2",
+          submittedAt: "2026-08-27 10:05:31",
+          userText: "停车费怎么交",
+          assistantSnippet: "请提供车牌号，我帮你查询停车费。",
+          skillId: "parking_pay",
+          skillName: "停车缴费",
+          routeSource: "workflow",
+          status: "pending",
+          messageType: "page_guide",
+          snapshot: {
+            kind: "page_guide",
+            kindLabel: "页面引导",
+            items: [
+              {
+                name: "停车缴费页",
+                extra: "引导前往 /parking 绑定车牌并缴费",
+              },
+            ],
+          },
+        },
+        {
+          id: "fb_d3",
+          submittedAt: "2026-08-26 16:48:12",
+          userText: "有什么优惠",
+          assistantSnippet: "可以根据会员等级为你推荐合适套餐。",
+          skillId: "ticket_purchase",
+          skillName: "智能购票",
+          routeSource: "llm",
+          status: "optimized",
+          messageType: "coupon",
+          snapshot: {
+            kind: "coupon",
+            kindLabel: "优惠券",
+            items: [
+              {
+                name: "新客满减券",
+                priceLabel: "满 200 减 30",
+                extra: "限自销小程序",
+              },
+              {
+                name: "会员专享 9 折券",
+                priceLabel: "9 折",
+                extra: "黄金会员及以上",
+              },
+            ],
+          },
+          note: "已补充优惠相关默认关键词",
+          handledAt: "2026-08-26 18:05:22",
+          handlerAccount: "a53828",
+          handlerName: "张三",
+          attachment: {
+            name: "优惠关键词优化说明.txt",
+            content:
+              "踩上报优化说明\nskillId: ticket_purchase\n已补充默认关键词：优惠、有什么券\n",
+          },
+        },
+        {
+          id: "fb_d4",
+          submittedAt: "2026-08-25 09:12:44",
+          userText: "你好呀",
+          assistantSnippet: "你好，我是游游，有什么可以帮你的？",
+          skillId: "",
+          skillName: "—",
+          routeSource: "general",
+          status: "ignored",
+          messageType: "text",
+          snapshot: null,
+        },
+        {
+          id: "fb_d5",
+          submittedAt: "2026-08-24 19:33:01",
+          userText: "明天有演出吗",
+          assistantSnippet: "明日场次可在演出推荐里查看，是否要我列一下？",
+          skillId: "scenic_recommend",
+          skillName: "演出推荐",
+          routeSource: "keyword",
+          status: "pending",
+          messageType: "scene_recommend",
+          snapshot: {
+            kind: "activity",
+            kindLabel: "演出 / 项目",
+            items: [
+              {
+                name: "海豚表演",
+                extra: "明日 10:30 / 14:30 · 海洋剧场",
+              },
+              {
+                name: "花车巡游",
+                extra: "明日 16:00 · 中心大道",
+              },
+              {
+                name: "灯光秀",
+                extra: "明日 20:00 · 湖心岛",
+              },
+            ],
+          },
+        },
+      ];
+
+      var FEEDBACK_STATUS_LABEL = {
+        pending: "待处理",
+        optimized: "已优化",
+        ignored: "无需处理",
+      };
+      var FEEDBACK_MESSAGE_TYPE_LABEL = {
+        ticket: "门票推荐",
+        coupon: "优惠券",
+        page_guide: "页面引导",
+        scene_recommend: "演出 / 项目",
+        text: "纯文本",
+      };
+      var FEEDBACK_ROUTE_LABEL = {
+        keyword: "关键词",
+        llm: "LLM",
+        workflow: "Workflow",
+        general: "通用",
+      };
+      var feedbackDrawerContext = null;
 
       var DEMO_SKILL_CATALOG = [
         { name: "getProductCatalog", label: "查询票产品", access: "read" },
@@ -7677,6 +8099,664 @@
         }
       }
 
+      function getFeedbackDislikeById(id) {
+        for (var i = 0; i < DEMO_FEEDBACK_DISLIKES.length; i++) {
+          if (DEMO_FEEDBACK_DISLIKES[i].id === id) return DEMO_FEEDBACK_DISLIKES[i];
+        }
+        return null;
+      }
+
+      var DEMO_FEEDBACK_LIKES_DAY = [
+        { date: "2026-08-31", count: 196, change: "+4.3%" },
+        { date: "2026-08-30", count: 188, change: "-2.1%" },
+        { date: "2026-08-29", count: 192, change: "+8.5%" },
+        { date: "2026-08-28", count: 177, change: "-1.7%" },
+        { date: "2026-08-27", count: 180, change: "+6.5%" },
+        { date: "2026-08-26", count: 169, change: "-3.4%" },
+        { date: "2026-08-25", count: 184, change: "+2.2%" },
+      ];
+      var DEMO_FEEDBACK_LIKES_SKILL = [
+        {
+          skillId: "ticket_purchase",
+          skillName: "智能购票",
+          count: 412,
+          ratio: "32.0%",
+        },
+        {
+          skillId: "scenic_recommend",
+          skillName: "演出推荐",
+          count: 286,
+          ratio: "22.2%",
+        },
+        {
+          skillId: "parking_pay",
+          skillName: "停车缴费",
+          count: 241,
+          ratio: "18.7%",
+        },
+        {
+          skillId: "coupon_claim",
+          skillName: "领券助手",
+          count: 198,
+          ratio: "15.4%",
+        },
+        {
+          skillId: "general",
+          skillName: "通用兜底",
+          count: 149,
+          ratio: "11.6%",
+        },
+      ];
+
+      function renderFeedbackUpList() {
+        var dimEl = document.getElementById("fb-up-dim");
+        var thead = document.getElementById("fb-up-thead");
+        var tbody = document.getElementById("fb-up-tbody");
+        var countEl = document.getElementById("fb-up-count");
+        if (!thead || !tbody) return;
+        var dim = dimEl ? dimEl.value : "day";
+        if (dim === "skill") {
+          thead.innerHTML =
+            "<th>SkillID</th>" +
+            "<th>Skill场景</th>" +
+            "<th>点赞数</th>" +
+            "<th>占比</th>";
+          tbody.innerHTML = DEMO_FEEDBACK_LIKES_SKILL.map(function (row) {
+            return (
+              "<tr><td><code>" +
+              escapeHtml(row.skillId) +
+              "</code></td><td>" +
+              escapeHtml(row.skillName) +
+              "</td><td>" +
+              escapeHtml(String(row.count)) +
+              "</td><td>" +
+              escapeHtml(row.ratio) +
+              "</td></tr>"
+            );
+          }).join("");
+          if (countEl) countEl.textContent = "共 " + DEMO_FEEDBACK_LIKES_SKILL.length + " 条";
+        } else {
+          thead.innerHTML =
+            "<th>日期</th>" +
+            "<th>点赞数</th>" +
+            "<th>环比</th>";
+          tbody.innerHTML = DEMO_FEEDBACK_LIKES_DAY.map(function (row) {
+            return (
+              "<tr><td>" +
+              escapeHtml(row.date) +
+              "</td><td>" +
+              escapeHtml(String(row.count)) +
+              "</td><td>" +
+              escapeHtml(row.change) +
+              "</td></tr>"
+            );
+          }).join("");
+          if (countEl) countEl.textContent = "共 " + DEMO_FEEDBACK_LIKES_DAY.length + " 条";
+        }
+        if (typeof refreshCurrentPageTipMarkers === "function") {
+          refreshCurrentPageTipMarkers();
+        }
+      }
+
+      function feedbackOpsHtml(item) {
+        return (
+          '<div class="table-ops">' +
+          '<button type="button" class="btn-link" data-fb-action="view" data-fb-id="' +
+          escapeHtml(item.id) +
+          '">查看</button>' +
+          "</div>"
+        );
+      }
+
+      function resetDrawerFootForFeedback() {
+        var cancelBtn = document.getElementById("drawer-cancel");
+        var ignoreBtn = document.getElementById("drawer-fb-ignore");
+        if (cancelBtn) cancelBtn.textContent = "取消";
+        if (ignoreBtn) {
+          ignoreBtn.hidden = true;
+          ignoreBtn.style.display = "none";
+        }
+        if (drawerSubmit) {
+          drawerSubmit.style.display = "";
+          drawerSubmit.textContent = "提交";
+        }
+      }
+
+      function syncFeedbackDrawerFoot(item) {
+        var cancelBtn = document.getElementById("drawer-cancel");
+        var ignoreBtn = document.getElementById("drawer-fb-ignore");
+        if (!item) {
+          resetDrawerFootForFeedback();
+          return;
+        }
+        if (item.status === "optimized") {
+          if (cancelBtn) cancelBtn.textContent = "关闭";
+          if (ignoreBtn) {
+            ignoreBtn.hidden = true;
+            ignoreBtn.style.display = "none";
+          }
+          if (drawerSubmit) drawerSubmit.style.display = "none";
+          return;
+        }
+        if (cancelBtn) cancelBtn.textContent = "取消";
+        if (drawerSubmit) {
+          drawerSubmit.style.display = "";
+          drawerSubmit.textContent = "提交优化";
+        }
+        if (ignoreBtn) {
+          if (item.status === "pending") {
+            ignoreBtn.hidden = false;
+            ignoreBtn.style.display = "";
+          } else {
+            ignoreBtn.hidden = true;
+            ignoreBtn.style.display = "none";
+          }
+        }
+      }
+
+      function renderFeedbackDownList() {
+        var tbody = document.getElementById("fb-down-tbody");
+        var countEl = document.getElementById("fb-down-count");
+        var statusSel = document.getElementById("fb-down-status");
+        if (!tbody) return;
+        var statusFilter = statusSel ? statusSel.value : "pending";
+        var rows = DEMO_FEEDBACK_DISLIKES.filter(function (item) {
+          return !statusFilter || item.status === statusFilter;
+        });
+        if (!rows.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="8"><div class="empty"><div class="empty__icon"></div><div>暂无数据</div></div></td></tr>';
+        } else {
+          tbody.innerHTML = rows
+            .map(function (item) {
+              return (
+                "<tr data-fb-id=\"" +
+                escapeHtml(item.id) +
+                '">' +
+                "<td>" +
+                escapeHtml(item.submittedAt) +
+                "</td>" +
+                "<td>" +
+                escapeHtml(item.userText) +
+                "</td>" +
+                "<td>" +
+                escapeHtml(item.assistantSnippet) +
+                "</td>" +
+                "<td><code>" +
+                escapeHtml(item.skillId || "—") +
+                "</code></td>" +
+                "<td>" +
+                escapeHtml(item.skillName || "—") +
+                "</td>" +
+                "<td>" +
+                escapeHtml(FEEDBACK_ROUTE_LABEL[item.routeSource] || item.routeSource || "—") +
+                "</td>" +
+                "<td>" +
+                escapeHtml(FEEDBACK_STATUS_LABEL[item.status] || item.status) +
+                "</td>" +
+                "<td>" +
+                feedbackOpsHtml(item) +
+                "</td></tr>"
+              );
+            })
+            .join("");
+        }
+        if (countEl) countEl.textContent = "共 " + rows.length + " 条";
+        if (typeof refreshCurrentPageTipMarkers === "function") {
+          refreshCurrentPageTipMarkers();
+        }
+      }
+
+      var pendingIgnoreFeedbackId = null;
+
+      function openFbIgnoreConfirm(id) {
+        pendingIgnoreFeedbackId = id || null;
+        var maskEl = document.getElementById("fb-ignore-mask");
+        if (!maskEl) return;
+        maskEl.classList.add("open");
+        maskEl.setAttribute("aria-hidden", "false");
+        if (typeof refreshCurrentPageTipMarkers === "function") {
+          refreshCurrentPageTipMarkers();
+        }
+      }
+
+      function closeFbIgnoreConfirm() {
+        pendingIgnoreFeedbackId = null;
+        var maskEl = document.getElementById("fb-ignore-mask");
+        if (!maskEl) return;
+        maskEl.classList.remove("open");
+        maskEl.setAttribute("aria-hidden", "true");
+        if (typeof refreshCurrentPageTipMarkers === "function") {
+          refreshCurrentPageTipMarkers();
+        }
+      }
+
+      function confirmFbIgnore() {
+        var item = getFeedbackDislikeById(pendingIgnoreFeedbackId);
+        closeFbIgnoreConfirm();
+        if (!item) return;
+        item.status = "ignored";
+        showOkToast("已标记为无需处理");
+        if (typeof closeDrawer === "function") closeDrawer();
+        renderFeedbackDownList();
+      }
+
+      function formatFeedbackHandler(item) {
+        if (!item.handlerAccount && !item.handlerName) return "—";
+        return (
+          (item.handlerAccount || "—") + "-" + (item.handlerName || "—")
+        );
+      }
+
+      function formatNowDateTime() {
+        var d = new Date();
+        function pad(n) {
+          return n < 10 ? "0" + n : String(n);
+        }
+        return (
+          d.getFullYear() +
+          "-" +
+          pad(d.getMonth() + 1) +
+          "-" +
+          pad(d.getDate()) +
+          " " +
+          pad(d.getHours()) +
+          ":" +
+          pad(d.getMinutes()) +
+          ":" +
+          pad(d.getSeconds())
+        );
+      }
+
+      function formatCurrentMonthRange() {
+        var d = new Date();
+        function pad(n) {
+          return n < 10 ? "0" + n : String(n);
+        }
+        var y = d.getFullYear();
+        var m = d.getMonth();
+        var start = y + "-" + pad(m + 1) + "-01";
+        var endDay = new Date(y, m + 1, 0).getDate();
+        var end = y + "-" + pad(m + 1) + "-" + pad(endDay);
+        return start + " ~ " + end;
+      }
+
+      function feedbackAttachmentCellHtml(item) {
+        if (!item.attachment || !item.attachment.name) return "—";
+        if (item.attachment.dataUrl) {
+          return (
+            '<div>' +
+            '<img class="fb-attach-thumb" src="' +
+            escapeHtml(item.attachment.dataUrl) +
+            '" alt="' +
+            escapeHtml(item.attachment.name) +
+            '" />' +
+            '<div class="fb-upload__name" style="margin-top:6px">' +
+            escapeHtml(item.attachment.name) +
+            "</div></div>"
+          );
+        }
+        return (
+          '<button type="button" class="btn-link" data-fb-download="' +
+          escapeHtml(item.id) +
+          '">' +
+          escapeHtml(item.attachment.name) +
+          "</button>"
+        );
+      }
+
+      function downloadFeedbackAttachment(item) {
+        if (!item || !item.attachment) return;
+        if (item.attachment.dataUrl) {
+          var a = document.createElement("a");
+          a.href = item.attachment.dataUrl;
+          a.download = item.attachment.name || "attachment.jpg";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          showOkToast("已开始下载附件");
+          return;
+        }
+        var blob = new Blob([item.attachment.content || ""], {
+          type: "text/plain;charset=utf-8",
+        });
+        var url = URL.createObjectURL(blob);
+        var a2 = document.createElement("a");
+        a2.href = url;
+        a2.download = item.attachment.name || "attachment.txt";
+        document.body.appendChild(a2);
+        a2.click();
+        a2.remove();
+        setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 1000);
+        showOkToast("已开始下载附件");
+      }
+
+      var feedbackPendingAttachment = null;
+      var FB_UPLOAD_MAX_BYTES = 2 * 1024 * 1024;
+
+      function isFbImageFile(file) {
+        if (!file) return false;
+        if (/^image\/(jpeg|png)$/i.test(file.type || "")) return true;
+        return /\.(jpe?g|png)$/i.test(file.name || "");
+      }
+
+      function validateFbImageFile(file) {
+        if (!file) return false;
+        if (!isFbImageFile(file)) {
+          showErrorToast("仅支持 JPG/PNG 格式");
+          return false;
+        }
+        if (file.size > FB_UPLOAD_MAX_BYTES) {
+          showErrorToast("文件大小不能超过 2M");
+          return false;
+        }
+        return true;
+      }
+
+      function clearFbUploadPreview(root) {
+        feedbackPendingAttachment = null;
+        if (!root) return;
+        var box = root.querySelector("#fb-opt-upload-box");
+        var preview = root.querySelector("#fb-opt-preview");
+        var nameEl = root.querySelector("#fb-opt-file-name");
+        var fileEl = root.querySelector("#fb-opt-file");
+        if (box) box.hidden = false;
+        if (preview) {
+          preview.hidden = true;
+          var img = preview.querySelector("img");
+          if (img) img.removeAttribute("src");
+        }
+        if (nameEl) nameEl.textContent = "";
+        if (fileEl) fileEl.value = "";
+      }
+
+      function applyFbUploadFile(root, file) {
+        if (!validateFbImageFile(file)) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          feedbackPendingAttachment = {
+            name: file.name || "screenshot.png",
+            dataUrl: reader.result,
+            size: file.size,
+          };
+          var box = root.querySelector("#fb-opt-upload-box");
+          var preview = root.querySelector("#fb-opt-preview");
+          var nameEl = root.querySelector("#fb-opt-file-name");
+          if (box) box.hidden = true;
+          if (preview) {
+            preview.hidden = false;
+            var img = preview.querySelector("img");
+            if (img) img.src = reader.result;
+          }
+          if (nameEl) nameEl.textContent = file.name || "screenshot.png";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function bindFeedbackUpload(root) {
+        var wrap = root.querySelector("#fb-opt-upload");
+        var box = root.querySelector("#fb-opt-upload-box");
+        var fileEl = root.querySelector("#fb-opt-file");
+        var removeBtn = root.querySelector("#fb-opt-remove");
+        if (!wrap || !fileEl) return;
+        feedbackPendingAttachment = null;
+
+        function openPicker() {
+          fileEl.click();
+        }
+        function handlePasteImage(e) {
+          var items = e.clipboardData && e.clipboardData.items;
+          if (!items) return false;
+          for (var i = 0; i < items.length; i++) {
+            if (items[i].type && items[i].type.indexOf("image/") === 0) {
+              e.preventDefault();
+              var blob = items[i].getAsFile();
+              if (!blob) return true;
+              var ext = /png/i.test(blob.type) ? "png" : "jpg";
+              var pasted = new File(
+                [blob],
+                "screenshot-" + Date.now() + "." + ext,
+                { type: blob.type || "image/png" }
+              );
+              applyFbUploadFile(root, pasted);
+              showOkToast("已粘贴截图");
+              return true;
+            }
+          }
+          return false;
+        }
+        if (box) {
+          box.addEventListener("click", openPicker);
+          box.addEventListener("keydown", function (e) {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openPicker();
+            }
+          });
+        }
+        fileEl.addEventListener("change", function () {
+          var file = fileEl.files && fileEl.files[0];
+          if (file) applyFbUploadFile(root, file);
+          else clearFbUploadPreview(root);
+        });
+        if (removeBtn) {
+          removeBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            clearFbUploadPreview(root);
+          });
+        }
+        wrap.addEventListener("focus", function () {
+          wrap.classList.add("is-paste-target");
+        });
+        wrap.addEventListener("blur", function () {
+          wrap.classList.remove("is-paste-target");
+        });
+        /* 抽屉内任意处粘贴截图均可落到附件（纯文本粘贴不拦截） */
+        root.addEventListener("paste", function (e) {
+          handlePasteImage(e);
+        });
+      }
+
+      function feedbackSnapshotRowsHtml(item) {
+        var snap = item.snapshot;
+        var body;
+        if (!snap || !snap.items || !snap.items.length) {
+          body = '<span class="field-view-text">无结构化内容（纯文本或未采集）</span>';
+        } else {
+          body =
+            '<span class="tag tag-blue fb-snapshot-kind">' +
+            escapeHtml(snap.kindLabel || snap.kind || "内容") +
+            "</span>" +
+            '<div class="fb-snapshot-list">' +
+            snap.items
+              .map(function (row) {
+                var metaParts = [];
+                if (row.id) metaParts.push("ID " + row.id);
+                if (row.priceLabel) metaParts.push("当时价 " + row.priceLabel);
+                if (row.extra) metaParts.push(row.extra);
+                return (
+                  '<div class="fb-snapshot-item">' +
+                  '<div class="fb-snapshot-item__name">' +
+                  escapeHtml(row.name || "—") +
+                  "</div>" +
+                  (metaParts.length
+                    ? '<div class="fb-snapshot-item__meta">' +
+                      escapeHtml(metaParts.join(" · ")) +
+                      "</div>"
+                    : "") +
+                  "</div>"
+                );
+              })
+              .join("") +
+            "</div>";
+        }
+        var typeLabel =
+          (snap && snap.kindLabel) ||
+          FEEDBACK_MESSAGE_TYPE_LABEL[item.messageType] ||
+          item.messageType ||
+          "—";
+        return (
+          "<tr><th>消息类型</th><td>" +
+          escapeHtml(typeLabel) +
+          "</td></tr>" +
+          '<tr data-tip-ref="fb-snapshot"><th>快照内容</th><td class="desc-table__cell--top">' +
+          body +
+          "</td></tr>"
+        );
+      }
+
+      function buildFeedbackDrawerHtml(item, mode) {
+        var readonly = mode === "view";
+        var statusLabel = FEEDBACK_STATUS_LABEL[item.status] || item.status;
+        var noteValue = item.note || "";
+        var basicHtml =
+          '<div class="kw-section">' +
+          '<div class="kw-section__title">基本信息</div>' +
+          '<table class="desc-table desc-table--drawer"><tbody>' +
+          "<tr><th>提交时间</th><td>" +
+          escapeHtml(item.submittedAt) +
+          "</td></tr>" +
+          "<tr><th>用户话术</th><td>" +
+          escapeHtml(item.userText) +
+          "</td></tr>" +
+          "<tr><th>回复摘要</th><td>" +
+          escapeHtml(item.assistantSnippet) +
+          "</td></tr>" +
+          feedbackSnapshotRowsHtml(item) +
+          "<tr><th>SkillID</th><td><code>" +
+          escapeHtml(item.skillId || "—") +
+          "</code></td></tr>" +
+          "<tr><th>Skill场景</th><td>" +
+          escapeHtml(item.skillName || "—") +
+          "</td></tr>" +
+          '<tr><th data-tip-ref="fb-route">路由来源</th><td>' +
+          escapeHtml(FEEDBACK_ROUTE_LABEL[item.routeSource] || item.routeSource || "—") +
+          "</td></tr>" +
+          "<tr><th>当前状态</th><td>" +
+          escapeHtml(statusLabel) +
+          "</td></tr>" +
+          "</tbody></table></div>";
+
+        if (readonly) {
+          return (
+            basicHtml +
+            '<div class="kw-section">' +
+            '<div class="kw-section__title">处理说明</div>' +
+            '<table class="desc-table desc-table--drawer"><tbody>' +
+            "<tr><th>处理时间</th><td>" +
+            escapeHtml(item.handledAt || "—") +
+            "</td></tr>" +
+            "<tr><th>处理人</th><td>" +
+            escapeHtml(formatFeedbackHandler(item)) +
+            "</td></tr>" +
+            "<tr><th>处理说明</th><td" +
+            (noteValue ? ' class="desc-table__cell--top"' : "") +
+            ">" +
+            (noteValue
+              ? '<div class="field-view-text field-view-text--block">' +
+                escapeHtml(noteValue) +
+                "</div>"
+              : "—") +
+            "</td></tr>" +
+            "<tr><th>附件</th><td>" +
+            feedbackAttachmentCellHtml(item) +
+            "</td></tr>" +
+            "</tbody></table></div>"
+          );
+        }
+
+        return (
+          basicHtml +
+          '<div class="kw-section">' +
+          '<div class="kw-section__title">处理说明</div>' +
+          '<table class="desc-table desc-table--drawer"><tbody>' +
+          "<tr><th data-tip-ref=\"fb-note\">处理说明</th><td class=\"desc-table__cell--top\">" +
+          '<textarea class="textarea" id="fb-opt-note" placeholder="提交优化时该字段必填" style="min-height:120px;width:100%;max-width:none">' +
+          escapeHtml(noteValue) +
+          "</textarea>" +
+          "</td></tr>" +
+          "<tr><th>附件</th><td class=\"desc-table__cell--top\">" +
+          '<div class="fb-upload" id="fb-opt-upload" tabindex="0" data-tip-ref="fb-upload" aria-label="附件上传，可粘贴截图">' +
+          '<p class="field-block__hint" style="margin:0 0 8px">格式.JPG/.PNG，≤2M，支持直接粘贴截图，仅一件。</p>' +
+          '<input type="file" id="fb-opt-file" accept=".jpg,.jpeg,.png,image/jpeg,image/png" hidden />' +
+          '<div class="upload-box" id="fb-opt-upload-box" role="button" tabindex="-1">+ 上传</div>' +
+          '<div class="fb-upload__preview" id="fb-opt-preview" hidden>' +
+          '<img alt="附件预览" />' +
+          '<button type="button" class="fb-upload__remove" id="fb-opt-remove" aria-label="移除附件">×</button>' +
+          "</div>" +
+          '<div class="fb-upload__name" id="fb-opt-file-name"></div>' +
+          "</div>" +
+          "</td></tr>" +
+          "</tbody></table></div>"
+        );
+      }
+
+      function bindFeedbackDownPage() {
+        var page = document.getElementById("page-feedback");
+        if (!page || page._fbBound) return;
+        page._fbBound = true;
+        var queryBtn = document.getElementById("fb-down-query");
+        if (queryBtn) {
+          queryBtn.addEventListener("click", function () {
+            renderFeedbackDownList();
+          });
+        }
+        var upQueryBtn = document.getElementById("fb-up-query");
+        if (upQueryBtn) {
+          upQueryBtn.addEventListener("click", function () {
+            renderFeedbackUpList();
+            showOkToast("已刷新赞统计（示意）");
+          });
+        }
+        var upDate = document.getElementById("fb-up-date");
+        if (upDate && !upDate.value) {
+          upDate.value = formatCurrentMonthRange();
+        }
+        var tbody = document.getElementById("fb-down-tbody");
+        if (tbody) {
+          tbody.addEventListener("click", function (e) {
+            var btn = e.target.closest("[data-fb-action]");
+            if (!btn) return;
+            var id = btn.getAttribute("data-fb-id");
+            var action = btn.getAttribute("data-fb-action");
+            var item = getFeedbackDislikeById(id);
+            if (!item) return;
+            if (action === "view") {
+              openDrawer("feedback", {
+                mode: item.status === "optimized" ? "view" : "optimize",
+                eventId: id,
+              });
+            }
+          });
+        }
+        (function bindFbIgnoreModal() {
+          var maskEl = document.getElementById("fb-ignore-mask");
+          var closeBtn = document.getElementById("fb-ignore-close");
+          var cancelBtn = document.getElementById("fb-ignore-cancel");
+          var okBtn = document.getElementById("fb-ignore-ok");
+          if (closeBtn) closeBtn.addEventListener("click", closeFbIgnoreConfirm);
+          if (cancelBtn) cancelBtn.addEventListener("click", closeFbIgnoreConfirm);
+          if (okBtn) okBtn.addEventListener("click", confirmFbIgnore);
+          if (maskEl) {
+            maskEl.addEventListener("click", function (e) {
+              if (e.target === maskEl) closeFbIgnoreConfirm();
+            });
+          }
+        })();
+        var drawerIgnoreBtn = document.getElementById("drawer-fb-ignore");
+        if (drawerIgnoreBtn && !drawerIgnoreBtn._fbBound) {
+          drawerIgnoreBtn._fbBound = true;
+          drawerIgnoreBtn.addEventListener("click", function () {
+            if (!feedbackDrawerContext || !feedbackDrawerContext.id) return;
+            openFbIgnoreConfirm(feedbackDrawerContext.id);
+          });
+        }
+        renderFeedbackDownList();
+        renderFeedbackUpList();
+      }
+
       function openDrawer(type, options) {
         options = options || {};
         if (type === "tag" || type === "tag-rule") {
@@ -7693,8 +8773,11 @@
             mode === "edit" ? "编辑推荐对话" : "新增推荐对话",
           service: mode === "edit" ? "编辑快捷服务" : "新增快捷服务",
           product: mode === "edit" ? "编辑产品" : "新增产品",
+          feedback: "踩上报详情",
         };
         drawerTitle.textContent = titles[type] || "编辑";
+        feedbackDrawerContext = null;
+        resetDrawerFootForFeedback();
         if (
           (type === "ops-skill" && mode === "edit") ||
           type === "ops-log" ||
@@ -7714,12 +8797,36 @@
           );
         } else if (type === "ops-log") {
           drawerBody.innerHTML = buildOpsLogHtml();
+        } else if (type === "feedback") {
+          var fbItem = getFeedbackDislikeById(options.eventId || "");
+          if (!fbItem) {
+            drawerBody.innerHTML = '<div class="empty"><div>记录不存在</div></div>';
+          } else {
+            var fbMode = fbItem.status === "optimized" ? "view" : "optimize";
+            feedbackDrawerContext = { id: fbItem.id, mode: fbMode };
+            drawerBody.innerHTML = buildFeedbackDrawerHtml(fbItem, fbMode);
+            syncFeedbackDrawerFoot(fbItem);
+            if (fbMode === "optimize") {
+              bindFeedbackUpload(drawerBody);
+            }
+            drawerBody.querySelectorAll("[data-fb-download]").forEach(function (btn) {
+              btn.addEventListener("click", function () {
+                downloadFeedbackAttachment(
+                  getFeedbackDislikeById(btn.getAttribute("data-fb-download"))
+                );
+              });
+            });
+          }
         } else {
           drawerBody.innerHTML = templates[type] || "";
         }
-        if (drawerSubmit) {
-          drawerSubmit.style.display = type === "ops-log" ? "none" : "";
-          drawerSubmit.textContent = "提交";
+        if (drawerSubmit && type !== "feedback") {
+          if (type === "ops-log") {
+            drawerSubmit.style.display = "none";
+          } else {
+            drawerSubmit.style.display = "";
+            drawerSubmit.textContent = "提交";
+          }
         }
         drawerBody.querySelectorAll(".switch").forEach(function (sw) {
           sw.addEventListener("click", function () {
@@ -8793,7 +9900,9 @@
         drawer.classList.remove("open");
         drawer.setAttribute("aria-hidden", "true");
         setDrawerMeta("", "");
-        if (drawerSubmit) drawerSubmit.style.display = "";
+        feedbackDrawerContext = null;
+        feedbackPendingAttachment = null;
+        resetDrawerFootForFeedback();
         if (drawerBody) {
           drawerBody.querySelectorAll("[data-tip-ref]").forEach(function (el) {
             el.removeAttribute("data-tip-ref");
@@ -8818,6 +9927,46 @@
       mask.addEventListener("click", closeDrawer);
       document.getElementById("drawer-close").addEventListener("click", closeDrawer);
       document.getElementById("drawer-cancel").addEventListener("click", closeDrawer);
+      if (drawerSubmit) {
+        drawerSubmit.addEventListener("click", function () {
+          if (
+            feedbackDrawerContext &&
+            feedbackDrawerContext.mode === "optimize"
+          ) {
+            var item = getFeedbackDislikeById(feedbackDrawerContext.id);
+            if (item) {
+              var noteEl = drawerBody.querySelector("#fb-opt-note");
+              var note = noteEl ? noteEl.value.trim() : "";
+              if (!note) {
+                showErrorToast("请填写处理说明。");
+                if (noteEl) noteEl.focus();
+                return;
+              }
+              item.note = note;
+              item.status = "optimized";
+              item.handledAt = formatNowDateTime();
+              item.handlerAccount = "admin";
+              item.handlerName = "管理员";
+              if (feedbackPendingAttachment) {
+                item.attachment = {
+                  name: feedbackPendingAttachment.name,
+                  dataUrl: feedbackPendingAttachment.dataUrl,
+                  size: feedbackPendingAttachment.size,
+                };
+              } else if (!item.attachment) {
+                item.attachment = null;
+              }
+              feedbackPendingAttachment = null;
+              showOkToast("已标记为已优化");
+              closeDrawer();
+              renderFeedbackDownList();
+              return;
+            }
+          }
+          closeDrawer();
+          showOkToast("已提交");
+        });
+      }
 
       (function bindTagFormModal() {
         var maskEl = document.getElementById("tag-form-mask");
@@ -8887,6 +10036,7 @@
 
       enhanceCharCounts(document.getElementById("page-ui"));
       enhanceSelects(document.getElementById("page-ui"));
+      bindFeedbackDownPage();
 
       function normalizeHexColor(raw) {
         var s = String(raw || "").trim();
